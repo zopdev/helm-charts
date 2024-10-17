@@ -1,0 +1,11 @@
+{{- if gt (int .Values.minReplicas) 1 }} 
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .Values.name }}
+spec:
+  minAvailable: {{ .Values.minAvailable }}
+  selector:
+    matchLabels:
+      app: {{ .Values.name }} 
+{{- end }}

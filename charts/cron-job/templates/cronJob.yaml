@@ -1,0 +1,127 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Values.name}}
+  labels:
+    app: {{ .Values.name }}
+  annotations:
+    configmap.reloader.stakater.com/reload: "{{ .Values.name }}"
+spec:
+  schedule: {{ .Values.schedule | quote }}
+  suspend: {{ .Values.suspend }}
+  concurrencyPolicy: {{ .Values.concurrencyPolicy }}
+  failedJobsHistoryLimit: 1
+  successfulJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          name: {{ .Values.name}}
+          labels:
+            app: {{ .Values.name }}
+        spec:
+          {{- if .Values.imagePullSecrets}}
+          imagePullSecrets:
+          {{- range $v := .Values.imagePullSecrets }}
+            - name: {{ . }}
+            {{- end }}
+          {{- end }}
+          {{- if .Values.appSecrets }}
+          serviceAccountName: secrets-account
+          {{- end }}
+          volumes:
+          {{- if .Values.volumeMounts }}
+            {{- range $k,$v := .Values.volumeMounts.configmaps }}
+            - name: {{ $v.name }}
+              configMap:
+                name: {{ $v.name }}
+            {{- end }}
+            {{- range $k,$v := .Values.volumeMounts.secrets }}
+            - name: {{ $v.name }}
+              secret:
+                secretName: {{ $v.name }}
+           {{- end }}
+           {{- range $k,$v := .Values.volumeMounts.pvc }}
+            - name: {{ $v.name }}
+              persistentVolumeClaim:
+                claimName: {{ $v.name }}
+          {{- end }}
+          {{- end }}
+          {{- if .Values.appSecrets }}
+            - name: app-secrets
+              csi:
+                driver: secrets-store.csi.k8s.io
+                readOnly: true
+                volumeAttributes:
+                  secretProviderClass: "{{ .Values.name }}-secrets-application"
+          {{- end }}
+          containers:
+            - name: {{ .Values.name }}
+              image: {{ .Values.image }}
+              {{- if ne .Values.command ""}}
+              command: {{ .Values.command | toYaml | nindent 14 }}
+              {{- end }}
+              imagePullPolicy: IfNotPresent
+              ports:
+                - name: metrics-port
+                  containerPort: {{ .Values.metricsPort }}
+              envFrom:
+                {{- range $i, $name := .Values.envFrom.configmaps }}
+                - configMapRef:
+                    name: {{ $name }}
+                {{- end }}
+                {{- range $i, $name := .Values.envFrom.secrets }}
+                - secretRef:
+                    name: {{ $name }}
+                 {{- end }}
+              env:
+                {{- range $k,$v := .Values.env }}
+                  {{- if ne (toString $v) ""}}
+                - name: {{ $k | quote }}
+                  value: {{ $v | quote }}
+                  {{- end }}
+                {{- end }}
+              volumeMounts:
+              {{- if .Values.volumeMounts }}
+              {{- range $k,$v := .Values.volumeMounts.configmaps }}
+                - name: {{ $v.name }}
+                  mountPath: {{ $v.mountPath }}
+              {{- if ne $v.subPath "" }}
+                  subPath: {{ $v.subPath }}
+              {{- end }}
+              {{- end }}
+              {{- range $k,$v := .Values.volumeMounts.secrets }}
+                - name: {{ $v.name }}
+                  mountPath: {{ $v.mountPath }}
+                {{- if ne $v.subPath "" }}
+                  subPath: {{ $v.subPath }}
+                {{- end }}
+              {{- end }}
+              {{- range $k,$v := .Values.volumeMounts.pvc }}
+                - name: {{ $v.name }}
+                  mountPath: {{ $v.mountPath }}
+                  {{- if ne $v.subPath "" }}
+                  subPath: {{ $v.subPath }}
+                  {{- end }}
+                {{- end }}
+              {{- end }}
+              # Volume mount is required for the secret to sync with kubernetes secret
+              {{- if .Values.appSecrets }}
+                - name: app-secrets
+                  mountPath: "/mnt/secrets-store"
+                  readOnly: true
+              {{- end }}
+              resources:
+                requests:
+                  memory: {{.Values.minMemory | quote }}
+                  cpu: {{.Values.minCPU | quote }}
+                limits:
+                {{ if ne .Values.maxMemory "" }}
+                  memory: {{.Values.maxMemory| quote }}
+                {{ end }}
+                {{ if ne .Values.maxCPU "" }}
+                  cpu: {{.Values.maxCPU | quote }}
+                {{ end }}
+          restartPolicy: Never
+---

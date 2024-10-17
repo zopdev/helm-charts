@@ -1,0 +1,112 @@
+# Name of the service
+name: hello-api
+
+# Number of replicas to run
+replicaCount: 2
+
+# Docker container image with tag
+image: "zopdev/sample-go-api:latest"
+
+imagePullSecrets:
+  # - gcr-secrets
+  # - acr-secrets
+  # - ecr-secrets
+
+# Port on which container runs its services
+httpPort: 8000
+metricsPort: 2121
+
+ports: # Provide the ports on which container runs its services
+# grpc: 9100
+
+metricsScrapeInterval: 30s
+
+envFrom:
+  secrets: [] #List of secrets
+  configmaps: [] #List of Configmaps
+
+# Resource allocations
+minCPU: "100m"
+minMemory: "128M"
+maxCPU: "500m"
+maxMemory: "512M"
+minReplicas: 2
+maxReplicas: 4
+minAvailable: 1
+
+# Whether application is a CLI service
+cliService: false
+
+# Heartbeat URL
+heartbeatURL: ""
+
+readinessProbe:
+  enable: false
+#  initialDelaySeconds: 3
+#  timeoutSeconds: 3
+#  periodSeconds: 10
+#  failureThreshold: 3
+
+livenessProbe:
+  enable: false
+#  initialDelaySeconds: 3
+#  timeoutSeconds: 3
+#  periodSeconds: 10
+#  failureThreshold: 3
+
+# All environment variables can be passed as a map
+env:
+  # APP_NAME: hello-api
+
+appSecrets: false
+
+volumeMounts:
+  configmaps:
+#    - name: zopdev-configmap
+#      mountPath: /etc/env
+  secrets:
+#    - name: zopdev-secret
+#      mountPath: /etc/secret
+  pvc:
+#    - name: zopdev-volume
+#      mountPath: /etc/data
+
+alerts:
+  standard:
+    infra:
+      unavailableReplicasThreshold: 0                   # Alert if the available replicas is lesser than number of desired replicas
+      podRestartThreshold: 0                            # Alert if the pod restarts goes beyond threshold over a 5-minute window.
+      podRestartTimeWindow: "5m"                        # Time window  ,default "5m"
+      hpaNearingMaxPodThreshold: 80                     # Alert if replica count crosses the threshold percentage of max pod count
+      serviceMemoryUtilizationThreshold: 90             # Alert if service memory exceeds threshold
+      serviceCpuUtilizationThreshold: 90                # Alert if service cpu exceeds threshold
+      serviceCpuUtilizationTimeWindow: "5m"             # Time window for service cpu utilization
+      healthCheckFailureThreshold: 50                   # Alert if  application health-check failures goes beyond 50 in a 5-minute window.
+      healthCheckFailureTimeWindow: "5m"                # Time window  ,default "5m"
+  custom:
+  # - name: "Custom alert if user_created events goes below threshold for 5 min"
+  #   description: "Custom alert if user_created events goes below threshold for 5 min"
+  #   alertRule: "user_post_get_counter" # Metric Name exposed by /metric endpoint
+  #   sumByLabel: "events" # Metric events key; can be empty string
+  #   percentile: -1.0 #Percentile is useful for histogram queries
+  #   labelValue: "user_created" # Metric Event Name; can be empty string
+  #   queryOperator: <= # Query Operator, by default its `>`
+  #   timeWindow: "5m"
+  #   threshold: 1
+  #   labels:
+  #     severity: critical
+
+# initContainer can be used to run database migration or other types of initialization operation before deployment
+#initContainer:
+#  image:
+#  args: ["gofr migrate -method=UP -database=gorm"]
+#  env:
+#    cloud: "AWS"
+#  secrets:
+#   DB_PASSWORD: zs-test-postgresqldb-db-secret      # Secrets will be in the format env_variable: AWS_Secret_Name
+ 
+# This section deals with creating custom dashboards for grafana
+grafanaDashboard: 
+#  sample format for using json model
+#  custom_dashboard.json: 
+#  {"annotations":{"list":[{"builtIn":1,"datasource":"-- Grafana --","enable":true,"hide":true,"iconColor":"rgba(0, 211, 255, 1)","name":"Annotations & Alerts","target":{"limit":100,"matchAny":false,"tags":[],"type":"dashboard"},"type":"dashboard"}]},"editable":true,"gnetId":null,"graphTooltip":0,"id":27,"links":[],"panels":[],"schemaVersion":30,"style":"dark","tags":[],"templating":{"list":[]},"time":{"from":"now-6h","to":"now"},"timepicker":{},"timezone":"","title":"Custom dashboard","version":1} 
