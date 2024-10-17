@@ -1,0 +1,9 @@
+apiVersion: v1
+appVersion: "1.0"
+description: Helm chart creates a cron-job, service, alerts along with serviceMonitor etc
+name: cron-job
+version: 0.0.1
+icon: "https://zop.dev/logo.png"
+maintainers:
+  - name: ZopDev
+    url: zop.dev

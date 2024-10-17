@@ -1,0 +1,52 @@
+# Name of the cron
+name: hello-api
+
+# Docker container image with tag
+image: "zopdev/sample-go-api:latest"
+
+imagePullSecrets:
+# - gcr-secrets
+# - acr-secrets
+# - ecr-secrets
+
+#cron JOB
+schedule: "0 */1 * * *"
+suspend: false
+concurrencyPolicy: "Replace"
+command: ""
+
+# Port on which container runs its service
+httpPort: 8000
+metricsPort: 2121
+
+# Resource allocations
+minCPU: "100m"
+minMemory: "128M"
+maxCPU: "500m"
+maxMemory: "512M"
+
+envFrom:
+  secrets: [] #List of secrets
+  configmaps: [] #List of Configmaps
+
+# All environment variables can be passed as a map
+env:
+  APP_NAME: hello-api
+
+appSecrets: false
+
+volumeMounts:
+  configmaps:
+  #    - name: zopdev-configmap
+  #      mountPath: /etc/env
+  secrets:
+  #    - name: zopdev-secret
+  #      mountPath: /etc/secret
+  pvc:
+#    - name: zopdev-volume
+#      mountPath: /etc/data
+
+alerts:
+  standard:
+    infra:
+      cronjobFailedThreshold: 0

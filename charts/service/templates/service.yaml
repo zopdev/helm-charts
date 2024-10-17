@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.name }}
+  labels:
+    app: {{ .Values.name }}
+spec:
+  ports:
+    - name: http-port
+      port: 80
+      targetPort: {{ .Values.httpPort}}
+    - name: metrics-port
+      port: 2121
+      targetPort: {{ .Values.metricsPort}}
+    {{- range $k, $v := .Values.ports}}
+    - name: {{ $k}}
+      port: {{ $v }}
+      targetPort: {{ $v }}
+      {{- end }}
+  selector:
+    app: {{ .Values.name }}
+  type: NodePort
+---

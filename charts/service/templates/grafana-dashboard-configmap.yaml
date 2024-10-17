@@ -1,0 +1,14 @@
+{{- if .Values.grafanaDashboard }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.name }}
+  namespace: monitoring
+  labels:
+    grafanaDashboard: "true"
+data:
+   {{- range $k,$v := .Values.grafanaDashboard }} 
+   {{ $k }}: {{  $v |  toJson | quote }}
+   {{- end }}
+
+{{- end }}

@@ -1,0 +1,44 @@
+{{- if (.Values.hpa_enable)   -}}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ .Values.name }}
+spec:
+  maxReplicas: {{ .Values.maxReplicas | default 4}}
+  minReplicas: {{ .Values.minReplicas | default 2}}
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ .Values.name }}
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        {{ if ne .Values.hpaCPU "" }}
+        {{ if ne .Values.hpaCPU nil }}
+        averageUtilization: {{ .Values.hpaCPU }}
+        {{ else if ne .Values.maxCPU "" }}
+        averageUtilization: {{ div (mul (int (trimSuffix "m" .Values.maxCPU)) 80) (int (trimSuffix "m" .Values.minCPU)) }}
+        {{ else }}
+        averageUtilization: 80
+        {{ end }}
+        {{ end }}
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        {{if ne .Values.hpaMemory ""}}
+        {{ if ne .Values.hpaMemory nil }}
+        averageUtilization: {{ .Values.hpaMemory }}
+        {{ else if ne .Values.maxMemory "" }}
+        averageUtilization: {{ div (mul (int (trimSuffix "M" .Values.maxMemory)) 80) (int (trimSuffix "M" .Values.minMemory)) }}
+        {{ else }}
+        averageUtilization: 80
+        {{ end }}
+        {{ end }}
+---
+  {{- end -}}

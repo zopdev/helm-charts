@@ -1,0 +1,23 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  generation: 1
+  labels:
+    app: kube-prometheus-stack
+    heritage: Helm
+    release: prometheus
+  name: {{ .Values.name }}
+spec:
+  groups:
+    - name: {{ .Release.Namespace }}.{{ .Values.name }}.rules
+      rules:
+        # Alert if the cron job failed.
+        - alert: {{ snakecase .Values.name }}_cron_job_failed
+          annotations:
+            description: "CronJob {{ .Values.name }} failed to complete in {{.Release.Name}} namespace."
+          expr: kube_job_status_failed{namespace="{{ .Release.Namespace }}",job_name=~"{{ .Values.name }}-.*"} > {{.Values.alerts.standard.infra.cronjobFailedThreshold}}
+          labels:
+            severity: critical
+            servicealert: "true"
+            service: {{ .Values.name }}
+            namespace: {{ .Release.Namespace }}
