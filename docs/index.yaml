@@ -3,7 +3,21 @@ entries:
   cron-job:
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2024-10-23T23:20:04.99127+05:30"
+    created: "2024-10-23T23:22:30.51595+05:30"
+    description: Helm chart creates a cron-job, service, alerts along with serviceMonitor
+      etc
+    digest: 8647eaeb33477970ec574dfea3549f71d480bb89cac42b99fba36a4f56d2c64f
+    icon: https://zop.dev/logo.png
+    maintainers:
+    - name: ZopDev
+      url: zop.dev
+    name: cron-job
+    urls:
+    - https://helm.zop.dev/cron-job-v0.0.2.tgz
+    version: v0.0.2
+  - apiVersion: v1
+    appVersion: "1.0"
+    created: "2024-10-23T23:22:30.513531+05:30"
     description: Helm chart creates a cron-job, service, alerts along with serviceMonitor
       etc
     digest: d8ab447cd5bff82957fc1bafdd4a1bdab91cea3b9eba179f17359d4b6265718b
@@ -18,7 +32,7 @@ entries:
   service:
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2024-10-23T23:20:04.993569+05:30"
+    created: "2024-10-23T23:22:30.517209+05:30"
     description: Helm chart creates a deployment, service, hpa for a service along
       with serviceMonitor etc
     digest: cc7992d670d615549c67717904238998780abe5aa5df400e4e3eb31d16237ea4
@@ -32,7 +46,7 @@ entries:
     version: v0.0.2
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2024-10-23T23:20:04.99174+05:30"
+    created: "2024-10-23T23:22:30.516633+05:30"
     description: Helm chart creates a deployment, service, hpa for a service along
       with serviceMonitor etc
     digest: e45d41b5041d8a3649bb8db768226990b2aae21b31b13ffd18d7253fe1e1d441
@@ -44,4 +58,4 @@ entries:
     urls:
     - https://helm.zop.dev/service-v0.0.1.tgz
     version: v0.0.1
-generated: "2024-10-23T23:20:04.990419+05:30"
+generated: "2024-10-23T23:22:30.512275+05:30"
