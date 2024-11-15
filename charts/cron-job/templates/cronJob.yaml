@@ -80,9 +80,9 @@ spec:
                 {{- if .Values.datastores.mysql }}
                 {{- range $i, $k := .Values.datastores.mysql }}
                 - configMapRef:
-                    name: {{ $k.name }}-{{ $k.database }}-{{ $.Release.Name}}-mysql-configmap
+                    name: {{ $k.datastore }}-{{ $k.database }}-{{ $.Release.Name}}-mysql-configmap
                 - secretRef:
-                    name: {{ $k.name }}-{{ $k.database }}-{{ $.Release.Name}}-mysql-database-secret
+                    name: {{ $k.datastore }}-{{ $k.database }}-{{ $.Release.Name}}-mysql-database-secret
                  {{- end }}
                  {{- end }}
                  {{- if .Values.datastores.redis }}
