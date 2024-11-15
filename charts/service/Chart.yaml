@@ -2,7 +2,7 @@ apiVersion: v1
 appVersion: "1.0"
 description: Helm chart creates a deployment, service, hpa for a service along with serviceMonitor etc
 name: service
-version: 0.0.1
+version: 0.0.3
 icon: "https://zop.dev/logo.png"
 maintainers:
   - name: ZopDev
