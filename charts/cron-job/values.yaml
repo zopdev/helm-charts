@@ -50,3 +50,6 @@ alerts:
   standard:
     infra:
       cronjobFailedThreshold: 0
+datastores:
+  mysql:
+  redis:

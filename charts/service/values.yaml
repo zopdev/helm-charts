@@ -115,3 +115,7 @@ grafanaDashboard:
 #  sample format for using json model
 #  custom_dashboard.json: 
 #  {"annotations":{"list":[{"builtIn":1,"datasource":"-- Grafana --","enable":true,"hide":true,"iconColor":"rgba(0, 211, 255, 1)","name":"Annotations & Alerts","target":{"limit":100,"matchAny":false,"tags":[],"type":"dashboard"},"type":"dashboard"}]},"editable":true,"gnetId":null,"graphTooltip":0,"id":27,"links":[],"panels":[],"schemaVersion":30,"style":"dark","tags":[],"templating":{"list":[]},"time":{"from":"now-6h","to":"now"},"timepicker":{},"timezone":"","title":"Custom dashboard","version":1} 
+
+datastores:
+  mysql:
+  redis:
