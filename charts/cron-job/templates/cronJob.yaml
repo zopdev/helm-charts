@@ -77,6 +77,22 @@ spec:
                 - secretRef:
                     name: {{ $name }}
                  {{- end }}
+                {{- if .Values.datastores.mysql }}
+                {{- range $i, $k := .Values.datastores.mysql }}
+                - configMapRef:
+                    name: {{ $k.name }}-{{ $k.database }}-{{ $.Release.Name}}-mysql-configmap
+                - secretRef:
+                    name: {{ $k.name }}-{{ $k.database }}-{{ $.Release.Name}}-mysql-database-secret
+                 {{- end }}
+                 {{- end }}
+                 {{- if .Values.datastores.redis }}
+                 {{- range .Values.datastores.redis }}
+                - configMapRef:
+                    name: {{ .name }}-configmap
+                - secretRef:
+                    name: {{ .name }}-database-secret
+                 {{- end }}
+                 {{- end }}
               env:
                 {{- range $k,$v := .Values.env }}
                   {{- if ne (toString $v) ""}}

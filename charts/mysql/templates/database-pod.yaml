@@ -1,0 +1,29 @@
+{{- range $index, $service := .Values.services }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mysql-init-{{ $.Release.Name }}-{{ $service.name }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  containers:
+    - name: mysql-init-role
+      image: imega/mysql-client
+      command: ["mysql"]
+      args:
+        ["-h", "{{ $.Release.Name }}-mysql", "-u", "root", "-p$(ROOTPASSWORD)", "-e", "source /etc/config/db-init.sql"]
+      env:
+        - name: ROOTPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{$.Release.Name}}-mysql-root-secret
+              key: root-password
+      volumeMounts:
+        - name: secret-volume
+          mountPath: /etc/config
+  volumes:
+    - name: secret-volume
+      configMap:
+        name: {{$.Release.Name}}-{{ .name }}-init-script
+  restartPolicy: OnFailure
+---
+{{- end }}
