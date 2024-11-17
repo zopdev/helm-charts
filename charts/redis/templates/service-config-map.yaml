@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ .Release.Name }}-redis-service-configmap"
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    app.kubernetes.io/component: master
+data:
+  REDIS_PORT: "6379"
+  REDIS_HOST: "{{ .Release.Name }}-redis-headless-service"
