@@ -86,11 +86,9 @@ spec:
                  {{- end }}
                  {{- end }}
                  {{- if and .Values.datastores .Values.datastores.redis }}
-                 {{- range .Values.datastores.redis }}
+                 {{- range $i, $k := .Values.datastores.redis }}
                 - configMapRef:
-                    name: {{ .name }}-configmap
-                - secretRef:
-                    name: {{ .name }}-database-secret
+                    name: {{ $k.datastore }}-redis-service-configmap
                  {{- end }}
                  {{- end }}
               env:
