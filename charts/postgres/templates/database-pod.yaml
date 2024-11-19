@@ -1,0 +1,34 @@
+{{- range $index, $service := .Values.services }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: postgres-init-{{ $.Release.Name }}-{{ $service.name }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  containers:
+    - name: postgres-init-role
+      image: postgres:latest
+      command: ["psql"]
+      args:
+        - "-h"
+        - "{{ $.Release.Name }}-postgres"
+        - "-U"
+        - "postgres"
+        - "-f"
+        - "/etc/config/db-init.sql"
+      env:
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{$.Release.Name}}-postgres-root-secret
+              key: postgres-password
+      volumeMounts:
+        - name: secret-volume
+          mountPath: /etc/config
+  volumes:
+    - name: secret-volume
+      configMap:
+        name: {{$.Release.Name}}-{{ .name }}-init-script
+  restartPolicy: OnFailure
+---
+{{- end }}
