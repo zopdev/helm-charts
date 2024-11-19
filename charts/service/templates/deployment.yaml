@@ -110,6 +110,14 @@ spec:
                 name: {{ $k.datastore }}-{{ $k.database }}-{{ $.Release.Name}}-mysql-database-secret
             {{- end }}
             {{- end }}
+            {{- if and .Values.datastores .Values.datastores.postgres }}
+            {{- range $i, $k := .Values.datastores.postgres }}
+            - configMapRef:
+                name: {{ $k.datastore }}-{{ $k.database }}-{{ $.Release.Name}}-postgres-configmap
+            - secretRef:
+                name: {{ $k.datastore }}-{{ $k.database }}-{{ $.Release.Name}}-postgres-database-secret
+            {{- end }}
+            {{- end }}
             {{- if and .Values.datastores .Values.datastores.redis }}
             {{- range $i, $k := .Values.datastores.redis }}
             - configMapRef:

@@ -1,0 +1,39 @@
+{{- range $index, $service := .Values.services }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $.Release.Name }}-{{ $service.name }}-init-script
+  namespace: {{ $.Release.Namespace }}
+data:
+  db-init.sql: |
+    CREATE EXTENSION IF NOT EXISTS dblink;
+    DO $$ BEGIN
+      IF NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = '{{ $service.database }}') THEN
+        PERFORM dblink_exec('dbname=postgres', 'CREATE DATABASE "{{ $service.database }}"');
+    END IF;
+    END $$;
+
+    \connect {{ $service.database }}
+
+    REVOKE ALL ON SCHEMA public FROM PUBLIC;
+    DO
+    $do$
+    BEGIN
+    IF NOT EXISTS (
+    SELECT FROM pg_catalog.pg_roles  -- SELECT list can be empty for this
+    WHERE  rolname = '{{ $service.name }}_user') THEN
+  
+    CREATE USER "{{ $service.name }}_user" WITH ENCRYPTED PASSWORD '{{ $service.password }}';
+    GRANT CONNECT, CREATE ON DATABASE "{{ $service.database }}" TO "{{ $service.name }}_user";
+    GRANT CREATE, USAGE ON SCHEMA public TO "{{ $service.name }}_user";
+    ALTER DEFAULT PRIVILEGES FOR USER postgres IN SCHEMA public GRANT INSERT, REFERENCES, SELECT, UPDATE, DELETE, TRUNCATE ON TABLES TO "{{ $service.name }}_user";
+    ALTER DEFAULT PRIVILEGES FOR USER postgres IN SCHEMA public GRANT SELECT, UPDATE ON SEQUENCES TO "{{ $service.name }}_user";
+    ELSE
+    ALTER USER "{{ $service.name }}_user" PASSWORD '{{ $service.password }}';
+    END IF;
+
+  
+    END
+    $do$;
+---
+{{- end }}
