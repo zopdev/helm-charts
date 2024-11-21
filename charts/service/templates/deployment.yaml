@@ -78,9 +78,11 @@ spec:
       containers:
         - name: {{ .Values.name }}
           image: {{ .Values.image }}
-          {{- if .Values.Containers.privileged }}
+          {{- with .Values.Containers }}
+          {{- if .privileged | default false }}
           securityContext:
             privileged: true
+          {{- end }}
           {{- end }}
           ports:
             - name: http-port
@@ -122,6 +124,24 @@ spec:
             {{- range $i, $k := .Values.datastores.redis }}
             - configMapRef:
                 name: {{ $k.datastore }}-redis-service-configmap
+            {{- end }}
+            {{- end }}
+            {{- if and .Values.datastores .Values.datastores.surrealdb }}
+            {{- range $i, $k := .Values.datastores.surrealdb }}
+            - configMapRef:
+                name: {{ $k.datastore }}-surrealdb-service-configmap
+            {{- end }}
+            {{- end }}
+            {{- if and .Values.datastores .Values.datastores.opentsdb }}
+            {{- range $i, $k := .Values.datastores.opentsdb }}
+            - configMapRef:
+                name: {{ $k.datastore }}-opentsdb-configmap
+            {{- end }}
+            {{- end }}
+            {{- if and .Values.datastores .Values.datastores.dgraph }}
+            {{- range $i, $k := .Values.datastores.dgraph }}
+            - configMapRef:
+                name: {{ $k.datastore }}-dgraph-configmap
             {{- end }}
             {{- end }}
           env:

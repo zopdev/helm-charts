@@ -99,6 +99,24 @@ spec:
                     name: {{ $k.datastore }}-redis-service-configmap
                  {{- end }}
                  {{- end }}
+                 {{- if and .Values.datastores .Values.datastores.surrealdb }}
+                 {{- range $i, $k := .Values.datastores.surrealdb }}
+                - configMapRef:
+                    name: {{ $k.datastore }}-surrealdb-service-configmap
+                 {{- end }}
+                 {{- end }}
+                {{- if and .Values.datastores .Values.datastores.opentsdb }}
+                {{- range $i, $k := .Values.datastores.opentsdb }}
+                - configMapRef:
+                    name: {{ $k.datastore }}-opentsdb-configmap
+                {{- end }}
+                {{- end }}
+                {{- if and .Values.datastores .Values.datastores.dgraph }}
+                {{- range $i, $k := .Values.datastores.dgraph }}
+                - configMapRef:
+                    name: {{ $k.datastore }}-dgraph-configmap
+                {{- end }}
+                {{- end }}
               env:
                 {{- range $k,$v := .Values.env }}
                   {{- if ne (toString $v) ""}}

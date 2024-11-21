@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "dgraph.alpha.fullname" . }}-headless
+  namespace: {{ include "dgraph.namespace" . }}
+  labels:
+    app: {{ template "dgraph.name" . }}
+    chart: {{ template "dgraph.chart" . }}
+    component: {{ .Values.alpha.name }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    {{- with .Values.alpha.serviceHeadless.labels }}
+    {{- toYaml . | trimSuffix "\n" | nindent 4 }}
+    {{- end }}
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+    - name: grpc-alpha-int
+      port: 7080
+      targetPort: 7080
+  selector:
+    app: {{ template "dgraph.name" . }}
+    chart: {{ template "dgraph.chart" . }}
+    component: {{ .Values.alpha.name }}
+    release: {{ .Release.Name }}
+  publishNotReadyAddresses: {{ .Values.alpha.service.publishNotReadyAddresses }}

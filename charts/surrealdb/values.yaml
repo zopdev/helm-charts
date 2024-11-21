@@ -1,0 +1,21 @@
+# values.yaml for SurrealDB Helm chart
+replicaCount: 1
+
+image: surrealdb/surrealdb:latest
+
+# Resource configuration
+resources:
+  requests:
+    cpu: "100m"
+    memory: "256M"
+  limits:
+    cpu: "1000m"
+    memory: "1Gi"
+
+diskSize: "10Gi"
+
+# Update strategy for the StatefulSet
+updateStrategy:
+  type: RollingUpdate
+
+port: 8000
