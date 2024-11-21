@@ -53,3 +53,4 @@ alerts:
 datastores:
   mysql:
   redis:
+  surrealdb:

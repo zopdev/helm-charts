@@ -119,3 +119,4 @@ grafanaDashboard:
 datastores:
   mysql:
   redis:
+  surrealdb:

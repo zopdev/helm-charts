@@ -124,6 +124,12 @@ spec:
                 name: {{ $k.datastore }}-redis-service-configmap
             {{- end }}
             {{- end }}
+            {{- if and .Values.datastores .Values.datastores.surrealdb }}
+            {{- range $i, $k := .Values.datastores.surrealdb }}
+            - configMapRef:
+                name: {{ $k.datastore }}-surrealdb-service-configmap
+            {{- end }}
+            {{- end }}
           env:
             {{- range $k,$v := .Values.env }}
               {{- if ne (toString $v) ""}}
