@@ -1,0 +1,259 @@
+{{- /* Generate domain name for first zero in cluster */}}
+{{- define "peer_zero" -}}
+  {{- $zeroFullName := include "dgraph.zero.fullname" . -}}
+
+  {{- /* Append domain suffix if domain is used */}}
+  {{- $domainSuffix := "" -}}
+  {{- if .Values.global.domain -}}
+  {{- $domainSuffix = printf ".%s" .Values.global.domain -}}
+  {{- end -}}
+
+  {{- printf "%s-%d.%s-headless.${POD_NAMESPACE}.svc%s:5080" $zeroFullName 0 $zeroFullName $domainSuffix -}}
+{{- end -}}
+{{- /* Superflag (v21.03.0) support and legacy flags */}}
+{{- define "raft_index_flag" -}}
+  {{- $safeVersion := include "dgraph.version" . -}}
+  {{- if semverCompare ">= 21.03.0" $safeVersion -}}
+    {{- printf "--raft idx=" -}}
+  {{- else -}}
+    {{- printf "--idx " -}}
+  {{- end -}}
+{{- end -}}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: "{{ template "dgraph.zero.fullname" . }}"
+  namespace: {{ include "dgraph.namespace" . }}
+  labels:
+    app: {{ template "dgraph.name" . }}
+    chart: {{ template "dgraph.chart" . }}
+    component: {{ .Values.zero.name }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  serviceName: {{ template "dgraph.zero.fullname" . }}-headless
+  replicas: {{ .Values.zero.replicaCount }}
+  podManagementPolicy: {{ .Values.zero.podManagementPolicy | quote }}
+  updateStrategy:
+    type: {{ .Values.zero.updateStrategy | quote }}
+    {{- if (eq "Recreate" .Values.zero.updateStrategy) }}
+    rollingUpdate: null
+    {{- else if .Values.zero.rollingUpdatePartition }}
+    rollingUpdate:
+      partition: {{ .Values.zero.rollingUpdatePartition }}
+    {{- end }}
+  selector:
+    matchLabels:
+      app: {{ template "dgraph.name" . }}
+      chart: {{ template "dgraph.chart" . }}
+      release: {{ .Release.Name }}
+      component: {{ .Values.zero.name }}
+  template:
+    metadata:
+      name: {{ template "dgraph.zero.fullname" . }}
+      {{- if or .Values.zero.metrics.enabled .Values.zero.extraAnnotations }}
+      annotations:
+        {{- if .Values.zero.metrics.enabled }}
+        prometheus.io/path: /debug/prometheus_metrics
+        prometheus.io/port: "6080"
+        prometheus.io/scrape: "true"
+        {{- end }}
+        {{- with .Values.zero.extraAnnotations }}
+{{- toYaml . | trimSuffix "\n" | nindent 8 }}
+        {{- end }}
+      {{- end }}
+      labels:
+        app: {{ template "dgraph.name" . }}
+        chart: {{ template "dgraph.chart" . }}
+        release: {{ .Release.Name }}
+        component: {{ .Values.zero.name }}
+        {{- if .Values.zero.podLabels }}
+{{ .Values.zero.podLabels | toYaml | indent 8}}
+        {{- end }}
+    spec:
+      {{- if .Values.serviceAccount.create }}
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      automountServiceAccountToken: {{ .Values.zero.automountServiceAccountToken }}
+      {{- end }}
+      {{- if .Values.zero.schedulerName }}
+      schedulerName: {{ .Values.zero.schedulerName }}
+      {{- end }}
+      {{- if or (eq .Values.zero.antiAffinity "hard") (eq .Values.zero.antiAffinity "soft") .Values.zero.nodeAffinity }}
+      affinity:
+      {{- end }}
+      {{- if eq .Values.zero.antiAffinity "hard" }}
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: component
+                operator: In
+                values:
+                - {{ .Values.zero.name }}
+            topologyKey: {{ .Values.zero.podAntiAffinitytopologyKey }}
+      {{- else if eq .Values.zero.antiAffinity "soft" }}
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: component
+                  operator: In
+                  values:
+                  - {{ .Values.zero.name }}
+              topologyKey: {{ .Values.zero.podAntiAffinitytopologyKey }}
+      {{- end }}
+      {{- with .Values.zero.nodeAffinity }}
+        nodeAffinity:
+{{ toYaml . | indent 10 }}
+      {{- end }}
+{{- include "dgraph.imagePullSecrets" . | indent 6 }}
+      {{- if .Values.zero.securityContext.enabled }}
+      securityContext:
+        fsGroup: {{ .Values.zero.securityContext.fsGroup }}
+        runAsUser: {{ .Values.zero.securityContext.runAsUser }}
+      {{- end }}
+      {{- if .Values.zero.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.zero.nodeSelector | indent 8 }}
+      {{- end }}
+      {{- if .Values.zero.tolerations }}
+      tolerations:
+{{ toYaml .Values.zero.tolerations | indent 8 }}
+      {{- end }}
+      containers:
+      - name: {{ template "dgraph.zero.fullname" . }}
+        image: {{ template "dgraph.image" . }}
+        ports:
+        - containerPort: 5080
+          name: grpc-zero
+        - containerPort: 6080
+          name: http-zero
+        imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
+        env:
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          {{- if .Values.zero.configFile }}
+          - name: DGRAPH_ZERO_CONFIG
+            value: /dgraph/config/{{ first (keys .Values.zero.configFile | uniq | sortAlpha) }}
+          {{- end }}
+        {{- with .Values.zero.extraEnvs }}
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with .Values.zero.envFrom }}
+        envFrom:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        command:
+          - bash
+          - "-c"
+          - |
+            set -ex
+            [[ `hostname` =~ -([0-9]+)$ ]] || exit 1
+              ordinal=${BASH_REMATCH[1]}
+              idx=$(($ordinal + 1))
+              if [[ $ordinal -eq 0 ]]; then
+                exec dgraph zero --my=$(hostname -f | awk '{gsub(/\.$/,""); print $0}'):5080 {{ template "raft_index_flag" . }}$idx --replicas {{ .Values.zero.shardReplicaCount }} {{ .Values.zero.extraFlags }}
+              else
+                exec dgraph zero --my=$(hostname -f | awk '{gsub(/\.$/,""); print $0}'):5080 --peer {{ template "peer_zero" . }} {{ template "raft_index_flag" . }}$idx --replicas {{ .Values.zero.shardReplicaCount }} {{ .Values.zero.extraFlags }}
+              fi
+        resources:
+{{ toYaml .Values.zero.resources | indent 10 }}
+        {{- if .Values.zero.startupProbe.enabled }}
+        startupProbe:
+          httpGet:
+            port: {{ .Values.zero.startupProbe.port }}
+            path: {{ .Values.zero.startupProbe.path }}
+          periodSeconds: {{ .Values.zero.startupProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.zero.startupProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.zero.startupProbe.successThreshold }}
+          failureThreshold: {{ .Values.zero.startupProbe.failureThreshold }}
+        {{- else if .Values.zero.customStartupProbe }}
+        startupProbe: {{- toYaml .Values.zero.customStartupProbe | nindent 10 }}
+        {{- end }}
+        {{- if .Values.zero.livenessProbe.enabled }}
+        livenessProbe:
+          httpGet:
+            port: {{ .Values.zero.livenessProbe.port }}
+            path: {{ .Values.zero.livenessProbe.path }}
+          initialDelaySeconds: {{ .Values.zero.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.zero.livenessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.zero.livenessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.zero.livenessProbe.successThreshold }}
+          failureThreshold: {{ .Values.zero.livenessProbe.failureThreshold }}
+        {{- else if .Values.zero.customLivenessProbe }}
+        livenessProbe: {{- toYaml .Values.zero.customLivenessProbe | nindent 10 }}
+        {{- end }}
+        {{- if .Values.zero.readinessProbe.enabled }}
+        readinessProbe:
+          httpGet:
+            port: {{ .Values.zero.readinessProbe.port }}
+            path: {{ .Values.zero.readinessProbe.path }}
+          initialDelaySeconds: {{ .Values.zero.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.zero.readinessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.zero.readinessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.zero.readinessProbe.successThreshold }}
+          failureThreshold: {{ .Values.zero.readinessProbe.failureThreshold }}
+        {{- else if .Values.zero.customReadinessProbe }}
+        readinessProbe: {{- toYaml .Values.zero.customReadinessProbe | nindent 10 }}
+        {{- end }}
+        volumeMounts:
+        {{- if .Values.zero.persistence.enabled }}
+        - name: datadir
+          mountPath: /dgraph
+        {{- end }}
+        {{- if .Values.zero.configFile }}
+        - name: config-volume
+          mountPath: /dgraph/config
+        {{- end }}
+        {{- if .Values.zero.tls.enabled }}
+        - name: tls-volume
+          mountPath: /dgraph/tls
+        {{- end }}
+      terminationGracePeriodSeconds: {{ .Values.zero.terminationGracePeriodSeconds }}
+      volumes:
+      - name: datadir
+      {{- if .Values.zero.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: datadir
+      {{- else }}
+        emptyDir: {}
+      {{- end }}
+      {{- if .Values.zero.configFile }}
+      - name: config-volume
+        configMap:
+          name: {{ template "dgraph.zero.fullname" . }}-config
+      {{- end }}
+      {{- if .Values.zero.tls.enabled }}
+      - name: tls-volume
+        secret:
+          secretName: {{ template "dgraph.zero.fullname" . }}-tls-secret
+      {{- end }}
+{{- if .Values.zero.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: datadir
+        annotations:
+        {{- range $key, $value := .Values.zero.persistence.annotations }}
+          {{ $key }}: {{ $value }}
+        {{- end }}
+          volume.alpha.kubernetes.io/storage-class: anything
+      spec:
+        accessModes:
+        {{- range .Values.zero.persistence.accessModes }}
+          - {{ . | quote }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.zero.persistence.size | quote }}
+      {{- if .Values.zero.persistence.storageClass }}
+      {{- if (eq "-" .Values.zero.persistence.storageClass) }}
+        storageClassName: ""
+      {{- else }}
+        storageClassName: {{ .Values.zero.persistence.storageClass | quote }}
+      {{- end -}}
+      {{- end -}}
+{{- end }}

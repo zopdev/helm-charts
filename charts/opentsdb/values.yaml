@@ -9,10 +9,10 @@ image:
 # Resource configuration
 resources:
   requests:
-    cpu: "500m"
+    cpu: "100m"
     memory: "256M"
   limits:
-    cpu: "1500m"
+    cpu: "1000m"
     memory: "1Gi"
 
 diskSize: "10Gi"
@@ -21,5 +21,4 @@ diskSize: "10Gi"
 updateStrategy:
   type: RollingUpdate
 
-opentsdb_host: ""
 opentsdb_port: 4242

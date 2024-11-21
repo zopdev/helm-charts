@@ -4,5 +4,5 @@ metadata:
   name: "{{ .Release.Name }}-opentsdb-configmap"
   namespace: {{ .Release.Namespace | quote }}
 data:
-  OPENTSDB_HOST: "{{ .Values.opentsdb_host}}"
+  OPENTSDB_HOST: {{ $.Release.Name }}-opentsdb
   OPENTSDB_PORT: "{{ .Values.opentsdb_port}}"
