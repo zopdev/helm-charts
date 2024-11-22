@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}-solr
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: solr
+  annotations:
+    kubernetes.io/ingress.class : "nginx"
+    cert-manager.io/issuer      : "letsencrypt"
+    kubernetes.io/tls-acme      : "true"
+spec:
+  rules:
+    - host: {{ .Values.ingress.host }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-solr
+                port:
+                  number: 8983
+  tls:
+    - hosts:
+        - {{ .Values.ingress.host }}
+      secretName: tls-secret-{{ .Values.ingress.host }}

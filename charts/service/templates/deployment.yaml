@@ -124,6 +124,12 @@ spec:
                 name: {{ $k.datastore }}-redis-service-configmap
             {{- end }}
             {{- end }}
+            {{- if and .Values.datastores .Values.datastores.solr }}
+            {{- range $i, $k := .Values.datastores.solr }}
+            - configMapRef:
+                name: {{ $k.datastore }}-{{ $.Release.Name}}-solr-configmap
+            {{- end }}
+            {{- end }}
           env:
             {{- range $k,$v := .Values.env }}
               {{- if ne (toString $v) ""}}
