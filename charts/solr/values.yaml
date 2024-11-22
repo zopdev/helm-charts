@@ -19,9 +19,6 @@ persistence:
     - ReadWriteOnce
   size: 5Gi
 
-nodeSelector:
-  kubernetes.io/os: linux
-
 securityContext:
   runAsUser: 1001
   fsGroup: 1001
