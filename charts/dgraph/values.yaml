@@ -378,7 +378,7 @@ alpha:
     # storageClass: "-"
     accessModes:
       - ReadWriteOnce
-    size: 100Gi
+    size: 10Gi
     annotations: {}
 
   ## Node labels and tolerations for pod assignment
