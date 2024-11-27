@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}-mysql-master
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/part-of: mysql
+      app: {{ .Release.Name }}-mysql-master
+  serviceName: "{{ .Release.Name }}-mysql-master"
+  updateStrategy:
+    type: {{ .Values.updateStrategy.type }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/part-of: mysql
+        app: {{ .Release.Name }}-mysql-master
+        role: master
+    spec:
+      containers:
+        - name: mysql
+          image: {{ .Values.image }}
+          resources:
+            requests:
+              memory: {{ .Values.resources.requests.memory }}
+              cpu: {{ .Values.resources.requests.cpu}}
+            limits:
+              memory: {{ .Values.resources.limits.memory }}
+              cpu: {{ .Values.resources.limits.cpu }}
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-mysql-root-secret
+                  key: root-password
+          ports:
+            - containerPort: 3306
+          volumeMounts:
+            - name: {{ .Release.Name }}-mysql-persistent-storage
+              mountPath: /var/lib/mysql
+            - name: mysql-init-scripts
+              mountPath: /scripts
+            - name: mysql-config
+              mountPath: /etc/mysql/my.cnf
+              subPath: my.cnf
+      volumes:
+        - name: mysql-init-scripts
+          configMap:
+            name: {{ .Release.Name }}-mysql-init-scripts
+        - name: mysql-config
+          configMap:
+            name: {{ .Release.Name }}-mysql-config-master
+  volumeClaimTemplates:
+    - metadata:
+        name: {{ .Release.Name }}-mysql-persistent-storage
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: {{ .Values.diskSize }}

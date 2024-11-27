@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-mysql-init-scripts
+  namespace: {{ .Release.Namespace }}
+data:
+  master-init.sql: |
+    -- Enable Binary Logging and configure the master server
+    SET GLOBAL log_bin_trust_function_creators=1;
+
+    CREATE USER IF NOT EXISTS '{{ .Values.replication.username }}'@'%' IDENTIFIED WITH 'mysql_native_password' BY '{{ .Values.replication.password }}';
+    GRANT REPLICATION SLAVE ON *.* TO '{{ .Values.replication.username }}'@'%';
+    FLUSH PRIVILEGES;
+
+  slave-init.sql: |
+    -- Configure Slave to connect to Master
+    STOP REPLICA IO_THREAD FOR CHANNEL '';
+    CHANGE MASTER TO
+      MASTER_HOST='{{ .Release.Name }}-mysql-master',
+      MASTER_USER='{{ .Values.replication.username }}',
+      MASTER_PASSWORD='{{ .Values.replication.password }}',
+      MASTER_LOG_FILE='mysql-bin.000001',
+      MASTER_LOG_POS=4;
+    START SLAVE;

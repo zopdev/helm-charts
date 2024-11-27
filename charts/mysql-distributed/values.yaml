@@ -1,0 +1,35 @@
+
+updateStrategy:
+  type: RollingUpdate
+
+diskSize: "10Gi"
+
+image: mysql:8.0
+
+resources:
+  requests:
+    cpu: "500m"
+    memory: "256M"
+  limits:
+    cpu: "1500m"
+    memory: "1Gi"
+
+mysqlRootPassword: root
+
+replication:
+  count: 2 
+  diskSize: "10Gi"
+  updateStrategy:
+    type: RollingUpdate
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "256M"
+    limits:
+      cpu: "1500m"
+      memory: "1Gi"
+  username: user
+  password: root
+  enable : false
+
+services:
