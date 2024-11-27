@@ -8,3 +8,4 @@ metadata:
 data:
   REDIS_PORT: "6379"
   REDIS_HOST: "{{ .Release.Name }}-redis-headless-service"
+  REDIS_URL: {{ printf "redis://%s-redis-headless-service:6379" .Release.Name }}
