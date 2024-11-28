@@ -14,4 +14,16 @@ resources:
     cpu: "1500m"
     memory: "1Gi"
 
-slaveReplicas: 3
+replication : 
+  count : 3
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "256M"
+    limits:
+      cpu: "1500m"
+      memory: "1Gi"
+  updateStrategy:
+    type: RollingUpdate
+  diskSize: "10Gi"
+  enable : true
