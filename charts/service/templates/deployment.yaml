@@ -16,6 +16,10 @@ spec:
       labels:
         app: {{ .Values.name }}
     spec:
+      securityContext:
+        {{- if and (hasKey .Values.volumeMounts "pvc") (not (empty .Values.volumeMounts.pvc)) }}
+        fsGroup: 1000
+        {{- end }}
       {{- if .Values.imagePullSecrets}}
       imagePullSecrets:
         {{- range $v := .Values.imagePullSecrets }}
@@ -78,12 +82,17 @@ spec:
       containers:
         - name: {{ .Values.name }}
           image: {{ .Values.image }}
-          {{- with .Values.Containers }}
-          {{- if .privileged | default false }}
+
           securityContext:
+            {{- with .Values.Containers }}
+            {{- if .privileged | default false }}
             privileged: true
-          {{- end }}
-          {{- end }}
+            {{- end }}
+            {{- end }}
+            {{- if and (hasKey .Values.volumeMounts "pvc") (not (empty .Values.volumeMounts.pvc)) }}
+            runAsUser: 1000
+            runAsGroup: 1000
+            {{- end }}
           ports:
             - name: http-port
               containerPort: {{ .Values.httpPort }}
