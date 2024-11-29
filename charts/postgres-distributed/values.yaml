@@ -1,0 +1,243 @@
+global:
+  postgresql: {}
+
+image:
+  registry: docker.io
+  repository: bitnami/postgresql
+  tag: 11.7.0-debian-10-r9
+  debug: false
+
+volumePermissions:
+  enabled: false
+  image:
+    registry: docker.io
+    repository: bitnami/minideb
+    tag: buster
+    pullPolicy: Always
+  securityContext:
+    runAsUser: 0
+
+securityContext:
+  enabled: true
+  fsGroup: 1001
+  runAsUser: 1001
+
+serviceAccount:
+  enabled: false
+
+replication:
+  enabled: true
+  user: repl_user
+  password: root
+  slaveReplicas: 2
+  synchronousCommit: "off"
+  numSynchronousReplicas: 0
+  applicationName: my_application
+
+postgresqlUsername: postgres
+
+postgresqlPassword: root
+
+# postgresqlDatabase:
+
+postgresqlDataDir: /bitnami/postgresql/data
+
+extraEnv: []
+
+# postgresqlInitdbWalDir:
+
+## PostgreSQL configuration
+## Specify runtime configuration parameters as a dict, using camelCase, e.g.
+## {"sharedBuffers": "500MB"}
+## Alternatively, you can put your postgresql.conf under the files/ directory
+## ref: https://www.postgresql.org/docs/current/static/runtime-config.html
+##
+# postgresqlConfiguration:
+
+## PostgreSQL extended configuration
+## As above, but _appended_ to the main configuration
+## Alternatively, you can put your *.conf under the files/conf.d/ directory
+## https://github.com/bitnami/bitnami-docker-postgresql#allow-settings-to-be-loaded-from-files-other-than-the-default-postgresqlconf
+##
+# postgresqlExtendedConf:
+
+## PostgreSQL client authentication configuration
+## Specify content for pg_hba.conf
+## Default: do not create pg_hba.conf
+## Alternatively, you can put your pg_hba.conf under the files/ directory
+# pgHbaConfiguration: |-
+#   local all all trust
+#   host all all localhost trust
+#   host mydatabase mysuser 192.168.0.0/24 md5
+
+## ConfigMap with PostgreSQL configuration
+## NOTE: This will override postgresqlConfiguration and pgHbaConfiguration
+# configurationConfigMap:
+
+## ConfigMap with PostgreSQL extended configuration
+# extendedConfConfigMap:
+
+## initdb scripts
+## Specify dictionary of scripts to be run at first boot
+## Alternatively, you can put your scripts under the files/docker-entrypoint-initdb.d directory
+##
+# initdbScripts:
+#   my_init_script.sh: |
+#      #!/bin/sh
+#      echo "Do something."
+
+## ConfigMap with scripts to be run at first boot
+## NOTE: This will override initdbScripts
+# initdbScriptsConfigMap:
+
+## Secret with scripts to be run at first boot (in case it contains sensitive information)
+## NOTE: This can work along initdbScripts or initdbScriptsConfigMap
+# initdbScriptsSecret:
+
+## Specify the PostgreSQL username and password to execute the initdb scripts
+# initdbUser:
+# initdbPassword:
+
+## Optional duration in seconds the pod needs to terminate gracefully.
+## ref: https://kubernetes.io/docs/concepts/workloads/pods/pod/#termination-of-pods
+##
+# terminationGracePeriodSeconds: 30
+
+ldap:
+  enabled: false
+  url: ""
+  server: ""
+  port: ""
+  prefix: ""
+  suffix: ""
+  baseDN: ""
+  bindDN: ""
+  bind_password:
+  search_attr: ""
+  search_filter: ""
+  scheme: ""
+  tls: false
+
+service:
+  type: ClusterIP
+  port: 5432
+
+  # nodePort:
+
+  annotations: {}
+
+shmVolume:
+  enabled: true
+  chmod:
+    enabled: true
+
+persistence:
+  enabled: true
+  mountPath: /bitnami/postgresql
+  subPath: ""
+  accessModes:
+    - ReadWriteOnce
+  size: 8Gi
+  annotations: {}
+updateStrategy:
+  type: RollingUpdate
+
+master:
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
+  labels: {}
+  annotations: {}
+  podLabels: {}
+  podAnnotations: {}
+  priorityClassName: ""
+  extraInitContainers: |
+    # - name: do-something
+    #   image: busybox
+    #   command: ['do', 'something']
+
+  extraVolumeMounts: []
+  extraVolumes: []
+  sidecars: []
+
+slave:
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
+  labels: {}
+  annotations: {}
+  podLabels: {}
+  podAnnotations: {}
+  priorityClassName: ""
+  extraInitContainers: |
+    # - name: do-something
+    #   image: busybox
+    #   command: ['do', 'something']
+  extraVolumeMounts: []
+  extraVolumes: []
+  sidecars: []
+
+resources:
+  requests:
+    memory: 256Mi
+    cpu: 250m
+
+networkPolicy:
+  enabled: false
+  allowExternal: true
+
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 6
+  successThreshold: 1
+
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 6
+  successThreshold: 1
+
+metrics:
+  enabled: false
+  service:
+    type: ClusterIP
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9187"
+    loadBalancerIP:
+  serviceMonitor:
+    enabled: false
+    additionalLabels: {}
+  prometheusRule:
+    enabled: false
+    additionalLabels: {}
+    namespace: ""
+    rules: []
+  image:
+    registry: docker.io
+    repository: bitnami/postgres-exporter
+    tag: 0.8.0-debian-10-r28
+    pullPolicy: IfNotPresent
+  securityContext:
+    enabled: false
+    runAsUser: 1001
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
+    successThreshold: 1
+
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
+    successThreshold: 1
