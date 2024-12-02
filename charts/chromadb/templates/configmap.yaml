@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "chromadb.fullname" . }}-configmap
+  labels:
+    {{- include "chromadb.labels" . | nindent 4 }}
+data:
+  CHROMA_SERVER_HOST: "0.0.0.0"
+  CHROMA_SERVER_HTTP_PORT: "8000"
+  ANONYMIZED_TELEMETRY: "False"
+  ALLOW_RESET: "True"
+  IS_PERSISTENT: "True"
+  CHROMA_LOG_LEVEL: "DEBUG"
+  CHROMA_DATA_DIR: "/chroma/chroma"
+  CHROMA_IMPORT_SETTING: "True"

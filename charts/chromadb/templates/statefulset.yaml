@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "chromadb.fullname" . }}
+  labels:
+    {{- include "chromadb.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  serviceName: {{ include "chromadb.fullname" . }}
+  selector:
+    matchLabels:
+      {{- include "chromadb.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "chromadb.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "chromadb.fullname" . }}-configmap
+                
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          
+          volumeMounts:
+            - name: db-data
+              mountPath: /chroma/chroma
+              readOnly: false
+          
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: 1
+              memory: 2Gi
+          
+          startupProbe:
+            httpGet:
+              path: /api/v1/version
+              port: 8000
+            failureThreshold: 30
+            periodSeconds: 10
+
+  volumeClaimTemplates:
+    - metadata:
+        name: db-data
+      spec:
+        accessModes: 
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 2Gi
