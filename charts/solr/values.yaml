@@ -1,8 +1,4 @@
-replicaCount: 1
-image:
-  repository: solr
-  tag: "8.4"
-  pullPolicy: IfNotPresent
+image: "solr:8.4"
 
 resources:
   requests:
@@ -11,12 +7,6 @@ resources:
   limits:
     memory: "4Gi"
     cpu: "1"
-
-persistence:
-  enabled: true
-  accessModes:
-    - ReadWriteOnce
-  size: 5Gi
 
 securityContext:
   runAsUser: 1001

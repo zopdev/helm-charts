@@ -6,7 +6,7 @@ metadata:
   labels:
     app: solr
 spec:
-  replicas: {{ .Values.replicaCount }}
+  replicas: 1
   selector:
     matchLabels:
       app: solr
@@ -21,8 +21,7 @@ spec:
         fsGroup: {{ .Values.securityContext.fsGroup }}
       containers:
         - name: solr
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          image: "{{ .Values.image }}"
           ports:
             - containerPort: 8983
           env:
@@ -58,7 +57,8 @@ spec:
     - metadata:
         name: solr-data
       spec:
-        accessModes: {{ toJson .Values.persistence.accessModes }}
+        accessModes:
+          - ReadWriteOnce
         resources:
           requests:
-            storage: {{ .Values.persistence.size }}
+            storage: {{ .Values.diskSize }}
