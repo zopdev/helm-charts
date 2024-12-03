@@ -59,7 +59,6 @@ spec:
         name: solr-data
       spec:
         accessModes: {{ toJson .Values.persistence.accessModes }}
-        storageClassName: {{ .Values.persistence.storageClass }}
         resources:
           requests:
             storage: {{ .Values.persistence.size }}
