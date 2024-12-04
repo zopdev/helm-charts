@@ -7,16 +7,17 @@ metadata:
   labels:
     app: solr
   annotations:
-    kubernetes.io/ingress.class : "nginx"
-    cert-manager.io/issuer      : "letsencrypt"
-    kubernetes.io/tls-acme      : "true"
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/auth-realm: ""
+    nginx.ingress.kubernetes.io/auth-secret: ""
+    nginx.ingress.kubernetes.io/auth-type: ""
 spec:
   rules:
     - host: {{ .Values.host }}
       http:
         paths:
           - path: /
-            pathType: Prefix
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: {{ .Release.Name }}-solr
@@ -24,6 +25,10 @@ spec:
                   number: 8983
   tls:
     - hosts:
+        {{- if .Values.tlsHost }}
+        - {{ .Values.tlsHost }}
+        {{- else }}
         - {{ .Values.host }}
-      secretName: tls-secret-{{ .Values.host }}
+        {{- end }}
+      secretName: {{ .Release.Name }}-tls-secret
 {{- end }}
