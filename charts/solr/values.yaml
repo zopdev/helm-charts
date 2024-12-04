@@ -1,0 +1,17 @@
+image: "solr:8.4"
+
+resources:
+  requests:
+    memory: "1Gi"
+    cpu: "100m"
+  limits:
+    memory: "2Gi"
+    cpu: "1"
+
+securityContext:
+  runAsUser: 1001
+  fsGroup: 1001
+
+host:   
+
+services:
