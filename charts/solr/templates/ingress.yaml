@@ -1,3 +1,4 @@
+{{- if .Values.host }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -11,7 +12,7 @@ metadata:
     kubernetes.io/tls-acme      : "true"
 spec:
   rules:
-    - host: {{ .Values.ingress.host }}
+    - host: {{ .Values.host }}
       http:
         paths:
           - path: /
@@ -23,5 +24,6 @@ spec:
                   number: 8983
   tls:
     - hosts:
-        - {{ .Values.ingress.host }}
-      secretName: tls-secret-{{ .Values.ingress.host }}
+        - {{ .Values.host }}
+      secretName: tls-secret-{{ .Values.host }}
+{{- end }}
