@@ -1,0 +1,99 @@
+{{- if .Values.replication.enable }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}-redis-slave
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/part-of: redis
+    app: "{{ .Release.Name }}-redis"
+spec:
+  replicas: {{ .Values.replication.count }}
+  serviceName: "{{ .Release.Name }}-redis-headless-service"
+  selector:
+    matchLabels:
+      app.kubernetes.io/part-of: redis
+      app: "{{ .Release.Name }}-redis"
+  updateStrategy:
+    type: {{ .Values.replication.updateStrategy.type }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/part-of: redis
+        app: "{{ .Release.Name }}-redis"
+    spec:
+      containers:
+        - name: redis
+          image: {{ .Values.image }}
+          command:
+          - /bin/bash
+          - -c
+          - |
+            if [[ ! -f /etc/redis/replica.conf ]]; then
+              cp /etc/redis/mounted-etc/replica.conf /etc/redis/replica.conf
+            fi
+            until redis-cli -h "${REDIS_MASTER_HOST}" -p "${REDIS_MASTER_PORT_NUMBER}" ping; do
+              echo "Waiting for Redis master to be available..."
+              sleep 5
+            done
+            ARGS=("--port" "${REDIS_PORT}")
+            ARGS+=("--slaveof" "${REDIS_MASTER_HOST}" "${REDIS_MASTER_PORT_NUMBER}")
+            ARGS+=("--protected-mode" "no")
+            ARGS+=("--include" "/etc/redis/replica.conf")
+            redis-server "${ARGS[@]}"
+          resources:
+            requests:
+              memory: {{ .Values.replication.resources.requests.memory }}
+              cpu: {{ .Values.replication.resources.requests.cpu }}
+            limits:
+              memory: {{ .Values.replication.resources.limits.memory }}
+              cpu: {{ .Values.replication.resources.limits.cpu }}
+          env:
+            - name: REDIS_REPLICATION_MODE
+              value: slave
+            - name: REDIS_MASTER_HOST
+              value: "{{ .Release.Name }}-redis-headless-service"
+            - name: REDIS_PORT
+              value: "6379"
+            - name: REDIS_MASTER_PORT_NUMBER
+              value: "6379"
+          ports:
+            - name: redis
+              containerPort: 6379
+          livenessProbe:
+            exec:
+              command:
+                - redis-cli
+                - ping
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+                - redis-cli
+                - ping
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          volumeMounts:
+            - name: {{ .Release.Name }}-redis-persistent-storage
+              mountPath: /data
+            - name: redis-config
+              mountPath: /etc/redis/mounted-etc
+      volumes:
+        - name: redis-config
+          configMap:
+            name: "{{ .Release.Name }}-redis-configmap"
+  volumeClaimTemplates:
+    - metadata:
+        name: {{ .Release.Name }}-redis-persistent-storage
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: {{ .Values.replication.diskSize }}
+{{- end }}
