@@ -1,0 +1,24 @@
+# values.yaml for OpenTSDB Helm chart
+
+replicaCount: 1
+
+image:
+  opentsdb: petergrace/opentsdb-docker:latest
+  pullPolicy: IfNotPresent
+
+# Resource configuration
+resources:
+  requests:
+    cpu: "100m"
+    memory: "256M"
+  limits:
+    cpu: "1000m"
+    memory: "1Gi"
+
+diskSize: "10Gi"
+
+# Update strategy for the StatefulSet
+updateStrategy:
+  type: RollingUpdate
+
+opentsdb_port: 4242

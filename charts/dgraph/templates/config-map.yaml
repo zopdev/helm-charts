@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ .Release.Name }}-dgraph-configmap"
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    app.kubernetes.io/component: master
+data:
+  DGRAPH_HOST: {{ .Release.Name}}-dgraph-alpha
+  DGRAPH_RPC_PORT: "9080"
+  DGRAPH_HTTP_PORT: "8080"

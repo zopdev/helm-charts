@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $.Release.Name }}-opentsdb
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    app.kubernetes.io/part-of: opentsdb
+    app: {{ $.Release.Name }}-opentsdb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/part-of: opentsdb
+      app: {{ $.Release.Name }}-opentsdb
+  serviceName: {{ $.Release.Name }}-opentsdb
+  updateStrategy:
+    type: {{ .Values.updateStrategy.type }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/part-of: opentsdb
+        app: {{ $.Release.Name }}-opentsdb
+    spec:
+      containers:
+        - name: opentsdb
+          image: "{{ .Values.image.opentsdb }}"
+          imagePullPolicy: "IfNotPresent"
+          ports:
+            - containerPort: 4242
+          resources:
+            requests:
+              memory: {{ .Values.resources.requests.memory }}
+              cpu: {{ .Values.resources.requests.cpu }}
+            limits:
+              memory: {{ .Values.resources.limits.memory }}
+              cpu: {{ .Values.resources.limits.cpu }}
+          env:
+            - name: OPENTSDB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-opentsdb-configmap"
+                  key: OPENTSDB_HOST
+            - name: OPENTSDB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-opentsdb-configmap"
+                  key: OPENTSDB_PORT
+          readinessProbe:
+            tcpSocket:
+              port: 4242
+            initialDelaySeconds: 60
+            timeoutSeconds: 15
+          livenessProbe:
+            tcpSocket:
+              port: 4242
+            initialDelaySeconds: 60
+            timeoutSeconds: 15
+          volumeMounts:
+            - name: {{ $.Release.Name }}-persistent-storage
+              mountPath: /opt/opentsdb/data
+  volumeClaimTemplates:
+    - metadata:
+        name: {{ $.Release.Name }}-persistent-storage
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: {{ .Values.diskSize }}

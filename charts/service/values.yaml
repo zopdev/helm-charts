@@ -120,3 +120,4 @@ datastores:
   mysql:
   redis:
   solr:
+  surrealdb:

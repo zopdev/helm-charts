@@ -1,0 +1,310 @@
+{{- /* Generate comma-separated list of Zeros */}}
+{{- define "multi_zeros" -}}
+  {{- $zeroFullName := include "dgraph.zero.fullname" . -}}
+  {{- $max := int .Values.zero.replicaCount -}}
+  {{- $safeVersion := include "dgraph.version" . -}}
+  {{- /* Reset $max to 1 if multiple zeros not supported by dgraph version */}}
+  {{- if semverCompare "< 1.2.3 || 20.03.0" $safeVersion -}}
+     {{- $max = 1 -}}
+  {{- end -}}
+
+  {{- /* Append domain suffix if domain is used */}}
+  {{- $domainSuffix := "" -}}
+  {{- if .Values.global.domain -}}
+  {{- $domainSuffix = printf ".%s" .Values.global.domain -}}
+  {{- end -}}
+
+  {{- /* Create comma-separated list of zeros */}}
+  {{- range $idx := until $max }}
+    {{- printf "%s-%d.%s-headless.${POD_NAMESPACE}.svc%s:5080" $zeroFullName $idx $zeroFullName $domainSuffix -}}
+    {{- if ne $idx (sub $max 1) -}}
+      {{- print "," -}}
+    {{- end -}}
+  {{ end }}
+{{- end -}}
+{{- $initContainerEnabled := or .Values.alpha.initContainers.init.enabled .Values.alpha.extraInitContainers }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ template "dgraph.alpha.fullname" . }}
+  namespace: {{ include "dgraph.namespace" . }}
+  labels:
+    app: {{ template "dgraph.name" . }}
+    chart: {{ template "dgraph.chart" . }}
+    component: {{ .Values.alpha.name }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  serviceName: {{ template "dgraph.alpha.fullname" . }}-headless
+  replicas: {{ .Values.alpha.replicaCount }}
+  podManagementPolicy: {{ .Values.alpha.podManagementPolicy | quote }}
+  updateStrategy:
+    type: {{ .Values.alpha.updateStrategy | quote }}
+    {{- if (eq "Recreate" .Values.alpha.updateStrategy) }}
+    rollingUpdate: null
+    {{- else if .Values.alpha.rollingUpdatePartition }}
+    rollingUpdate:
+      partition: {{ .Values.alpha.rollingUpdatePartition }}
+    {{- end }}
+  selector:
+    matchLabels:
+      app: {{ template "dgraph.name" . }}
+      chart: {{ template "dgraph.chart" . }}
+      release: {{ .Release.Name }}
+      component: {{ .Values.alpha.name }}
+  template:
+    metadata:
+      name: {{ template "dgraph.alpha.fullname" . }}
+      {{- if or .Values.alpha.metrics.enabled .Values.alpha.extraAnnotations }}
+      annotations:
+        {{- if .Values.alpha.metrics.enabled }}
+        prometheus.io/path: /debug/prometheus_metrics
+        prometheus.io/port: "8080"
+        prometheus.io/scrape: "true"
+        {{- end }}
+        {{- with .Values.alpha.extraAnnotations }}
+{{- toYaml . | trimSuffix "\n" | nindent 8 }}
+        {{- end }}
+      {{- end }}
+      labels:
+        app: {{ template "dgraph.name" . }}
+        chart: {{ template "dgraph.chart" . }}
+        release: {{ .Release.Name }}
+        component: {{ .Values.alpha.name }}
+        {{- if .Values.alpha.podLabels }}
+{{ .Values.alpha.podLabels | toYaml | indent 8}}
+        {{- end }}
+    spec:
+      {{- if .Values.serviceAccount.create }}
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      automountServiceAccountToken: {{ .Values.alpha.automountServiceAccountToken }}
+      {{- end }}
+      {{- if .Values.alpha.schedulerName }}
+      schedulerName: {{ .Values.alpha.schedulerName }}
+      {{- end }}
+      {{- if or (eq .Values.alpha.antiAffinity "hard") (eq .Values.alpha.antiAffinity "soft") .Values.alpha.nodeAffinity }}
+      affinity:
+      {{- end }}
+      {{- if eq .Values.alpha.antiAffinity "hard" }}
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: component
+                operator: In
+                values:
+                - {{ .Values.alpha.name }}
+            topologyKey: {{ .Values.alpha.podAntiAffinitytopologyKey }}
+      {{- else if eq .Values.alpha.antiAffinity "soft" }}
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: component
+                  operator: In
+                  values:
+                  - {{ .Values.alpha.name }}
+              topologyKey: {{ .Values.alpha.podAntiAffinitytopologyKey }}
+      {{- end }}
+      {{- with .Values.alpha.nodeAffinity }}
+        nodeAffinity:
+{{ toYaml . | indent 10 }}
+      {{- end }}
+{{- include "dgraph.imagePullSecrets" . | indent 6 }}
+      {{- if .Values.alpha.securityContext.enabled }}
+      securityContext:
+        fsGroup: {{ .Values.alpha.securityContext.fsGroup }}
+        runAsUser: {{ .Values.alpha.securityContext.runAsUser }}
+      {{- end }}
+      {{- if .Values.alpha.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.alpha.nodeSelector | indent 8 }}
+      {{- end }}
+      {{- if .Values.alpha.tolerations }}
+      tolerations:
+{{ toYaml .Values.alpha.tolerations | indent 8 }}
+      {{- end }}
+      {{- if $initContainerEnabled }}
+      initContainers:
+      {{- with .Values.alpha.extraInitContainers }}
+        {{- tpl (toYaml .) $ | nindent 6 }}
+      {{- end }}
+      {{- if .Values.alpha.initContainers.init.enabled }}
+      - name: {{ template "dgraph.alpha.fullname" . }}-init
+        image: {{ template "dgraph.initContainers.init.image" . }}
+        imagePullPolicy: {{ .Values.alpha.initContainers.init.image.pullPolicy | quote }}
+        {{- with .Values.alpha.initContainers.init.env }}
+        env:
+          {{- tpl (toYaml .) $ | nindent 10 }}
+        {{- end }}
+        {{- with .Values.alpha.initContainers.init.envFrom }}
+        envFrom:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        command:
+        {{- range .Values.alpha.initContainers.init.command }}
+          - {{ . | quote }}
+        {{- end }}
+        {{- with .Values.alpha.initContainers.init.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- if .Values.alpha.persistence.enabled }}
+        volumeMounts:
+        - name: datadir
+          mountPath: /dgraph
+        {{- end }}
+      {{- end }}
+      {{- end }}
+      containers:
+      - name: {{ template "dgraph.alpha.fullname" . }}
+        image: {{ template "dgraph.image" . }}
+        ports:
+        - containerPort: 7080
+          name: grpc-alpha-int
+        - containerPort: 8080
+          name: http-alpha
+        - containerPort: 9080
+          name: grpc-alpha
+        imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
+        env:
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          {{- if .Values.alpha.configFile }}
+          - name: DGRAPH_ALPHA_CONFIG
+            value: /dgraph/config/{{ first (keys .Values.alpha.configFile | uniq | sortAlpha) }}
+          {{- end }}
+        {{- with .Values.alpha.extraEnvs }}
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with .Values.alpha.envFrom }}
+        envFrom:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{/* NOTE: awk '{gsub(/\.$/,"") needed to trim */}}
+        command:
+          - bash
+          - "-c"
+          ## NOTE: awk gsub is needed to trim trailing period otherwise it causes
+          ##       crash for Kubernetes without the domain name
+          {{- /* TODO: Remove awk-gsub once dgraph-io/dgraph#6837 is merged and back-ported. */}}
+          - |
+            set -ex
+            dgraph alpha --my=$(hostname -f | awk '{gsub(/\.$/,""); print $0}'):7080 --zero {{ template "multi_zeros" . }} {{ .Values.alpha.extraFlags }}
+        resources:
+{{ toYaml .Values.alpha.resources | indent 10 }}
+        {{- if .Values.alpha.startupProbe.enabled }}
+        startupProbe:
+          httpGet:
+            port: {{ .Values.alpha.startupProbe.port }}
+            path: {{ .Values.alpha.startupProbe.path }}
+          periodSeconds: {{ .Values.alpha.startupProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.alpha.startupProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.alpha.startupProbe.successThreshold }}
+          failureThreshold: {{ .Values.alpha.startupProbe.failureThreshold }}
+        {{- else if .Values.alpha.customStartupProbe }}
+        startupProbe: {{- toYaml .Values.alpha.customStartupProbe | nindent 10 }}
+        {{- end }}
+        {{- if .Values.alpha.livenessProbe.enabled }}
+        livenessProbe:
+          httpGet:
+            port: {{ .Values.alpha.livenessProbe.port }}
+            path: {{ .Values.alpha.livenessProbe.path }}
+          initialDelaySeconds: {{ .Values.alpha.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.alpha.livenessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.alpha.livenessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.alpha.livenessProbe.successThreshold }}
+          failureThreshold: {{ .Values.alpha.livenessProbe.failureThreshold }}
+        {{- else if .Values.alpha.customLivenessProbe }}
+        livenessProbe: {{- toYaml .Values.alpha.customLivenessProbe | nindent 10 }}
+        {{- end }}
+        {{- if .Values.alpha.readinessProbe.enabled }}
+        readinessProbe:
+          httpGet:
+            port: {{ .Values.alpha.readinessProbe.port }}
+            path: {{ .Values.alpha.readinessProbe.path }}
+          initialDelaySeconds: {{ .Values.alpha.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.alpha.readinessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.alpha.readinessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.alpha.readinessProbe.successThreshold }}
+          failureThreshold: {{ .Values.alpha.readinessProbe.failureThreshold }}
+        {{- else if .Values.alpha.customReadinessProbe }}
+        readinessProbe: {{- toYaml .Values.alpha.customReadinessProbe | nindent 10 }}
+        {{- end }}
+        volumeMounts:
+        {{- if .Values.alpha.persistence.enabled }}
+        - name: datadir
+          mountPath: /dgraph
+        {{- end }}
+        {{- if .Values.alpha.configFile }}
+        - name: config-volume
+          mountPath: /dgraph/config
+        {{- end }}
+        {{- if .Values.alpha.tls.enabled }}
+        - name: tls-volume
+          mountPath: /dgraph/tls
+        {{- end }}
+        {{- if .Values.alpha.encryption.enabled }}
+        - name: enc-volume
+          mountPath: /dgraph/enc
+        {{- end }}
+        {{- if .Values.alpha.acl.enabled }}
+        - name: acl-volume
+          mountPath: /dgraph/acl
+        {{- end }}
+      terminationGracePeriodSeconds: {{ .Values.alpha.terminationGracePeriodSeconds }}
+      volumes:
+      - name: datadir
+      {{- if .Values.alpha.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: datadir
+      {{- else }}
+        emptyDir: {}
+      {{- end }}
+      {{- if .Values.alpha.configFile }}
+      - name: config-volume
+        configMap:
+          name: {{ template "dgraph.alpha.fullname" . }}-config
+      {{- end }}
+      {{- if .Values.alpha.tls.enabled }}
+      - name: tls-volume
+        secret:
+          secretName: {{ template "dgraph.alpha.fullname" . }}-tls-secret
+      {{- end }}
+      {{- if .Values.alpha.encryption.enabled }}
+      - name: enc-volume
+        secret:
+          secretName: {{ template "dgraph.alpha.fullname" . }}-encryption-secret
+      {{- end }}
+      {{- if or .Values.alpha.acl.enabled }}
+      - name: acl-volume
+        secret:
+          secretName: {{ template "dgraph.alpha.fullname" . }}-acl-secret
+      {{- end }}
+
+{{- if .Values.alpha.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: datadir
+        annotations:
+          volume.alpha.kubernetes.io/storage-class: anything
+      spec:
+        accessModes:
+        {{- range .Values.alpha.persistence.accessModes }}
+          - {{ . | quote }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.alpha.persistence.size | quote }}
+      {{- if .Values.alpha.persistence.storageClass }}
+      {{- if (eq "-" .Values.alpha.persistence.storageClass) }}
+        storageClassName: ""
+      {{- else }}
+        storageClassName: {{ .Values.alpha.persistence.storageClass | quote }}
+      {{- end -}}
+      {{- end -}}
+{{- end }}

@@ -16,6 +16,10 @@ spec:
       labels:
         app: {{ .Values.name }}
     spec:
+      securityContext:
+        {{- if and (hasKey .Values.volumeMounts "pvc") (not (empty .Values.volumeMounts.pvc)) }}
+        fsGroup: 1000
+        {{- end }}
       {{- if .Values.imagePullSecrets}}
       imagePullSecrets:
         {{- range $v := .Values.imagePullSecrets }}
@@ -78,10 +82,17 @@ spec:
       containers:
         - name: {{ .Values.name }}
           image: {{ .Values.image }}
-          {{- if .Values.Containers.privileged }}
+
           securityContext:
+            {{- with .Values.Containers }}
+            {{- if .privileged | default false }}
             privileged: true
-          {{- end }}
+            {{- end }}
+            {{- end }}
+            {{- if and (hasKey .Values.volumeMounts "pvc") (not (empty .Values.volumeMounts.pvc)) }}
+            runAsUser: 1000
+            runAsGroup: 1000
+            {{- end }}
           ports:
             - name: http-port
               containerPort: {{ .Values.httpPort }}
@@ -128,6 +139,24 @@ spec:
             {{- range $i, $k := .Values.datastores.solr }}
             - configMapRef:
                 name: {{ $k.datastore }}-{{ $.Release.Name}}-solr-configmap
+            {{- end }}
+            {{- end }}
+            {{- if and .Values.datastores .Values.datastores.surrealdb }}
+            {{- range $i, $k := .Values.datastores.surrealdb }}
+            - configMapRef:
+                name: {{ $k.datastore }}-surrealdb-service-configmap
+            {{- end }}
+            {{- end }}
+            {{- if and .Values.datastores .Values.datastores.opentsdb }}
+            {{- range $i, $k := .Values.datastores.opentsdb }}
+            - configMapRef:
+                name: {{ $k.datastore }}-opentsdb-configmap
+            {{- end }}
+            {{- end }}
+            {{- if and .Values.datastores .Values.datastores.dgraph }}
+            {{- range $i, $k := .Values.datastores.dgraph }}
+            - configMapRef:
+                name: {{ $k.datastore }}-dgraph-configmap
             {{- end }}
             {{- end }}
           env:
