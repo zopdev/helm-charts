@@ -1,0 +1,11 @@
+image: ghcr.io/chroma-core/chroma:latest
+
+resources:
+  requests:
+    memory: "1Gi"
+    cpu: "100m"
+  limits:
+    memory: "2Gi"
+    cpu: "1"
+
+diskSize: 10
