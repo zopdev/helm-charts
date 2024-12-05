@@ -5,9 +5,9 @@ metadata:
   labels:
     {{- include "chromadb.labels" . | nindent 4 }}
 spec:
-  type: {{ .Values.service.type }}
+  type: ClusterIP
   ports:
-    - port: {{ .Values.service.port }}
+    - port: 8000
       targetPort: http
       protocol: TCP
       name: http

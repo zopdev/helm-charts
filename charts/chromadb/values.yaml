@@ -1,15 +1,11 @@
-replicaCount: 1
+image: ghcr.io/chroma-core/chroma:latest
 
-image:
-  repository: ghcr.io/chroma-core/chroma
-  pullPolicy: IfNotPresent
-  tag: "latest"
+resources:
+  requests:
+    memory: "1Gi"
+    cpu: "100m"
+  limits:
+    memory: "2Gi"
+    cpu: "1"
 
-imagePullSecrets: []
-
-nameOverride: ""
-fullnameOverride: ""
-
-service:
-  type: ClusterIP
-  port: 8000
+diskSize: 10

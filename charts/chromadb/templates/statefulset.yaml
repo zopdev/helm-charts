@@ -5,7 +5,7 @@ metadata:
   labels:
     {{- include "chromadb.labels" . | nindent 4 }}
 spec:
-  replicas: {{ .Values.replicaCount }}
+  replicas: 1
   serviceName: {{ include "chromadb.fullname" . }}
   selector:
     matchLabels:
@@ -17,37 +17,32 @@ spec:
     spec:
       containers:
         - name: {{ .Chart.Name }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          image: {{.Values.image}}
+          imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:
                 name: {{ include "chromadb.fullname" . }}-configmap
-                
           ports:
             - name: http
               containerPort: 8000
               protocol: TCP
-          
           volumeMounts:
             - name: db-data
               mountPath: /chroma/chroma
-              readOnly: false
-          
+              readOnly: false 
           resources:
             requests:
-              cpu: 500m
-              memory: 1Gi
+              memory: {{ .Values.resources.requests.memory }}
+              cpu: {{ .Values.resources.requests.cpu }}
             limits:
-              cpu: 1
-              memory: 2Gi
-          
+              memory: {{ .Values.resources.limits.memory }}
+              cpu: {{ .Values.resources.limits.cpu }}
           startupProbe:
             httpGet:
               path: /api/v1/version
               port: 8000
             failureThreshold: 30
             periodSeconds: 10
-
   volumeClaimTemplates:
     - metadata:
         name: db-data
@@ -56,4 +51,4 @@ spec:
           - ReadWriteOnce
         resources:
           requests:
-            storage: 2Gi
+            storage: {{.Values.diskSize}}
