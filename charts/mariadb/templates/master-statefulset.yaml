@@ -1,0 +1,183 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ template "master.fullname" . }}
+  labels:
+    app: {{ template "mariadb.name" . }}
+    chart: {{ template "mariadb.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    component: master
+spec:
+  selector:
+    matchLabels:
+      app: {{ template "mariadb.name" . }}
+      release: {{ .Release.Name }}
+      component: master
+  serviceName: {{ template "master.fullname" . }}
+  replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: {{ template "mariadb.name" . }}
+        chart: {{ template "mariadb.chart" . }}
+        release: {{ .Release.Name }}
+        component: master
+    spec:
+      securityContext:
+        fsGroup: 1001
+        runAsUser: 1001
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app: {{ template "mariadb.name" . }}
+                    release: {{ .Release.Name }}
+      containers:
+        - name: "mariadb"
+          image: {{ template "mariadb.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
+          env:
+            {{- if .Values.image.debug}}
+            - name: BITNAMI_DEBUG
+              value: "true"
+            {{- end }}
+            {{- if .Values.master.extraFlags }}
+            - name: MARIADB_EXTRA_FLAGS
+              value: "{{ .Values.master.extraFlags }}"
+            {{- end }}
+            {{- if .Values.rootUser.injectSecretsAsVolume }}
+            - name: MARIADB_ROOT_PASSWORD_FILE
+              value: "/opt/bitnami/mariadb/secrets/mariadb-root-password"
+            {{- else }}
+            - name: MARIADB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-mariadb-secrets"
+                  key: mariadb-root-password
+            {{- end }}
+            {{- if not (empty .Values.service.user) }}
+            - name: MARIADB_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Release.Name }}-mariadb-database-config
+                  key: DATABASE_USER
+            - name: MARIADB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-mariadb-database-secret
+                  key: DATABASE_PASSWORD
+            {{- end }}
+            - name: MARIADB_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Release.Name }}-mariadb-database-config
+                  key: DATABASE_NAME
+            {{- if .Values.replication.enabled }}
+            - name: MARIADB_REPLICATION_MODE
+              value: "master"
+            - name: MARIADB_REPLICATION_USER
+              value: "{{ .Values.replication.user }}"
+            {{- if .Values.replication.injectSecretsAsVolume }}
+            - name: MARIADB_REPLICATION_PASSWORD_FILE
+              value: "/opt/bitnami/mariadb/secrets/mariadb-replication-password"
+            {{- else }}
+            - name: MARIADB_REPLICATION_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-mariadb-secrets"
+                  key: mariadb-replication-password
+            {{- end }}
+            {{- end }}
+            {{- if .Values.master.extraEnvVars }}
+            {{- tpl (toYaml .Values.master.extraEnvVars) $ | nindent 12 }}
+            {{- end }}
+          ports:
+            - name: mysql
+              containerPort: 3306
+          {{- if .Values.master.livenessProbe.enabled }}
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - |
+                  password_aux="${MARIADB_ROOT_PASSWORD:-}"
+                  if [ -f "${MARIADB_ROOT_PASSWORD_FILE:-}" ]; then
+                      password_aux=$(cat $MARIADB_ROOT_PASSWORD_FILE)
+                  fi
+                  mysqladmin status -uroot -p$password_aux
+            initialDelaySeconds: {{ .Values.master.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.master.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.master.livenessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.master.livenessProbe.successThreshold }}
+            failureThreshold: {{ .Values.master.livenessProbe.failureThreshold }}
+          {{- end }}
+          {{- if .Values.master.readinessProbe.enabled }}
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - |
+                  password_aux="${MARIADB_ROOT_PASSWORD:-}"
+                  if [ -f "${MARIADB_ROOT_PASSWORD_FILE:-}" ]; then
+                      password_aux=$(cat $MARIADB_ROOT_PASSWORD_FILE)
+                  fi
+                  mysqladmin status -uroot -p$password_aux
+            initialDelaySeconds: {{ .Values.master.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.master.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.master.readinessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.master.readinessProbe.successThreshold }}
+            failureThreshold: {{ .Values.master.readinessProbe.failureThreshold }}
+          {{- end }}
+          resources:
+            requests:
+              memory: {{ .Values.master.resources.requests.memory }}
+              cpu: {{ .Values.master.resources.requests.cpu }}
+            limits:
+              memory: {{ .Values.master.resources.limits.memory }}
+              cpu: {{ .Values.master.resources.limits.cpu }}
+          volumeMounts:
+            - name: data
+              mountPath: /data/mariadb
+            - name: config
+              mountPath: /opt/bitnami/mariadb/conf/my.cnf
+              subPath: my.cnf
+      volumes:
+        - name: config
+          configMap:
+            name: "{{ .Release.Name }}-master-mariadb-configmap"
+        {{- if or .Values.rootUser.injectSecretsAsVolume .Values.replication.injectSecretsAsVolume }}
+        - name: mariadb-credentials
+          secret:
+            secretName: {{ template "mariadb.fullname" . }}
+            items:
+              {{- if .Values.rootUser.injectSecretsAsVolume }}
+              - key: mariadb-root-password
+                path: mariadb-root-password
+              {{- end }}
+              {{- if and .Values.replication.enabled .Values.replication.injectSecretsAsVolume }}
+              - key: mariadb-replication-password
+                path: mariadb-replication-password
+              {{- end }}
+        {{- end }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+        labels:
+          app: "{{ template "mariadb.name" . }}"
+          component: "master"
+          release: {{ .Release.Name | quote }}
+          heritage: {{ .Release.Service | quote }}
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests:
+            storage: {{ .Values.diskSize}}
