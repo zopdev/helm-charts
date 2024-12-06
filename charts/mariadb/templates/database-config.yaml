@@ -1,8 +1,13 @@
+{{- range $index, $service := .Values.services }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Release.Name }}-mariadb-database-config
-  namespace: {{ .Release.Namespace }}
+  name: {{ $.Release.Name }}-{{ $service.database }}-{{ $service.name}}-mariadb-configmap
+  namespace: {{ $.Release.Namespace }}
 data:
-  DATABASE_NAME: "{{ .Values.service.name }}" 
-  DATABASE_USER: "{{ .Values.service.user }}" 
+  DB_DIALECT: "mariadb"
+  DB_USER: "{{ $service.name }}-user"
+  DB_PORT: "3306"
+  DB_NAME: "{{ $service.database }}"
+  DB_HOST: "{{ $.Release.Name}}-mariadb"
+{{- end}}

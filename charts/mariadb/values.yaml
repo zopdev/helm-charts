@@ -72,7 +72,4 @@ slave:
 
 diskSize: 10
 
-service:
-  user: "user"
-  password: "root"
-  name: test_db
+services:

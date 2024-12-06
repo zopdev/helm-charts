@@ -62,23 +62,6 @@ spec:
                   name: "{{ .Release.Name }}-mariadb-secrets"
                   key: mariadb-root-password
             {{- end }}
-            {{- if not (empty .Values.service.user) }}
-            - name: MARIADB_USER
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ .Release.Name }}-mariadb-database-config
-                  key: DATABASE_USER
-            - name: MARIADB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Release.Name }}-mariadb-database-secret
-                  key: DATABASE_PASSWORD
-            {{- end }}
-            - name: MARIADB_DATABASE
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ .Release.Name }}-mariadb-database-config
-                  key: DATABASE_NAME
             {{- if .Values.replication.enabled }}
             - name: MARIADB_REPLICATION_MODE
               value: "master"
