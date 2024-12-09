@@ -121,3 +121,4 @@ datastores:
   redis:
   solr:
   surrealdb:
+  mariadb: 
