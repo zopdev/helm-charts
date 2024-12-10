@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ include "chromadb.fullname" . }}
+  name: {{ .Release.Name}}-chromadb
   labels:
     {{- include "chromadb.labels" . | nindent 4 }}
 spec:
@@ -16,7 +16,7 @@ spec:
         {{- include "chromadb.selectorLabels" . | nindent 8 }}
     spec:
       containers:
-        - name: {{ .Chart.Name }}
+        - name: chromadb
           image: {{.Values.image}}
           imagePullPolicy: IfNotPresent
           envFrom:

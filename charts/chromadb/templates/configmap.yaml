@@ -1,11 +1,11 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "chromadb.fullname" . }}-configmap
+  name: {{ .Release.Name}}-chromadb-configmap
   labels:
     {{- include "chromadb.labels" . | nindent 4 }}
 data:
-  CHROMA_SERVER_HOST: "0.0.0.0"
+  CHROMA_SERVER_HOST: {{ .Release.Name}}-chromadb
   CHROMA_SERVER_HTTP_PORT: "8000"
   ANONYMIZED_TELEMETRY: "False"
   ALLOW_RESET: "True"
