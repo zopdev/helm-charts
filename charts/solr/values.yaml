@@ -14,4 +14,8 @@ securityContext:
 
 host:   
 
+tlsHost:
+
+diskSize:
+
 services:
