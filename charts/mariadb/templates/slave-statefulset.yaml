@@ -170,5 +170,5 @@ spec:
         accessModes: [ReadWriteOnce]
         resources:
           requests:
-            storage: {{ .Values.diskSize}}
+            storage: {{ .Values.slave.persistence.size}}
 {{- end }}

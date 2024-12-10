@@ -44,6 +44,9 @@ master:
     successThreshold: 1
     failureThreshold: 3
 
+  persistence:
+    size: 10Gi
+  
 slave:
   replicas: 1
 
@@ -70,6 +73,7 @@ slave:
     successThreshold: 1
     failureThreshold: 3
 
-diskSize: 10
+  persistence:
+    size: 10Gi
 
 services:
