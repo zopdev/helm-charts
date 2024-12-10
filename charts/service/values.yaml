@@ -121,3 +121,7 @@ datastores:
   redis:
   solr:
   surrealdb:
+<<<<<<< HEAD
+=======
+  chromadb:
+>>>>>>> 0501cfc76359bcb3cc5fbd428d447ff371d0a0f2

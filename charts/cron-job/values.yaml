@@ -54,3 +54,4 @@ datastores:
   mysql:
   redis:
   surrealdb:
+  chromadb:

@@ -12,6 +12,10 @@ securityContext:
   runAsUser: 1001
   fsGroup: 1001
 
-host:   
+host:   test-solr-service-123.971a9e0f-595c-444b-a826-eabc8d6db79b.zop.dev
+
+tlsHost:  '*.971a9e0f-595c-444b-a826-eabc8d6db79b.zop.dev'
+
+diskSize:
 
 services:
