@@ -12,10 +12,12 @@ securityContext:
   runAsUser: 1001
   fsGroup: 1001
 
+tlsSecretName: 
+
 host:   
 
 tlsHost:
 
-diskSize:
+diskSize: "10Gi"
 
 services:

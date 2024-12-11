@@ -26,5 +26,5 @@ spec:
   tls:
     - hosts:
         - '{{ .Values.tlsHost | default .Values.host }}'
-      secretName: {{ .Release.Name }}-tls-secret
+      secretName: {{ .Values.tlsSecretName | default "tls-secret-replica" }}
 {{- end }}
