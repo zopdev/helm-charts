@@ -135,16 +135,16 @@ kubectl create secret generic my-mysql-secret --from-literal=mysql-root-password
 
 ## Contributing
 
-We welcome contributions to improve this Helm chart. Please refer to the [CONTRIBUTING.md](../CONTRIBUTING.md) file for guidelines.
+We welcome contributions to improve this Helm chart. Please refer to the [CONTRIBUTING.md](../../CONTRIBUTING.md) file for guidelines.
 
 ---
 
 ## Code of Conduct
 
-To ensure a respectful and collaborative community, please adhere to our [Code of Conduct](../CODE_OF_CONDUCT.md).
+To ensure a respectful and collaborative community, please adhere to our [Code of Conduct](../../CODE_OF_CONDUCT.md).
 
 ---
 
 ## License
 
-This project is licensed under the [LICENSE](../LICENSE). Please review it for terms of use.
+This project is licensed under the [LICENSE](../../LICENSE). Please review it for terms of use.

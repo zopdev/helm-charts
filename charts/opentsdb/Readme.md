@@ -148,16 +148,16 @@ opentsdb_port: 8080
 
 ## Contributing
 
-We welcome contributions to improve this Helm chart. Please refer to the [CONTRIBUTING.md](../CONTRIBUTING.md) file for contribution guidelines.
+We welcome contributions to improve this Helm chart. Please refer to the [CONTRIBUTING.md](../../CONTRIBUTING.md) file for contribution guidelines.
 
 ---
 
 ## Code of Conduct
 
-To maintain a healthy and collaborative community, please adhere to our [Code of Conduct](../CODE_OF_CONDUCT.md).
+To maintain a healthy and collaborative community, please adhere to our [Code of Conduct](../../CODE_OF_CONDUCT.md).
 
 ---
 
 ## License
 
-This project is licensed under the [LICENSE](../LICENSE). Please review it for terms of use.
+This project is licensed under the [LICENSE](../../LICENSE). Please review it for terms of use.
