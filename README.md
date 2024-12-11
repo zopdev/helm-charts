@@ -87,51 +87,51 @@ This repository provides Helm charts for a wide variety of datastores. Each char
 
 ### Relational Databases
 
-- **[MySQL](./mysql):** A widely-used open-source relational database system known for its reliability and ease of use.
+- **[MySQL](./charts/mysql):** A widely-used open-source relational database system known for its reliability and ease of use.
   - URL: `https://helm.zop.dev/mysql`
   - Example: Use this chart to deploy MySQL for a high-availability setup.
 
-- **[PostgreSQL](./postgres):** A powerful, open-source object-relational database system.
+- **[PostgreSQL](./charts/postgres):** A powerful, open-source object-relational database system.
   - URL: `https://helm.zop.dev/postgres`
   - Example: Ideal for handling complex queries and transactional workloads.
 
 ### NoSQL Databases
 
-- **[Redis](./redis):** An in-memory data structure store, used as a database, cache, and message broker.
+- **[Redis](./charts/redis):** An in-memory data structure store, used as a database, cache, and message broker.
   - URL: `https://helm.zop.dev/redis`
   - Example: Deploy a Redis cluster with persistence enabled for caching and session storage.
 
-- **[SurrealDB](./surrealdb):** A cloud-native database for modern, highly-scalable applications.
+- **[SurrealDB](./charts/surrealdb):** A cloud-native database for modern, highly-scalable applications.
   - URL: `https://helm.zop.dev/surrealdb`
   - Example: Use this chart to deploy SurrealDB for high-speed real-time analytics.
 
 ### Graph Databases
 
-- **[Dgraph](./dgraph):** A distributed, fast, and scalable graph database.
+- **[Dgraph](./charts/dgraph):** A distributed, fast, and scalable graph database.
   - URL: `https://helm.zop.dev/dgraph`
   - Example: Use this chart for graph-based querying and data visualization.
 
 ### Search and Analytics
 
-- **[Solr](./solr):** An open-source search platform for enterprise-scale applications.
+- **[Solr](./charts/solr):** An open-source search platform for enterprise-scale applications.
   - URL: `https://helm.zop.dev/solr`
   - Example: Deploy Solr for full-text search and analytics.
 
-- **[OpenTSDB](./opentsdb):** A distributed, scalable time-series database.
+- **[OpenTSDB](./charts/opentsdb):** A distributed, scalable time-series database.
   - URL: `https://helm.zop.dev/opentsdb`
   - Example: Ideal for managing and querying large-scale time-series data.
 
 ### Specialized Services
 
-- **[ChromaDB](./chromadb):** A specialized datastore designed for AI and machine learning workloads.
+- **[ChromaDB](./charts/chromadb):** A specialized datastore designed for AI and machine learning workloads.
   - URL: `https://helm.zop.dev/chromadb`
   - Example: Use this chart for managing vector embeddings in ML applications.
 
-- **[Cron-Job](./cron-job):** A datastore setup for scheduling and managing cron jobs.
+- **[Cron-Job](./charts/cron-job):** A datastore setup for scheduling and managing cron jobs.
   - URL: `https://helm.zop.dev/cron-job`
   - Example: Deploy this chart to handle background tasks in your application.
 
-- **[Service](./service):** A generic service chart to deploy and manage custom services.
+- **[Service](./charts/service):** A generic service chart to deploy and manage custom services.
   - URL: `https://helm.zop.dev/service`
   - Example: Extend this chart to suit your unique service deployment needs.
 
