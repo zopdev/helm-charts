@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-mysql-config-master
+  namespace: {{ .Release.Namespace }}
+data:
+  my.cnf: |
+    [mysqld]
+    server-id=1
+    log-bin=mysql-bin
+
+---
+{{- if .Values.replication.enable }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-mysql-config-slave
+  namespace: {{ .Release.Namespace }}
+data:
+  my.cnf: |
+    [mysqld]
+    server-id=2
+{{- end }}

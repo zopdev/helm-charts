@@ -1,0 +1,17 @@
+{{- range $index, $service := .Values.services }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $.Release.Name }}-{{ $service.name }}-init-script
+  namespace: {{ $.Release.Namespace }}
+data:
+  db-init.sql: |
+    CREATE DATABASE IF NOT EXISTS `{{ $service.database }}`;
+    USE `{{ $service.database }}`;
+
+    CREATE USER IF NOT EXISTS '{{ $service.name }}-user'@'%' IDENTIFIED BY '{{ $service.password }}';
+
+    GRANT CREATE, ALTER, USAGE ON `{{ $service.database }}`.* TO '{{ $service.name }}-user'@'%';
+    GRANT INSERT, INDEX, REFERENCES, SELECT, UPDATE, DELETE, DROP ON `{{ $service.database }}`.* TO '{{ $service.name }}-user'@'%';
+---
+{{- end }}
