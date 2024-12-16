@@ -25,10 +25,6 @@ spec:
                   number: 8983
   tls:
     - hosts:
-        {{- if .Values.tlsHost }}
-        - {{ .Values.tlsHost }}
-        {{- else }}
-        - {{ .Values.host }}
-        {{- end }}
-      secretName: {{ .Release.Name }}-tls-secret
+        - '{{ .Values.tlsHost | default .Values.host }}'
+      secretName: {{ .Values.tlsSecretName | default "tls-secret-replica" }}
 {{- end }}
