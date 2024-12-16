@@ -129,6 +129,14 @@ spec:
                     name: {{ $k.datastore }}-chromadb-configmap
                 {{- end }}
                 {{- end }}
+                {{- if and .Values.datastores .Values.datastores.mariadb }}
+                {{- range $i, $k := .Values.datastores.mariadb }}
+                - configMapRef:
+                    name: {{ $k.datastore }}-{{ $k.database }}-{{ $.Release.Name}}-mariadb-configmap
+                - secretRef:
+                    name: {{ $k.datastore }}-{{ $k.database }}-{{ $.Release.Name}}-mariadb-database-secret
+                {{- end }}
+                {{- end }}
               env:
                 {{- range $k,$v := .Values.env }}
                   {{- if ne (toString $v) ""}}

@@ -54,4 +54,6 @@ datastores:
   mysql:
   redis:
   surrealdb:
+  solr:
   chromadb:
+  mariadb:
