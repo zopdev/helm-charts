@@ -122,3 +122,4 @@ datastores:
   solr:
   surrealdb:
   chromadb:
+  mariadb: 
