@@ -1,0 +1,26 @@
+{{- range $index, $service := .Values.services }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: cockroach-init-{{ $.Release.Name }}-{{ $service.name }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  containers:
+    - name: cockroach-init-role
+      image: cockroachdb/cockroach
+      command: ["/bin/sh"]
+      args:
+        [
+          "-c",
+          "sleep 40 && ./cockroach sql --insecure --host={{ $.Release.Name }}-cockroachdb -e \"$(cat /etc/config/db-init.sql)\""
+        ]
+      volumeMounts:
+        - name: secret-volume
+          mountPath: /etc/config
+  volumes:
+    - name: secret-volume
+      configMap:
+        name: {{ $.Release.Name }}-{{ $service.name }}-init-script
+  restartPolicy: OnFailure
+---
+{{- end }}

@@ -41,54 +41,6 @@ spec:
       annotations: {{- toYaml . | nindent 8 }}
     {{- end }}
     spec:
-    {{- if or .Values.image.credentials (and .Values.tls.enabled .Values.tls.init.image.credentials (not .Values.tls.certs.provided)) }}
-      imagePullSecrets:
-      {{- if .Values.image.credentials }}
-        - name: {{ template "cockroachdb.fullname" . }}.db.registry
-      {{- end }}
-      {{- if and .Values.tls.enabled .Values.tls.init.image.credentials (not .Values.tls.certs.provided) }}
-        - name: {{ template "cockroachdb.fullname" . }}.init-certs.registry
-      {{- end }}
-    {{- end }}
-    {{- if .Values.tls.enabled }}
-      serviceAccountName: {{ template "cockroachdb.tls.serviceAccount.name" . }}
-      {{- if not .Values.tls.certs.provided }}
-      initContainers:
-        # The init-certs container sends a CSR (certificate signing request) to
-        # the Kubernetes cluster.
-        # You can see pending requests using:
-        #   kubectl get csr
-        # CSRs can be approved using:
-        #   kubectl certificate approve <csr-name>
-        #
-        # All addresses used to contact a Node must be specified in the
-        # `--addresses` arg.
-        #
-        # In addition to the Node certificate and key, the init-certs entrypoint
-        # will symlink the cluster CA to the certs directory.
-        - name: init-certs
-          image: "{{ .Values.tls.init.image.repository }}:{{ .Values.tls.init.image.tag }}"
-          imagePullPolicy: {{ .Values.tls.init.image.pullPolicy | quote }}
-          command:
-            - /bin/ash
-            - -ecx
-            - >-
-              /request-cert
-              -namespace=${POD_NAMESPACE}
-              -certs-dir=/cockroach-certs/
-              -symlink-ca-from=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-              -type=node
-              -addresses=localhost,127.0.0.1,$(hostname -f),$(hostname -f|cut -f 1-2 -d '.'),{{ template "cockroachdb.fullname" . }}-public,{{ template "cockroachdb.fullname" . }}-public.$(hostname -f|cut -f 3- -d '.')
-          env:
-            - name: POD_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
-          volumeMounts:
-            - name: certs
-              mountPath: /cockroach-certs/
-      {{- end }}
-    {{- end }}
     {{- if or .Values.statefulset.nodeAffinity .Values.statefulset.podAffinity .Values.statefulset.podAntiAffinity }}
       affinity:
       {{- with .Values.statefulset.nodeAffinity }}
@@ -138,7 +90,7 @@ spec:
       # needed for graceful shutdown of a node.
       terminationGracePeriodSeconds: 60
       containers:
-        - name: db
+        - name: cockroachdb
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
           args:
@@ -183,11 +135,7 @@ spec:
             {{- end }}
             {{- end }}
               --logtostderr={{ .Values.conf.logtostderr }}
-            {{- if .Values.tls.enabled }}
-              --certs-dir=/cockroach/cockroach-certs/
-            {{- else }}
               --insecure
-            {{- end }}
             {{- with .Values.conf.attrs }}
               --attrs={{ join `:` . }}
             {{- end }}
@@ -226,10 +174,6 @@ spec:
           volumeMounts:
             - name: datadir
               mountPath: /cockroach/cockroach-data/
-          {{- if .Values.tls.enabled }}
-            - name: certs
-              mountPath: /cockroach/cockroach-certs/
-          {{- end }}
           {{- range .Values.statefulset.secretMounts }}
             - name: {{ printf "secret-%s" . | quote }}
               mountPath: {{ printf "/etc/cockroach/secrets/%s" . | quote }}
@@ -239,18 +183,12 @@ spec:
             httpGet:
               path: /health
               port: http
-            {{- if .Values.tls.enabled }}
-              scheme: HTTPS
-            {{- end }}
             initialDelaySeconds: 30
             periodSeconds: 5
           readinessProbe:
             httpGet:
               path: /health?ready=1
               port: http
-            {{- if .Values.tls.enabled }}
-              scheme: HTTPS
-            {{- end }}
             initialDelaySeconds: 10
             periodSeconds: 5
             failureThreshold: 2
@@ -265,33 +203,6 @@ spec:
           hostPath:
             path: {{ .Values.storage.hostPath | quote }}
         {{- end }}
-      {{- if .Values.tls.enabled }}
-        - name: certs
-          {{- if .Values.tls.certs.provided }}
-          {{- if .Values.tls.certs.tlsSecret }}
-          projected:
-            sources:
-            - secret:
-                name: {{ .Values.tls.certs.nodeSecret }}
-                items:
-                - key: ca.crt
-                  path: ca.crt
-                  mode: 0400
-                - key: tls.crt
-                  path: node.crt
-                  mode: 0400
-                - key: tls.key
-                  path: node.key
-                  mode: 0400
-          {{- else }}
-          secret:
-            secretName: {{ .Values.tls.certs.nodeSecret }}
-            defaultMode: 0400
-          {{- end }}
-          {{- else }}
-          emptyDir: {}
-          {{- end }}
-      {{- end }}
       {{- range .Values.statefulset.secretMounts }}
         - name: {{ printf "secret-%s" . | quote }}
           secret:

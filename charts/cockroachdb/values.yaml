@@ -130,24 +130,9 @@ init:
 
   resources: {}
 
-tls:
-  enabled: no
-  serviceAccount:
-    create: yes
-    name: "test"
-  certs:
-    provided: no
-    clientRootSecret: cockroachdb-root
-    nodeSecret: cockroachdb-node
-    tlsSecret: no
-
-  init:
-    image:
-      repository: cockroachdb/cockroach-k8s-request-cert
-      tag: "0.4"
-      pullPolicy: IfNotPresent
-
 storage:
   hostPath: ""
 
 diskSize : 10Gi
+
+services :
