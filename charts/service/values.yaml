@@ -121,4 +121,5 @@ datastores:
   redis:
   solr:
   surrealdb:
+  chromadb:
   mariadb: 

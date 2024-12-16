@@ -159,6 +159,12 @@ spec:
                 name: {{ $k.datastore }}-dgraph-configmap
             {{- end }}
             {{- end }}
+            {{- if and .Values.datastores .Values.datastores.chromadb }}
+            {{- range $i, $k := .Values.datastores.chromadb }}
+            - configMapRef:
+                name: {{ $k.datastore }}-chromadb-configmap
+            {{- end }}
+            {{- end }}
             {{- if and .Values.datastores .Values.datastores.mariadb }}
             {{- range $i, $k := .Values.datastores.mariadb }}
             - configMapRef:
