@@ -1,0 +1,29 @@
+{{- range $index, $service := .Values.services }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ $.Release.Name }}-{{ $service.name }}-mariadb-init
+  namespace: {{ $.Release.Namespace }}
+spec:
+  containers:
+    - name: mysql-init-role
+      image: imega/mysql-client
+      command: ["mysql"]
+      args:
+        ["-h", "{{ $.Release.Name }}-mariadb", "-u", "root", "-p$(ROOTPASSWORD)", "-e", "source /etc/config/db-init.sql"]
+      env:
+        - name: ROOTPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: "{{ $.Release.Name }}-mariadb-secrets"
+              key: mariadb-root-password
+      volumeMounts:
+        - name: secret-volume
+          mountPath: /etc/config
+  volumes:
+    - name: secret-volume
+      configMap:
+        name: {{ $.Release.Name }}-{{ $service.name }}-init-script
+  restartPolicy: OnFailure
+---
+{{- end }}

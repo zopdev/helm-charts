@@ -95,6 +95,10 @@ This repository provides Helm charts for a wide variety of datastores. Each char
   - URL: `https://helm.zop.dev/postgres`
   - Example: Ideal for handling complex queries and transactional workloads.
 
+- **[MariaDB](./charts/mariadb):** A popular open-source relational database, highly compatible with MySQL.  
+  - URL: `https://helm.zop.dev/mariadb`  
+  - Example: Use this chart to deploy MariaDB for master-slave replication or standalone setups.
+
 ### NoSQL Databases
 
 - **[Redis](./charts/redis):** An in-memory data structure store, used as a database, cache, and message broker.
