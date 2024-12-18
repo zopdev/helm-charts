@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ $.Release.Name }}-{{ $service.database }}-{{ $service.name }}-cockroach-configmap
+  name: {{ $.Release.Name }}-{{ $service.database }}-{{ $service.name }}-cockroachdb-configmap
   namespace: {{ $.Release.Namespace }}
 data:
   DB_DIALECT: "cockroachdb"

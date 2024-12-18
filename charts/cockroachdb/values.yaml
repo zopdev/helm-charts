@@ -135,4 +135,10 @@ storage:
 
 diskSize : 10Gi
 
+host : 
+
+tlsHost : 
+
+tlsSecretName : 
+
 services :

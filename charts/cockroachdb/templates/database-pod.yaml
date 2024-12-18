@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: cockroach-init-{{ $.Release.Name }}-{{ $service.name }}
+  name: cockroachdb-init-{{ $.Release.Name }}-{{ $service.name }}
   namespace: {{ $.Release.Namespace }}
 spec:
   containers:
