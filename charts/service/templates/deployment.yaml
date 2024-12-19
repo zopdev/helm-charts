@@ -173,6 +173,12 @@ spec:
                 name: {{ $k.datastore }}-{{ $k.database }}-{{ $.Release.Name}}-mariadb-database-secret
             {{- end }}
             {{- end }}
+            {{- if and .Values.datastores .Values.datastores.cockroachdb }}
+            {{- range $i, $k := .Values.datastores.cockroachdb }}
+            - configMapRef:
+                name: {{ $k.datastore }}-{{ $k.database }}-{{ $.Release.Name}}-cockroachdb-configmap
+            {{- end }}
+            {{- end }}
           env:
             {{- range $k,$v := .Values.env }}
               {{- if ne (toString $v) ""}}
