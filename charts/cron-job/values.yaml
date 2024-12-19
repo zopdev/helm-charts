@@ -57,3 +57,4 @@ datastores:
   solr:
   chromadb:
   mariadb:
+  cockroachdb:
