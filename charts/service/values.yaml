@@ -123,3 +123,4 @@ datastores:
   surrealdb:
   chromadb:
   mariadb: 
+  cockroachdb:

@@ -1,0 +1,14 @@
+{{- range $index, $service := .Values.services }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $.Release.Name }}-{{ $service.database }}-{{ $service.name }}-cockroachdb-configmap
+  namespace: {{ $.Release.Namespace }}
+data:
+  DB_DIALECT: "cockroachdb"
+  DB_USER: "{{ $service.name }}-user"
+  DB_PORT: "26257"
+  DB_NAME: "{{ $service.database }}"
+  DB_HOST: "{{ $.Release.Name }}-cockroachdb-public"
+---
+{{- end }}
