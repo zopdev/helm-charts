@@ -179,6 +179,14 @@ spec:
                 name: {{ $k.datastore }}-{{ $k.database }}-{{ $.Release.Name}}-cockroachdb-configmap
             {{- end }}
             {{- end }}
+            {{- if and .Values.datastores .Values.datastores.cassandradb }}
+            {{- range $i, $k := .Values.datastores.cassandradb }}
+            - configMapRef:
+                name: {{ $k.datastore }}-{{ $k.database }}-{{ $.Release.Name}}-cassandradb-configmap
+            - secretRef:
+                name: {{ $k.datastore }}-{{ $k.database }}-{{ $.Release.Name}}-cassandradb-database-secret
+            {{- end }}
+            {{- end }}
           env:
             {{- range $k,$v := .Values.env }}
               {{- if ne (toString $v) ""}}
