@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}-cassandra
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Release.Name }}-cassandra
+spec:
+  replicas: 1
+  serviceName: {{ .Release.Name }}-cassandra
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-cassandra
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-cassandra
+    spec:
+      containers:
+        - name: cassandra
+          image: {{ .Values.image }}
+          imagePullPolicy: {{ .Values.pullPolicy }}
+          ports:
+            - containerPort: 9042
+          resources:
+            requests:
+              memory: {{ .Values.resources.requests.memory }}
+              cpu: {{ .Values.resources.requests.cpu }}
+            limits:
+              memory: {{ .Values.resources.limits.memory }}
+              cpu: {{ .Values.resources.limits.cpu }}
+          env:
+            - name: CASSANDRA_CLUSTER_NAME
+              value: {{ .Values.config.cluster_name }}
+            - name: CASSANDRA_NUM_TOKENS
+              value: "{{ .Values.config.num_tokens }}"
+            - name: CASSANDRA_SEEDS
+              value: "{{ .Release.Name }}-cassandra-0.{{ .Release.Name }}-cassandra.{{ .Release.Namespace }}.svc.cluster.local"
+          lifecycle:
+            preStop:
+              exec:
+                command: 
+                - /bin/sh
+                - -c
+                - nodetool drain
+          livenessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - "nodetool status"
+            initialDelaySeconds: 120
+            periodSeconds: 20
+            timeoutSeconds: 15
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - "nodetool status"
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            timeoutSeconds: 15
+            failureThreshold: 3
+          volumeMounts:
+            - name: {{.Release.Name }}-cassandra-data
+              mountPath: /var/lib/cassandra
+  volumeClaimTemplates:
+    - metadata:
+        name: {{.Release.Name }}-cassandra-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: {{ .Values.diskSize }}
+        storageClassName: standard
