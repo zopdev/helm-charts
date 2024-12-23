@@ -143,12 +143,12 @@ spec:
                     name: {{ $k.datastore }}-{{ $k.database }}-{{ $.Release.Name}}-cockroachdb-configmap
                 {{- end }}
                 {{- end }}
-                {{- if and .Values.datastores .Values.datastores.cassandradb }}
-                {{- range $i, $k := .Values.datastores.cassandradb }}
+                {{- if and .Values.datastores .Values.datastores.cassandra }}
+                {{- range $i, $k := .Values.datastores.cassandra }}
                 - configMapRef:
-                    name: {{ $k.datastore }}-{{ $k.database }}-{{ $.Release.Name}}-cassandradb-configmap
+                    name: {{ $k.datastore }}-{{ $k.database }}-{{ $.Release.Name}}-cassandra-configmap
                 - secretRef:
-                    name: {{ $k.datastore }}-{{ $k.database }}-{{ $.Release.Name}}-cassandradb-database-secret
+                    name: {{ $k.datastore }}-{{ $k.database }}-{{ $.Release.Name}}-cassandra-database-secret
                 {{- end }}
                 {{- end }}
               env:

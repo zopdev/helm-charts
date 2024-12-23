@@ -58,4 +58,4 @@ datastores:
   chromadb:
   mariadb:
   cockroachdb:
-  cassandradb:
+  cassandra:
