@@ -13,7 +13,7 @@ spec:
         - -c
         - |
           echo "Initializing Cassandra Pod...";
-          sleep 30;
+          sleep 60;
           cqlsh {{ $.Release.Name }}-cassandra -u superuser -p $POD_PASSWORD -e "SOURCE '/etc/config/init-schema.cql';"
       env:
         - name: POD_PASSWORD

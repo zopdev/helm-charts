@@ -49,16 +49,20 @@ spec:
               - sh
               - -c
               - "nodetool status"
-            initialDelaySeconds: 30
-            periodSeconds: 10
+            initialDelaySeconds: 120
+            periodSeconds: 20
+            timeoutSeconds: 15
+            failureThreshold: 3
           readinessProbe:
             exec:
               command:
               - sh
               - -c
               - "nodetool status"
-            initialDelaySeconds: 15
-            periodSeconds: 10
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            timeoutSeconds: 15
+            failureThreshold: 3
           volumeMounts:
             - name: {{.Release.Name }}-cassandra-data
               mountPath: /var/lib/cassandra
