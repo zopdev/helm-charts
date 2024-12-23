@@ -1,0 +1,12 @@
+{{- range $index, $service := .Values.services }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $.Release.Name }}-{{ $service.database }}-{{ $service.name }}-cassandra-configmap
+  namespace: {{ $.Release.Namespace }}
+data:
+  Hosts: {{ $.Release.Name }}-cassandra
+  Keyspace: "{{ $service.database }}" 
+  Port: "9042"
+  Username: "{{ $service.name }}-user"
+{{- end }}
