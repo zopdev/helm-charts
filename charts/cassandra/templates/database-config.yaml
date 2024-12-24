@@ -9,4 +9,5 @@ data:
   Keyspace: "{{ $service.database }}" 
   Port: "9042"
   Username: "{{ $service.name }}-user"
+---
 {{- end }}
