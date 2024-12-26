@@ -1,0 +1,20 @@
+image: cassandra:4.1.0
+pullPolicy: IfNotPresent
+
+resources:
+  requests:
+    memory: "2000Mi"
+    cpu: "1000m"
+  limits:
+    memory: "4000Mi"
+    cpu: "2000m"
+
+diskSize: 10Gi
+
+config:
+  cluster_name: "Cluster"
+  num_tokens: 256
+
+cassandradbRootPassword:
+
+services:

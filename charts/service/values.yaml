@@ -119,4 +119,9 @@ grafanaDashboard:
 datastores:
   mysql:
   redis:
+  solr:
   surrealdb:
+  chromadb:
+  mariadb: 
+  cockroachdb:
+  cassandra:

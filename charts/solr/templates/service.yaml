@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-solr
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: solr
+spec:
+  selector:
+    app: solr
+  type: ClusterIP
+  ports:
+    - protocol: TCP
+      port: 8983
+      targetPort: 8983

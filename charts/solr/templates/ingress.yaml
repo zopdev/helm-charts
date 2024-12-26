@@ -1,0 +1,30 @@
+{{- if .Values.host }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}-solr
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: solr
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/auth-realm: ""
+    nginx.ingress.kubernetes.io/auth-secret: ""
+    nginx.ingress.kubernetes.io/auth-type: ""
+spec:
+  rules:
+    - host: {{ .Values.host }}
+      http:
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ .Release.Name }}-solr
+                port:
+                  number: 8983
+  tls:
+    - hosts:
+        - '{{ .Values.tlsHost | default .Values.host }}'
+      secretName: {{ .Values.tlsSecretName | default "tls-secret-replica" }}
+{{- end }}
