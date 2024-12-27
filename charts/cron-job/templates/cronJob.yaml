@@ -151,6 +151,12 @@ spec:
                     name: {{ $k.datastore }}-{{ $k.database }}-{{ $.Release.Name}}-cassandra-database-secret
                 {{- end }}
                 {{- end }}
+                {{- if and .Values.datastores .Values.datastores.redisdistributed }}
+                {{- range $i, $k := .Values.datastores.redisdistributed }}
+                - configMapRef:
+                    name: {{ $k.datastore }}-redis-values-configmap
+                {{- end }}
+                {{- end }}     
               env:
                 {{- range $k,$v := .Values.env }}
                   {{- if ne (toString $v) ""}}
