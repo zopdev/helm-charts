@@ -125,3 +125,4 @@ datastores:
   mariadb: 
   cockroachdb:
   cassandra:
+  redisdistributed:
