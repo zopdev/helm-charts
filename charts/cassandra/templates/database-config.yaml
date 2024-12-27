@@ -5,9 +5,9 @@ metadata:
   name: {{ $.Release.Name }}-{{ $service.database }}-{{ $service.name }}-cassandra-configmap
   namespace: {{ $.Release.Namespace }}
 data:
-  Hosts: {{ $.Release.Name }}-cassandra
-  Keyspace: "{{ $service.database }}" 
-  Port: "9042"
-  Username: "{{ $service.name }}-user"
+  CASSANDRA_HOST: {{ $.Release.Name }}-cassandra
+  CASSANDRA_KEYSPACE: "{{ $service.database }}" 
+  CASSANDRA_PORT: "9042"
+  CASSANDRA_USERNAME: "{{ $service.name }}-user"
 ---
 {{- end }}
