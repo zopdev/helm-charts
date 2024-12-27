@@ -10,7 +10,7 @@ data:
     WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
 
     USE "{{ $service.database }}";
-    CREATE ROLE IF NOT EXISTS "{{ $service.name }}-user" WITH PASSWORD '{{ $service.password }}' AND LOGIN = true;
+    CREATE ROLE IF NOT EXISTS "{{ $service.name }}-user" WITH PASSWORD = '{{ $service.password }}' AND LOGIN = true;
     GRANT ALL PERMISSIONS ON KEYSPACE "{{ $service.database }}" TO "{{ $service.name }}-user";
 ---
 {{- end }}

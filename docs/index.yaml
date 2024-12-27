@@ -3,7 +3,20 @@ entries:
   cassandra:
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2024-12-27T16:27:14.771661+05:30"
+    created: "2024-12-27T15:17:31.790133+05:30"
+    description: Helm chart for deploying cassandra
+    digest: f45dea69d490bc1e07764fc2e632cabda6465b4a99d12ed6c78eb4646b742e11
+    icon: https://zop.dev/logo.png
+    maintainers:
+    - name: ZopDev
+      url: zop.dev
+    name: cassandra
+    urls:
+    - https://helm.zop.dev/cassandra-v0.0.2.tgz
+    version: v0.0.2
+  - apiVersion: v1
+    appVersion: "1.0"
+    created: "2024-12-27T15:17:31.789898+05:30"
     description: Helm chart for deploying cassandra
     digest: 87dcf6e85af6afe5ff9c90bb29272edbc9cb21ce8019361015b1733442644ca9
     icon: https://zop.dev/logo.png
