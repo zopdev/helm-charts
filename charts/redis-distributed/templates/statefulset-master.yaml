@@ -37,11 +37,11 @@ spec:
             redis-server "${ARGS[@]}"
           resources:
             requests:
-              memory: {{ .Values.resources.requests.memory }}
-              cpu: {{ .Values.resources.requests.cpu }}
+              memory: {{ .Values.master.resources.requests.memory }}
+              cpu: {{ .Values.master.resources.requests.cpu }}
             limits:
-              memory: {{ .Values.resources.limits.memory }}
-              cpu: {{ .Values.resources.limits.cpu }}
+              memory: {{ .Values.master.resources.limits.memory }}
+              cpu: {{ .Values.master.resources.limits.cpu }}
           env:
             - name: REDIS_REPLICATION_MODE
               value: master
@@ -85,4 +85,4 @@ spec:
           - ReadWriteOnce
         resources:
           requests:
-            storage: {{ .Values.diskSize }}
+            storage: {{ .Values.master.persistence.size }}

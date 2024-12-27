@@ -1,29 +1,30 @@
 updateStrategy:
   type: RollingUpdate
 
-diskSize: "10Gi"
-
 image: "redis:6.2.13"
 
-# Resource configuration
-resources:
-  requests:
-    cpu: "500m"
-    memory: "256M"
-  limits:
-    cpu: "1500m"
-    memory: "1Gi"
-
-replication : 
-  count : 3
+master:
   resources:
     requests:
-      cpu: "500m"
-      memory: "256M"
+      cpu: "100m"
+      memory: "500Mi"
     limits:
-      cpu: "1500m"
-      memory: "1Gi"
-  updateStrategy:
-    type: RollingUpdate
-  diskSize: "10Gi"
+      cpu: "500m"
+      memory: "1000Mi"
+
+  persistence:
+    size: 10Gi
+  
+slave:
   enable : true
+  count: 1
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "500Mi"
+    limits:
+      cpu: "500m"
+      memory: "1000Mi"
+
+  persistence:
+    size: 10Gi

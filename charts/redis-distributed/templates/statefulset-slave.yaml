@@ -1,4 +1,4 @@
-{{- if .Values.replication.enable }}
+{{- if .Values.slave.enable }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -8,14 +8,14 @@ metadata:
     app.kubernetes.io/part-of: redis
     app: "{{ .Release.Name }}-redis"
 spec:
-  replicas: {{ .Values.replication.count }}
+  replicas: {{ .Values.slave.count }}
   serviceName: "{{ .Release.Name }}-redis-headless-service"
   selector:
     matchLabels:
       app.kubernetes.io/part-of: redis
       app: "{{ .Release.Name }}-redis"
   updateStrategy:
-    type: {{ .Values.replication.updateStrategy.type }}
+    type: {{ .Values.updateStrategy.type }}
   template:
     metadata:
       labels:
@@ -43,11 +43,11 @@ spec:
             redis-server "${ARGS[@]}"
           resources:
             requests:
-              memory: {{ .Values.replication.resources.requests.memory }}
-              cpu: {{ .Values.replication.resources.requests.cpu }}
+              memory: {{ .Values.slave.resources.requests.memory }}
+              cpu: {{ .Values.slave.resources.requests.cpu }}
             limits:
-              memory: {{ .Values.replication.resources.limits.memory }}
-              cpu: {{ .Values.replication.resources.limits.cpu }}
+              memory: {{ .Values.slave.resources.limits.memory }}
+              cpu: {{ .Values.slave.resources.limits.cpu }}
           env:
             - name: REDIS_REPLICATION_MODE
               value: slave
@@ -95,5 +95,5 @@ spec:
           - ReadWriteOnce
         resources:
           requests:
-            storage: {{ .Values.replication.diskSize }}
+            storage: {{ .Values.slave.persistence.size }}
 {{- end }}
