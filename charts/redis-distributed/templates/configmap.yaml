@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ .Release.Name }}-redis-configmap"
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    app.kubernetes.io/component: master
+data:
+  master.conf: |
+    dir /data
+    rename-command FLUSHDB ""
+    rename-command FLUSHALL ""
+  
+  replica.conf: |
+    dir /data
+    slave-read-only yes

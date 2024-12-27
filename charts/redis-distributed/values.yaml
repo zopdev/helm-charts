@@ -1,0 +1,30 @@
+updateStrategy:
+  type: RollingUpdate
+
+image: "redis:6.2.13"
+
+master:
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "500Mi"
+    limits:
+      cpu: "500m"
+      memory: "1000Mi"
+
+  persistence:
+    size: 10Gi
+  
+slave:
+  enable : true
+  count: 1
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "500Mi"
+    limits:
+      cpu: "500m"
+      memory: "1000Mi"
+
+  persistence:
+    size: 10Gi
