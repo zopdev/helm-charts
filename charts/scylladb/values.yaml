@@ -1,0 +1,19 @@
+image: "scylladb/scylla:latest"
+pullPolicy: IfNotPresent
+
+resources:
+  requests:
+    memory: "2000Mi"
+    cpu: "500m"
+  limits:
+    memory: "4000Mi"
+    cpu: "1000m"
+
+diskSize: "10Gi"
+
+config:
+  cluster_name: "Cluster"
+
+scylladbRootPassword:
+
+services:

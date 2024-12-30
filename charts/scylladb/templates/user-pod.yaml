@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ $.Release.Name }}-scylladb-user
+  namespace: {{ $.Release.Namespace }}
+spec:
+  containers:
+    - name: scylla-password-change
+      image: {{ .Values.image }}
+      command:
+        - "/bin/bash"
+        - "-c"
+        - |
+          echo "Changing the password for user 'cassandra'...";
+          sleep 10
+          cqlsh -u cassandra -p cassandra {{ $.Release.Name }}-scylladb -e "ALTER USER cassandra WITH PASSWORD '${SCYLLA_PASSWORD}';"
+      env:
+        - name: SCYLLA_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ $.Release.Name }}-scylladb-database-secret
+              key: pod_password
+  restartPolicy: OnFailure

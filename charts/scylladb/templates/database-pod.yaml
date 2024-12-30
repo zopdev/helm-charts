@@ -1,0 +1,33 @@
+{{- range $index, $service := .Values.services }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ $.Release.Name }}-{{ $service.name }}-scylladb-init
+  namespace: {{ $.Release.Namespace }}
+spec:
+  containers:
+    - name: scylladb-init
+      image: {{ $.Values.image }}
+      command:
+        - /bin/bash
+        - -c
+        - |
+          echo "Initializing Scylladb Pod...";
+          sleep 10
+          cqlsh -u cassandra -p $SCYLLADB_PASSWORD {{ $.Release.Name }}-scylladb -e "SOURCE '/etc/config/init-schema.cql';"
+      env:
+        - name: SCYLLADB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ $.Release.Name }}-scylladb-database-secret
+              key: pod_password
+      volumeMounts:
+        - name: script-volume
+          mountPath: /etc/config
+  volumes:
+    - name: script-volume
+      configMap:
+        name: {{ $.Release.Name }}-{{ $service.name }}-init-script
+  restartPolicy: OnFailure
+---
+{{- end}}
