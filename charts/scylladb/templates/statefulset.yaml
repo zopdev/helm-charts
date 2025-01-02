@@ -1,0 +1,113 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $.Release.Name }}-scylladb
+  labels:
+    app: {{ $.Release.Name }}-scylladb
+spec:
+  replicas: 1
+  serviceName: {{ $.Release.Name }}-scylladb
+  selector:
+    matchLabels:
+      app: {{ $.Release.Name }}-scylladb
+  template:
+    metadata:
+      labels:
+        app: {{ $.Release.Name }}-scylladb
+    spec:
+      initContainers:
+        - name: sysctl-tune
+          image: busybox:1.35.0-uclibc
+          command:
+            - "sh"
+            - "-c"
+            - "sysctl -w fs.aio-max-nr=524288"
+          securityContext:
+            privileged: true
+      containers:
+        - name: scylladb
+          image: {{ .Values.image }}
+          imagePullPolicy: {{ .Values.pullPolicy }}
+          command: ["/bin/bash", "-c", "--"]
+          args:
+            - |
+                sed -i "s/#cluster_name: .*/cluster_name: '${CLUSTER_NAME}'/" /etc/scylla/scylla.yaml
+                sed -i 's/# data_file_directories:/data_file_directories:/' /etc/scylla/scylla.yaml
+                sed -i 's/#    - \/var\/lib\/scylla\/data/    - \/var\/lib\/scylla\/data/' /etc/scylla/scylla.yaml
+                sed -i 's/# commitlog_directory: \/var\/lib\/scylla\/commitlog/commitlog_directory: \/var\/lib\/scylla\/commitlog/' /etc/scylla/scylla.yaml
+
+                # Modify the seeds in scylla.yaml by replacing "127.0.0.1" with the SCYLLA_SEEDS value
+                sed -i "s/seeds: \"127.0.0.1\"/seeds: '${SCYLLA_SEEDS}'/" /etc/scylla/scylla.yaml
+
+                # Modify Authenticator and Authorizer
+                sed -i "s/# authenticator: AllowAllAuthenticator/authenticator: '${SCYLLA_AUTHENTICATOR}'/" /etc/scylla/scylla.yaml
+                sed -i "s/# authorizer: AllowAllAuthorizer/authorizer: '${SCYLLA_AUTHORIZER}'/" /etc/scylla/scylla.yaml
+
+                # Modify listen_address to the Helm release name
+                sed -i "s/listen_address: localhost/listen_address: '{{ .Release.Name }}-scylladb-0'/" /etc/scylla/scylla.yaml
+
+                # Modify rpc_address to listen on all interfaces
+                sed -i "s/rpc_address: localhost/rpc_address: '0.0.0.0'/" /etc/scylla/scylla.yaml
+
+                # Set broadcast_rpc_address to Helm release name for correct node discovery
+                sed -i "s/# broadcast_rpc_address: 1.2.3.4/broadcast_rpc_address: '{{ .Release.Name }}-scylladb-0'/" /etc/scylla/scylla.yaml
+
+                # Enable Prometheus metrics on port 9180
+                sed -i 's/# prometheus_port: 9180/prometheus_port: 9180/' /etc/scylla/scylla.yaml
+                # Start ScyllaDB in the background
+                exec /docker-entrypoint.py
+          ports:
+            - containerPort: 9042
+          resources:
+            requests:
+              memory: {{ .Values.resources.requests.memory }}
+              cpu: {{ .Values.resources.requests.cpu }}
+            limits:
+              memory: {{ .Values.resources.limits.memory }}
+              cpu: {{ .Values.resources.limits.cpu }}
+          env:
+            - name: SCYLLA_SEEDS
+              value: "{{ $.Release.Name }}-scylladb-0.{{ $.Release.Name }}-scylladb.{{ $.Release.Namespace }}.svc.cluster.local"
+            - name: SCYLLA_AUTHENTICATOR
+              value: "PasswordAuthenticator"
+            - name: SCYLLA_AUTHORIZER
+              value: "CassandraAuthorizer"
+            - name: CLUSTER_NAME
+              value: "Cluster"
+            - name: SCYLLA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Release.Name }}-scylladb-database-secret
+                  key: pod_password
+          livenessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - "nodetool status"
+            initialDelaySeconds: 120
+            periodSeconds: 20
+            timeoutSeconds: 15
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - "nodetool status"
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            timeoutSeconds: 15
+            failureThreshold: 3
+          volumeMounts:
+            - name: {{ $.Release.Name }}-scylla-data
+              mountPath: /var/lib/scylla
+  volumeClaimTemplates:
+    - metadata:
+        name: {{ $.Release.Name }}-scylla-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: {{ .Values.diskSize }}
+        storageClassName: standard

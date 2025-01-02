@@ -1,0 +1,16 @@
+{{- range $index, $service := .Values.services }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $.Release.Name }}-{{ $service.name }}-init-script
+  namespace: {{ $.Release.Namespace }}
+data:
+  init-schema.cql: |
+    CREATE KEYSPACE IF NOT EXISTS "{{ $service.database }}"
+    WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 3};
+
+    USE "{{ $service.database }}";
+    CREATE ROLE IF NOT EXISTS "{{ $service.name }}-user" WITH PASSWORD = '{{ $service.password }}' AND LOGIN = true;
+    GRANT ALL PERMISSIONS ON KEYSPACE "{{ $service.database }}" TO "{{ $service.name }}-user";
+---
+{{- end }}
