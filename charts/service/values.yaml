@@ -126,3 +126,4 @@ datastores:
   cockroachdb:
   cassandra:
   redisdistributed:
+  scylladb:
