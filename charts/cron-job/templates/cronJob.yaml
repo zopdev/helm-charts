@@ -156,7 +156,15 @@ spec:
                 - configMapRef:
                     name: {{ $k.datastore }}-redis-values-configmap
                 {{- end }}
-                {{- end }}     
+                {{- end }}
+                {{- if and .Values.datastores .Values.datastores.scylladb }}
+                {{- range $i, $k := .Values.datastores.scylladb }}
+                - configMapRef:
+                    name: {{ $k.datastore }}-{{ $k.database }}-{{ $.Release.Name}}-scylladb-configmap
+                - secretRef:
+                    name: {{ $k.datastore }}-{{ $k.database }}-{{ $.Release.Name}}-scylladb-database-secret
+                {{- end }}
+                {{- end }}
               env:
                 {{- range $k,$v := .Values.env }}
                   {{- if ne (toString $v) ""}}
