@@ -57,13 +57,13 @@ spec:
             service: {{ .Values.name }}
             namespace: {{ .Release.Namespace }}
         #  Alert if replica count crosses the threshold percentage of max pod count.
-        {{- if ne .Values.alerts.standard.infra.hpaNearingMaxPodThreshold -1.0 }}
+        {{- if ne (int .Values.maxReplicas) 1 }}
         - alert: {{ snakecase .Values.name }}_hpa_nearing_max_pod_count
           annotations:
             description: "HPA of {{ .Values.name }} has been running at {{ .Values.alerts.standard.infra.hpaNearingMaxPodThreshold }} percent of max replicas."
           expr: (sum(kube_horizontalpodautoscaler_status_current_replicas{namespace="{{ .Release.Namespace }}", horizontalpodautoscaler="{{ .Values.name }}"}) / sum(kube_horizontalpodautoscaler_spec_max_replicas{namespace="{{ .Release.Namespace }}", horizontalpodautoscaler="{{ .Values.name }}"})) * 100 >= {{ .Values.alerts.standard.infra.hpaNearingMaxPodThreshold }}
           labels:
-            severity: critical
+            severity: warning
             servicealert: "true"
             service: {{ .Values.name }}
             namespace: {{ .Release.Namespace }}
@@ -75,7 +75,7 @@ spec:
             description: "Memory Utilisation of {{ .Values.name }} exceeded {{ .Values.alerts.standard.infra.serviceMemoryUtilizationThreshold}} percent of the resource limits"
           expr: sum(container_memory_working_set_bytes{pod=~"{{ .Values.name }}-.*", container="{{ .Values.name }}", namespace="{{ .Release.Namespace }}"}) / sum(container_spec_memory_limit_bytes{pod=~"{{ .Values.name }}-.*",container="{{ .Values.name }}",namespace="{{ .Release.Namespace }}"}) *100 > {{ .Values.alerts.standard.infra.serviceMemoryUtilizationThreshold }}
           labels:
-            severity: critical
+            severity: warning
             servicealert: "true"
             service: {{ .Values.name }}
             namespace: {{ .Release.Namespace }}
@@ -87,7 +87,7 @@ spec:
             description: "CPU Utilisation of {{ .Values.name }} exceeded {{ .Values.alerts.standard.infra.serviceCpuUtilizationThreshold }} percent of the resource limits"
           expr: ((sum(irate(container_cpu_usage_seconds_total{container="{{ .Values.name }}", namespace="{{ .Release.Namespace }}"}[{{ .Values.alerts.standard.infra.serviceCpuUtilizationTimeWindow }}]))  / sum(container_spec_cpu_quota{container="{{ .Values.name }}", namespace="{{ .Release.Namespace }}"} / container_spec_cpu_period{container="{{ .Values.name }}", namespace="{{ .Release.Namespace }}"})  ) * 100)  > {{ .Values.alerts.standard.infra.serviceCpuUtilizationThreshold }} 
           labels:
-            severity: critical
+            severity: warning
             servicealert: "true"
             service: {{ .Values.name }}
             namespace: {{ .Release.Namespace }}
