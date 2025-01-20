@@ -1,0 +1,40 @@
+{{- if .Values.host }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Values.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.name }}
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/auth-realm: ""
+    nginx.ingress.kubernetes.io/auth-secret: ""
+    nginx.ingress.kubernetes.io/auth-type: ""
+
+spec:
+  rules:
+    - host: {{ .Values.host }}
+      http:
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ .Values.name }}
+                port:
+                  number: 80
+          {{- if .Values.metricsPort }}
+          - path: /metrics
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ .Values.name }}
+                port:
+                  number: 2121
+          {{- end }}
+  tls:
+    - hosts:
+        - '{{ .Values.tlsHost | default .Values.host }}'
+      secretName: {{ .Values.tlsSecretName | default "tls-secret-replica" }}
+{{- end }}

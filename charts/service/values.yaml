@@ -22,6 +22,12 @@ metricsPort: 2121
 ports: # Provide the ports on which container runs its services
 # grpc: 9100
 
+tlsSecretName: 
+
+host: 
+
+tlsHost:
+
 metricsScrapeInterval: 30s
 
 envFrom:
