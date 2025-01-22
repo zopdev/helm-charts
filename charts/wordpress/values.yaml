@@ -1,0 +1,45 @@
+mysql:
+  mysqlRootPassword:
+  services:
+
+
+service:
+  name: wordpress
+  image: wordpress:latest
+
+  minCPU: "500m"
+  minMemory: "256M"
+  maxCPU: "1500m"
+  maxMemory: "1Gi"
+
+  env:
+    WORDPRESS_DB_HOST: "$(DB_HOST)"
+    WORDPRESS_DB_USER: "$(DB_USER)"
+    WORDPRESS_DB_PASSWORD: "$(DB_PASSWORD)"
+    WORDPRESS_DB_NAME: "$(DB_NAME)"
+
+  datastores:
+    mysql:
+  
+  heartbeatURL: /wp-login.php
+
+  httpPort: 80
+
+  readinessProbe:
+    enable: true
+    initialDelaySeconds: 30
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+  livenessProbe:
+    enable: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+  volumeMounts:
+    emptyDir:
+      - name: wordpress-env
+        mountPath: /etc/wordpress
