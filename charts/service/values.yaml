@@ -22,12 +22,9 @@ metricsPort: 2121
 ports: # Provide the ports on which container runs its services
 # grpc: 9100
 
-host: 
-
-# Annotations to be added to the ingress resource.
-annotations:
-
 nginx:
+  host:
+  annotations:
   tlsHost:
   tlsSecretName: 
 

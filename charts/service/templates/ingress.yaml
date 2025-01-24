@@ -1,4 +1,4 @@
-{{- if .Values.host }}
+{{- if .Values.nginx.host }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -7,13 +7,13 @@ metadata:
   labels:
     app: {{ .Values.name }}
   annotations:
-    {{- range $key, $value := .Values.annotations }}
+    {{- range $key, $value := .Values.nginx.annotations }}
     {{ $key }}: {{ $value | quote }}
     {{- end }}
 
 spec:
   rules:
-    - host: {{ .Values.host }}
+    - host: {{ .Values.nginx.host }}
       http:
         paths:
           - path: /
@@ -34,6 +34,6 @@ spec:
           {{- end }}
   tls:
     - hosts:
-        - '{{ .Values.nginx.tlsHost | default .Values.host }}'
+        - '{{ .Values.nginx.tlsHost | default .Values.nginx.host }}'
       secretName: {{ .Values.nginx.tlsSecretName | default "tls-secret-replica" }}
 {{- end }}
