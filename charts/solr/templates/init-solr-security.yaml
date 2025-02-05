@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-solr-security-config
+data:
+  security.json: |
+    {
+    "authentication":{
+      "blockUnknown": true,
+      "class":"solr.BasicAuthPlugin",
+      "credentials":{"admin":"{{ .Values.solrRootPassword}}"},
+      "realm":"Solr users",
+      "forwardCredentials": false
+    },
+    "authorization":{
+      "class":"solr.RuleBasedAuthorizationPlugin",
+      "permissions":[{"name":"security-edit",
+          "role":"admin"}],
+      "user-role":{ "admin":"admin"}
+    }}

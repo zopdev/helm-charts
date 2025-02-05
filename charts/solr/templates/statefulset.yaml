@@ -28,7 +28,7 @@ spec:
             - name: SOLR_HOME
               value: "/var/solr/data"
             - name: SOLR_JAVA_MEM
-              value: "-Xms4g -Xmx4g"
+              value: "-Xms2g -Xmx2g"
           resources:
             requests:
               memory: {{ .Values.resources.requests.memory }}
@@ -53,6 +53,13 @@ spec:
           volumeMounts:
             - name: solr-data
               mountPath: /var/solr
+            - name: security-config
+              mountPath: /var/solr/data/security.json
+              subPath: security.json
+      volumes:
+        - name: security-config
+          configMap:
+            name: {{ .Release.Name }}-solr-security-config
   volumeClaimTemplates:
     - metadata:
         name: solr-data
