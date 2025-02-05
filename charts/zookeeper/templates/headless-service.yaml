@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "zookeeper.fullname" . }}-headless
+  labels:
+    {{- include "zookeeper.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  clusterIP: None
+  publishNotReadyAddresses: true
+  ports:
+  - name: tcp-peers
+    port: {{ .Values.port.peers }}
+    protocol: TCP
+    targetPort: tcp-peers
+  - name: tcp-leader
+    port: {{ .Values.port.leader }}
+    protocol: TCP
+    targetPort: tcp-leader
+  - name: http-admin
+    port: {{ .Values.port.admin }}
+    protocol: TCP
+    targetPort: http-admin
+  - name: tcp-client
+    port: {{ .Values.port.client }}
+    protocol: TCP
+    targetPort: tcp-client
+  selector:
+    {{- include "zookeeper.selectorLabels" . | nindent 4 }}

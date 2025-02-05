@@ -1,0 +1,11 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "zookeeper.fullname" . }}-pdb
+  labels:
+    {{- include "zookeeper.labels" . | nindent 4 }}
+spec:
+  minAvailable: {{ .Values.minAvailable | default 1 }}
+  selector:
+    matchLabels:
+      {{- include "zookeeper.selectorLabels" . | nindent 6 }} 
