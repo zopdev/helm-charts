@@ -5,7 +5,7 @@ image:
   pullPolicy: IfNotPresent
 imagePullSecrets:  []
 
-replicaCount: 2
+replicaCount: 3
 maxUnavailable: 1
 
 acls:
