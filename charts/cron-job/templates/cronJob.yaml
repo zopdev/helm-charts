@@ -165,6 +165,12 @@ spec:
                     name: {{ $k.datastore }}-{{ $k.database }}-{{ $.Release.Name}}-scylladb-database-secret
                 {{- end }}
                 {{- end }}
+                {{- if and .Values.datastores .Values.datastores.kafka }}
+                {{- range $i, $k := .Values.datastores.kafka }}
+                - configMapRef:
+                    name: {{ $k.datastore }}-kafka-configmap
+                {{- end }}
+                {{- end }}  
               env:
                 {{- range $k,$v := .Values.env }}
                   {{- if ne (toString $v) ""}}
