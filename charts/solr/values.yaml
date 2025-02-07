@@ -4,8 +4,8 @@ solrRootPassword:
 
 resources:
   requests:
-    memory: "2000Mi"
-    cpu: "100m"
+    memory: "2500Mi"
+    cpu: "250m"
   limits:
     memory: "3000Mi"
     cpu: "500m"

@@ -1,3 +1,4 @@
+{{- if .Values.solrRootPassword }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -18,3 +19,4 @@ data:
           "role":"admin"}],
       "user-role":{ "admin":"admin"}
     }}
+{{- end }}
