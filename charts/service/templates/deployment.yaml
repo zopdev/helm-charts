@@ -138,7 +138,7 @@ spec:
             {{- if and .Values.datastores .Values.datastores.solr }}
             {{- range $i, $k := .Values.datastores.solr }}
             - configMapRef:
-                name: {{ $k.datastore }}-{{ $.Release.Name}}-solr-configmap
+                name: {{ $k.datastore }}-solr-configmap
             {{- end }}
             {{- end }}
             {{- if and .Values.datastores .Values.datastores.surrealdb }}

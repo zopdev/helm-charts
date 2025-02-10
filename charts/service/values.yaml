@@ -120,6 +120,7 @@ datastores:
   mysql:
   redis:
   solr:
+    - datastore : solr 
   surrealdb:
   chromadb:
   mariadb: 
