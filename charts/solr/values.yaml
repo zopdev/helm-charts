@@ -1,12 +1,14 @@
-image: "solr:8.4"
+image: "solr:9.8"
+
+solrRootPassword: 
 
 resources:
   requests:
-    memory: "1Gi"
-    cpu: "100m"
+    memory: "2500Mi"
+    cpu: "250m"
   limits:
-    memory: "2Gi"
-    cpu: "1"
+    memory: "3000Mi"
+    cpu: "500m"
 
 securityContext:
   runAsUser: 1001

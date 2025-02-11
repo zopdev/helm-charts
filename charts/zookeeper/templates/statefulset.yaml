@@ -1,0 +1,149 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "zookeeper.fullname" . }}
+  labels:
+    {{- include "zookeeper.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "zookeeper.selectorLabels" . | nindent 6 }}
+  serviceName: {{ include "zookeeper.fullname" . }}-headless
+  replicas: {{ .Values.replicaCount }}
+  updateStrategy:
+    type: RollingUpdate
+  podManagementPolicy: Parallel
+  template:
+    metadata:
+      labels:
+        {{- include "zookeeper.selectorLabels" . | nindent 8 }}
+    spec:
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      affinity:
+      {{- if .Values.affinity }}
+        {{ toYaml .Values.affinity | indent 8 }}
+      {{- else }}
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - zookeeper
+              topologyKey: kubernetes.io/hostname
+            weight: 1
+     {{- end }}
+      containers:
+      - name: {{ .Chart.Name }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag | default "latest" }}"
+        env:
+        - name: ZOOKEEPER_CLIENT_PORT
+          value: {{ .Values.port.client | int | quote }}
+        - name: ZOOKEEPER_TICK_TIME
+          value: {{ .Values.tickTime | int | quote }}
+        - name: ZOOKEEPER_INIT_LIMIT
+          value: {{ .Values.initLimit | int | quote }}
+        - name: ZOOKEEPER_SYNC_LIMIT
+          value: {{ .Values.syncLimit | int | quote }}
+        - name: ZOOKEEPER_MAX_CLIENT_CNXNS
+          value: {{ .Values.maxClientCnxns | int | quote }}
+        - name: ZOOKEEPER_AUTOPURGE_PURGE_INTERVAL
+          value: {{ .Values.autopurge.purgeInterval | int | quote }}
+        - name: ZOOKEEPER_AUTOPURGE_SNAP_RETAIN_COUNT
+          value: {{ .Values.autopurge.snapRetainCount | int | quote }}
+        - name: ZOOKEEPER_QUORUM_LISTEN_ON_ALL_IPS
+          value: {{ .Values.quorumListenOnAllIPs | quote }}
+        - name: ZOOKEEPER_MAX_SESSION_TIMEOUT
+          value: {{ .Values.maxSessionTimeout | int | quote }}
+        - name: ZOOKEEPER_ADMIN_ENABLE_SERVER
+          value: {{ .Values.adminEnableServer  | quote }}
+        - name: ZOOKEEPER_LOG4J_ROOT_LOGLEVEL
+          value: {{ .Values.log4jRootLogLevel  | quote }}
+        - name: KAFKA_HEAP_OPTS
+          value: {{ .Values.heapOpts | quote }}
+        - name : ZOOKEEPER_SERVERS
+          value: {{ include "zookeeper.serverlist" . }}
+        - name: ZOOKEEPER_SERVER_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        command:
+        - "bash"
+        - "-c"
+        - |
+          ZK_FIX_HOST_REGEX="s/${HOSTNAME}\.[^:]*:/0.0.0.0:/g"
+          ZOOKEEPER_SERVER_ID=$((${HOSTNAME##*-}+1)) \
+          ZOOKEEPER_SERVERS=`echo $ZOOKEEPER_SERVERS | sed -e "$ZK_FIX_HOST_REGEX"` \
+          /etc/confluent/docker/run
+        ports:
+        - name: tcp-client
+          containerPort: {{ .Values.port.client }}
+        - name: tcp-peers
+          containerPort: {{ .Values.port.peers }}
+        - name: tcp-leader
+          containerPort: {{ .Values.port.leader }}
+        - name: http-admin
+          containerPort: {{ .Values.port.admin }}
+        {{- if .Values.livenessProbe.enabled }}
+        livenessProbe:
+          httpGet:
+            path: /commands/ruok
+            port: http-admin
+          initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.livenessProbe.successThreshold }}
+          failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+        {{- end }}
+        {{- if .Values.readinessProbe.enabled }}
+        readinessProbe:
+          httpGet:
+            path: /commands/ruok
+            port: http-admin
+          initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+          successThreshold: {{ .Values.readinessProbe.successThreshold }}
+          failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+        {{- end }}
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/zookeeper/data
+        - name: log
+          mountPath: /var/lib/zookeeper/log
+        - name: config
+          mountPath: /etc/kafka
+        - name: logs
+          mountPath: /var/log
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 12 }}
+        resources:
+          {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+      - name: config
+        emptyDir: {}
+      - name: logs
+        emptyDir: {}
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: {{ .Values.diskSize | quote }}
+  - metadata:
+      name: log
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: {{ .Values.diskSize | quote }}

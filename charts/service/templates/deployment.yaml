@@ -138,7 +138,7 @@ spec:
             {{- if and .Values.datastores .Values.datastores.solr }}
             {{- range $i, $k := .Values.datastores.solr }}
             - configMapRef:
-                name: {{ $k.datastore }}-{{ $.Release.Name}}-solr-configmap
+                name: {{ $k.datastore }}-solr-configmap
             {{- end }}
             {{- end }}
             {{- if and .Values.datastores .Values.datastores.surrealdb }}
@@ -199,6 +199,12 @@ spec:
                 name: {{ $k.datastore }}-{{ $k.database }}-{{ $.Release.Name}}-scylladb-configmap
             - secretRef:
                 name: {{ $k.datastore }}-{{ $k.database }}-{{ $.Release.Name}}-scylladb-database-secret
+            {{- end }}
+            {{- end }}
+            {{- if and .Values.datastores .Values.datastores.kafka }}
+            {{- range $i, $k := .Values.datastores.kafka }}
+            - configMapRef:
+                name: {{ $k.datastore }}-kafka-configmap
             {{- end }}
             {{- end }}
           env:
