@@ -22,6 +22,12 @@ metricsPort: 2121
 ports: # Provide the ports on which container runs its services
 # grpc: 9100
 
+nginx:
+  host:
+  annotations:
+  tlsHost:
+  tlsSecretName: 
+
 metricsScrapeInterval: 30s
 
 envFrom:
