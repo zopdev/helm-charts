@@ -127,3 +127,4 @@ datastores:
   cassandra:
   redisdistributed:
   scylladb:
+  kafka: 

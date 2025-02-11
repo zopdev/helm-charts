@@ -1,12 +1,8 @@
-{{- range $index, $service := .Values.services }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ $.Release.Name }}-{{ $service.name }}-solr-configmap
+  name: {{ $.Release.Name }}-solr-configmap
   namespace: {{ $.Release.Namespace }}
 data:
   SOLR_HOST: {{ $.Release.Name }}-solr
   SOLR_PORT: "8983"
-  SOLR_CORE: "{{ $service.core }}"
----
-{{- end }}
