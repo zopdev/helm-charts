@@ -1,0 +1,60 @@
+postgres:
+  postgresRootPassword: 
+  services: 
+
+service:
+  name: outline
+  image: outlinewiki/outline
+
+  minReplicas: 1
+  minCPU: "250m"
+  minMemory: "1000Mi"
+  maxCPU: "500m"
+  maxMemory: "1500Mi"
+
+  nginx:
+    host : 
+    annotations:
+      kubernetes.io/ingress.class: "nginx"
+      nginx.ingress.kubernetes.io/auth-realm: ''
+      nginx.ingress.kubernetes.io/auth-secret: ''
+      nginx.ingress.kubernetes.io/auth-type: ''
+    tlsHost : 
+    tlsSecretName: 
+
+  env:
+    SECRET_KEY: 106ff5ec40e340972540fefd770dad24db868deb68bec9d2556365f2ff66ed99 # Replace with a hex-encoded 32-byte random key. You should use `openssl rand -hex 32`
+    UTILS_SECRET: 45aec6e6b7340f3c8e5b34d533f9d63fd72a2830ee35d1345cb144d484205ba2 # Replace with a unique random key. You could still use `openssl rand -hex 32`
+    FILE_STORAGE : local
+    FORCE_HTTPS: false
+    PGSSLMODE: disable
+    PORT: 3000
+    URL: 
+    FILE_STORAGE_LOCAL_ROOT_DIR : /data
+
+  datastores:
+    postgres:
+    redis:
+
+  heartbeatURL: /
+  
+  httpPort: 3000
+
+  livenessProbe:
+    enable: true
+    initialDelaySeconds: 30
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+  readinessProbe:
+    enable: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+  volumeMounts:
+    emptyDir:
+      - name: outline-storage
+        mountPath: /data
