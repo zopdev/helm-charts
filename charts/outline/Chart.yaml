@@ -1,0 +1,19 @@
+apiVersion: v1
+appVersion: "1.0"
+description: Helm chart for deploying outline app
+name: outline
+version: 0.0.1
+icon: "https://zop.dev/logo.png"
+dependencies:
+  - name: postgres
+    version: 0.0.1
+    repository:  https://helm.zop.dev
+  - name: redis
+    version: 0.0.1
+    repository: https://helm.zop.dev
+  - name: service
+    version: 0.0.17
+    repository: https://helm.zop.dev
+maintainers:
+  - name: ZopDev
+    url: zop.dev
