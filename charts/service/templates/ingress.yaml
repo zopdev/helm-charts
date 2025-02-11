@@ -1,0 +1,39 @@
+{{- if .Values.nginx.host }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Values.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.name }}
+  annotations:
+    {{- range $key, $value := .Values.nginx.annotations }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+
+spec:
+  rules:
+    - host: {{ .Values.nginx.host }}
+      http:
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ .Values.name }}
+                port:
+                  number: 80
+          {{- if .Values.metricsPort }}
+          - path: /metrics
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ .Values.name }}
+                port:
+                  number: 2121
+          {{- end }}
+  tls:
+    - hosts:
+        - '{{ .Values.nginx.tlsHost | default .Values.nginx.host }}'
+      secretName: {{ .Values.nginx.tlsSecretName | default "tls-secret-replica" }}
+{{- end }}
