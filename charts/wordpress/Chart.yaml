@@ -10,7 +10,7 @@ dependencies:
     version: 0.0.1
   - name: service
     repository: "https://helm.zop.dev"
-    version: 0.0.16
+    version: 0.0.17
 maintainers:
   - name: ZopDev
     url: zop.dev

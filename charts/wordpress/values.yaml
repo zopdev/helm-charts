@@ -7,13 +7,26 @@ service:
   name: wordpress
   image: wordpress:latest
 
+  minReplicas: 1
+  maxReplicas: 1
+
   minCPU: "500m"
-  minMemory: "256M"
-  maxCPU: "1500m"
-  maxMemory: "1Gi"
+  minMemory: "500Mi"
+  maxCPU: "1000m"
+  maxMemory: "1000Mi"
+
+  nginx:
+    host : 
+    annotations:
+      kubernetes.io/ingress.class: "nginx"
+      nginx.ingress.kubernetes.io/auth-realm: ''
+      nginx.ingress.kubernetes.io/auth-secret: ''
+      nginx.ingress.kubernetes.io/auth-type: ''
+    tlsHost : 
+    tlsSecretName: 
 
   env:
-    WORDPRESS_DB_HOST: "$(DB_HOST)"
+    WORDPRESS_DB_HOST: "$(DB_HOST):$(DB_PORT)"
     WORDPRESS_DB_USER: "$(DB_USER)"
     WORDPRESS_DB_PASSWORD: "$(DB_PASSWORD)"
     WORDPRESS_DB_NAME: "$(DB_NAME)"
@@ -21,25 +34,20 @@ service:
   datastores:
     mysql:
   
-  heartbeatURL: /wp-login.php
+  heartbeatURL: 
 
   httpPort: 80
 
   readinessProbe:
     enable: true
-    initialDelaySeconds: 30
+    initialDelaySeconds: 40
     periodSeconds: 5
     timeoutSeconds: 3
     failureThreshold: 3
 
   livenessProbe:
     enable: true
-    initialDelaySeconds: 30
+    initialDelaySeconds: 40
     periodSeconds: 10
     timeoutSeconds: 5
-    failureThreshold: 3
-
-  volumeMounts:
-    emptyDir:
-      - name: wordpress-env
-        mountPath: /etc/wordpress
+    failureThreshold: 3    
