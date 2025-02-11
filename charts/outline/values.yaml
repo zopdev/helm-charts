@@ -1,9 +1,6 @@
 postgres:
-  postgresRootPassword: root
+  postgresRootPassword: 
   services: 
-    - name : outline
-      password : root 
-      database : outline
 
 service:
   name: outline
@@ -11,9 +8,19 @@ service:
 
   minReplicas: 1
   minCPU: "250m"
-  minMemory: "500Mi"
+  minMemory: "1000Mi"
   maxCPU: "500m"
-  maxMemory: "1Gi"
+  maxMemory: "1500Mi"
+
+  nginx:
+    host : 
+    annotations:
+      kubernetes.io/ingress.class: "nginx"
+      nginx.ingress.kubernetes.io/auth-realm: ''
+      nginx.ingress.kubernetes.io/auth-secret: ''
+      nginx.ingress.kubernetes.io/auth-type: ''
+    tlsHost : 
+    tlsSecretName: 
 
   env:
     SECRET_KEY: 106ff5ec40e340972540fefd770dad24db868deb68bec9d2556365f2ff66ed99 # Replace with a hex-encoded 32-byte random key. You should use `openssl rand -hex 32`
@@ -22,15 +29,12 @@ service:
     FORCE_HTTPS: false
     PGSSLMODE: disable
     PORT: 3000
-    URL: https://outline-app10feb.f9a0e996-8363-4ad3-9eda-547f172704df.zop.dev
+    URL: 
     FILE_STORAGE_LOCAL_ROOT_DIR : /data
 
   datastores:
     postgres:
-      - datastore : outline
-        database : outline
     redis:
-      - datastore : outline
 
   heartbeatURL: /
   

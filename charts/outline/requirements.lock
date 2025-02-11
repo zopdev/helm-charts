@@ -7,6 +7,6 @@ dependencies:
   version: v0.0.1
 - name: service
   repository: https://helm.zop.dev
-  version: v0.0.16
-digest: sha256:151ebe018e5fcb140cbe8d7af9f0391152dba0e275f951f6009c2f82865aeeea
-generated: "2025-02-11T11:25:13.346534+05:30"
+  version: v0.0.17
+digest: sha256:338c91b9d83d83eb36aae2505e76a777da93127f7ed7fb21feaed5f9f4be5df3
+generated: "2025-02-11T16:33:23.795392+05:30"
