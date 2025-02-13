@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ $.Release.Name }}-{{ $service.database }}-{{ $service.name}}-mysql-configmap
+  name: {{ $.Release.Name }}-{{ replace "_" "-" $service.database }}-{{ $service.name }}-mysql-configmap
   namespace: {{ $.Release.Namespace }}
 data:
   DB_DIALECT: "mysql"
