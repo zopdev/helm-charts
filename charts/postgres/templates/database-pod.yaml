@@ -7,7 +7,7 @@ metadata:
 spec:
   containers:
     - name: postgres-init-role
-      image: postgres:latest
+      image: postgres:15.9
       command: ["psql"]
       args:
         - "-h"
