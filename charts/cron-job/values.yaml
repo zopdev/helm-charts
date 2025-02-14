@@ -52,6 +52,7 @@ alerts:
       cronjobFailedThreshold: 0
 datastores:
   mysql:
+  postgres:
   redis:
   surrealdb:
   solr:

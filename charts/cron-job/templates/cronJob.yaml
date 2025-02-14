@@ -80,17 +80,17 @@ spec:
                 {{- if and .Values.datastores .Values.datastores.mysql }}
                 {{- range $i, $k := .Values.datastores.mysql }}
                 - configMapRef:
-                    name: {{ $k.datastore }}-{{ $k.database }}-{{ $.Release.Name}}-mysql-configmap
+                    name: {{ $k.datastore }}-{{ replace "_" "-" $k.database }}-{{ $.Release.Name}}-mysql-configmap
                 - secretRef:
-                    name: {{ $k.datastore }}-{{ $k.database }}-{{ $.Release.Name}}-mysql-database-secret
+                    name: {{ $k.datastore }}-{{ replace "_" "-" $k.database }}-{{ $.Release.Name}}-mysql-database-secret
                  {{- end }}
                  {{- end }}
                 {{- if and .Values.datastores .Values.datastores.postgres }}
                 {{- range $i, $k := .Values.datastores.postgres }}
                 - configMapRef:
-                    name: {{ $k.datastore }}-{{ $k.database }}-{{ $.Release.Name}}-postgres-configmap
+                    name: {{ $k.datastore }}-{{ replace "_" "-" $k.database }}-{{ $.Release.Name}}-postgres-configmap
                 - secretRef:
-                    name: {{ $k.datastore }}-{{ $k.database }}-{{ $.Release.Name}}-postgres-database-secret
+                    name: {{ $k.datastore }}-{{ replace "_" "-" $k.database }}-{{ $.Release.Name}}-postgres-database-secret
                 {{- end }}
                 {{- end }}
                  {{- if and .Values.datastores .Values.datastores.redis }}
