@@ -124,6 +124,7 @@ grafanaDashboard:
 
 datastores:
   mysql:
+  postgres: 
   redis:
   solr:
   surrealdb:
