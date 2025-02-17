@@ -1,4 +1,4 @@
-{{- if .Values.nginx.host }}
+{{- if and .Values.nginx .Values.nginx.host }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
