@@ -1,0 +1,9 @@
+dependencies:
+- name: postgres
+  repository: https://helm.zop.dev
+  version: v0.0.2
+- name: redis
+  repository: https://helm.zop.dev
+  version: v0.0.1
+digest: sha256:b0cb2afae548e6ee4dfee77a8f469c4757886615edbfd11ec86df9d599ff5e59
+generated: "2025-02-25T16:45:35.964032+05:30"
