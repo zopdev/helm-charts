@@ -27,9 +27,6 @@ extraSecretEnv:
 extraConfigs: {}
 
 configOverrides: 
-  # secret: |
-  #   # Generate your own secret key for encryption. Use `openssl rand -base64 42` to generate a good key
-  #   SECRET_KEY = ''
 
 configMountPath: "/app/pythonpath"
 extraConfigMountPath: "/app/configs"
@@ -489,4 +486,8 @@ postgres:
 redis:
   enabled: true
 
+host : 
 
+tlsHost : 
+
+tlsSecretName : 
