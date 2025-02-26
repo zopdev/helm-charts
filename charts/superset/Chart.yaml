@@ -1,0 +1,18 @@
+apiVersion: v1
+appVersion: "1.0"
+description: Helm chart for Deploying Apache Superset
+name: superset
+version: 0.0.1
+icon: "https://zop.dev/logo.png"
+maintainers:
+  - name: ZopDev
+    url: zop.dev
+dependencies:
+  - condition: postgres.enabled 
+    name: postgres
+    version: 0.0.2
+    repository: https://helm.zop.dev
+  - condition: redis.enabled 
+    name: redis
+    version: 0.0.1
+    repository: https://helm.zop.dev

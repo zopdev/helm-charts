@@ -1,0 +1,58 @@
+{{- if .Values.init.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ template "superset.fullname" . }}-init-db
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "superset.name" . }}
+    chart: {{ template "superset.chart" . }}
+    release: {{ .Release.Name }}
+  {{- if .Values.init.jobAnnotations }}
+  annotations: {{- toYaml .Values.init.jobAnnotations | nindent 4 }}
+  {{- end }}
+spec:
+  template:
+    metadata:
+      name: {{ template "superset.fullname" . }}-init-db
+    spec:
+      securityContext:
+        runAsUser: {{ .Values.runAsUser }}
+      {{- if .Values.init.initContainers }}
+      initContainers: {{-  tpl (toYaml .Values.init.initContainers) . | nindent 6 }}
+      {{- end }}
+      containers:
+      - name: {{ template "superset.name" . }}-init-db
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag}}"
+        envFrom:
+          - secretRef:
+              name: {{ template "superset.fullname" . }}-env
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        volumeMounts:
+          - name: superset-config
+            mountPath: {{ .Values.configMountPath | quote }}
+            readOnly: true
+          {{- if .Values.extraConfigs }}
+          - name: superset-extra-config
+            mountPath: {{ .Values.extraConfigMountPath | quote }}
+            readOnly: true
+          {{- end }}
+        command: {{  tpl (toJson .Values.init.command) . }}
+        resources: {{- toYaml .Values.init.resources | nindent 10 }}
+      {{- if .Values.init.priorityClassName }}
+      priorityClassName: {{ .Values.init.priorityClassName }}
+      {{- end }}
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml .Values.imagePullSecrets | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: superset-config
+          secret:
+            secretName: {{ template "superset.fullname" . }}-config
+        {{- if .Values.extraConfigs }}
+        - name: superset-extra-config
+          configMap:
+            name: {{ template "superset.fullname" . }}-extra-config
+        {{- end }}
+      restartPolicy: Never
+{{- end }}

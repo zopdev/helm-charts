@@ -1,0 +1,21 @@
+{{- if .Values.supersetCeleryFlower.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ template "superset.fullname" . }}-flower"
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "superset.name" . }}
+    chart: {{ template "superset.chart" . }}
+    release: {{ .Release.Name }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.supersetCeleryFlower.service.port }}
+      targetPort: flower
+      protocol: TCP
+      name: flower
+  selector:
+    app: {{ template "superset.name" . }}-flower
+    release: {{ .Release.Name }}
+{{- end }}
