@@ -8,7 +8,7 @@ maintainers:
   - name: ZopDev
     url: zop.dev
 dependencies:
-  - condition: postgresql.enabled 
+  - condition: postgres.enabled 
     name: postgres
     version: 0.0.2
     repository: https://helm.zop.dev

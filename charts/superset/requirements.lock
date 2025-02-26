@@ -5,5 +5,5 @@ dependencies:
 - name: redis
   repository: https://helm.zop.dev
   version: v0.0.1
-digest: sha256:b0cb2afae548e6ee4dfee77a8f469c4757886615edbfd11ec86df9d599ff5e59
-generated: "2025-02-25T16:45:35.964032+05:30"
+digest: sha256:c3e78b661b576da72da950cfa8f6666a0cfcd717c399a0f5c4453f2f85a3e461
+generated: "2025-02-26T11:04:20.772974+05:30"
