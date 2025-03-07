@@ -1,4 +1,32 @@
 {{- range $index, $service := .Values.services }}
+{{- $maxLen := 27 }}
+{{- $randomSuffix := randAlphaNum 4 | lower }}
+{{- $trimmedName := trunc $maxLen $service.name }}
+{{- $generatedUsername := printf "%s-%s_user" $trimmedName $randomSuffix }}
+{{- $generatedPassword := printf "%s%s%s" (randAlpha 4) (randNumeric 4) (randAlpha 4 | upper) }}
+
+{{/* Define Secret Name */}}
+{{- $secretName := printf "%s-%s-%s-postgres-database-secret" $.Release.Name (replace "_" "-" $service.database) $service.name }}
+
+{{/* Retrieve existing secret (if any) */}}
+{{- $existingSecret := lookup "v1" "Secret" $.Release.Namespace $secretName }}
+
+{{/* Use existing values if available, otherwise generate new ones */}}
+{{- $username := $generatedUsername }}
+{{- $password := $generatedPassword }}
+
+{{- if $existingSecret }}
+  {{- with $existingSecret.data }}
+    {{- if hasKey . "DB_USER" }}
+      {{- $username = index . "DB_USER" | b64dec }}
+    {{- end }}
+    {{- if hasKey . "DB_PASSWORD" }}
+      {{- $password = index . "DB_PASSWORD" | b64dec }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -19,21 +47,43 @@ data:
     DO
     $do$
     BEGIN
-    IF NOT EXISTS (
-    SELECT FROM pg_catalog.pg_roles  -- SELECT list can be empty for this
-    WHERE  rolname = '{{ $service.name }}_user') THEN
-  
-    CREATE USER "{{ $service.name }}_user" WITH ENCRYPTED PASSWORD '{{ $service.password }}';
-    GRANT CONNECT, CREATE ON DATABASE "{{ $service.database }}" TO "{{ $service.name }}_user";
-    GRANT CREATE, USAGE ON SCHEMA public TO "{{ $service.name }}_user";
-    ALTER DEFAULT PRIVILEGES FOR USER postgres IN SCHEMA public GRANT INSERT, REFERENCES, SELECT, UPDATE, DELETE, TRUNCATE ON TABLES TO "{{ $service.name }}_user";
-    ALTER DEFAULT PRIVILEGES FOR USER postgres IN SCHEMA public GRANT SELECT, UPDATE ON SEQUENCES TO "{{ $service.name }}_user";
+      IF NOT EXISTS (
+        SELECT FROM pg_catalog.pg_roles WHERE rolname = '{{ $username }}'
+      ) THEN
+        CREATE USER "{{ $username }}" WITH ENCRYPTED PASSWORD '{{ $password }}';
+        GRANT CONNECT, CREATE ON DATABASE "{{ $service.database }}" TO "{{ $username }}";
+        GRANT CREATE, USAGE ON SCHEMA public TO "{{ $username }}";
+        ALTER DEFAULT PRIVILEGES FOR USER postgres IN SCHEMA public
+          GRANT INSERT, REFERENCES, SELECT, UPDATE, DELETE, TRUNCATE ON TABLES TO "{{ $username }}";
+    ALTER DEFAULT PRIVILEGES FOR USER postgres IN SCHEMA public
+          GRANT SELECT, UPDATE ON SEQUENCES TO "{{ $username }}";
     ELSE
-    ALTER USER "{{ $service.name }}_user" PASSWORD '{{ $service.password }}';
+        ALTER USER "{{ $username }}" PASSWORD '{{ $password }}';
     END IF;
-
-  
     END
     $do$;
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $.Release.Name }}-{{ replace "_" "-" $service.database }}-{{ $service.name }}-postgres-configmap
+  namespace: {{ $.Release.Namespace }}
+data:
+  DB_DIALECT: "postgres"
+  DB_USER: "{{ $username }}"
+  DB_PORT: "5432"
+  DB_NAME: "{{ $service.database }}"
+  DB_HOST: "{{ $.Release.Name }}-postgres"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $secretName }}
+  namespace: {{ $.Release.Namespace }}
+type: Opaque
+data:
+  DB_USER: {{ $username | b64enc }}
+  DB_PASSWORD: {{ $password | b64enc }}
+  DATABASE_URL: {{ printf "postgres://%s:%s@%s-postgres:5432/%s" $username $password $.Release.Name $service.database | b64enc }}
 ---
 {{- end }}
