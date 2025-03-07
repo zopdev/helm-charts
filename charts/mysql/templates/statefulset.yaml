@@ -14,7 +14,7 @@ spec:
       app: {{ .Release.Name }}-mysql
   serviceName: "{{ .Release.Name }}-mysql"
   updateStrategy:
-    type: {{ .Values.updateStrategy.type }}
+    type: RollingUpdate
   template:
     metadata:
       labels:
@@ -23,7 +23,7 @@ spec:
     spec:
       containers:
         - name: mysql
-          image: {{ .Values.image }}
+          image: mysql:8.0
           args:
             - "--default-authentication-plugin=mysql_native_password"
           resources:

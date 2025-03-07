@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: minio
+  labels:
+    app: minio
+spec:
+  replicas: 1
+  serviceName: minio
+  updateStrategy:
+    type: {{ .Values.updateStrategy.type }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-minio
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-minio
+    spec:
+      containers:
+        - name: {{ .Release.Name }}-minio
+          image: {{ .Values.image }}
+          args:
+            - "server"
+            - "/data"
+            - "--console-address"
+            - ":9001"
+          ports:
+            - containerPort: 9000
+              name: http
+            - containerPort: 9001
+              name: console
+          env:
+            - name: MINIO_ACCESS_KEY
+              value: {{ .Values.accessKey | quote }}
+            - name: MINIO_SECRET_KEY
+              value: {{ .Values.secretKey | quote }}
+          volumeMounts:
+            - name: {{ .Release.Name }}-minio-data
+              mountPath: /data
+          resources:
+            requests:
+              cpu: {{ .Values.resources.requests.cpu }}
+              memory: {{ .Values.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.resources.limits.cpu }}
+              memory: {{ .Values.resources.limits.memory }}
+  volumeClaimTemplates:
+    - metadata:
+        name: {{ .Release.Name }}-minio-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: {{ .Values.diskSize }}
