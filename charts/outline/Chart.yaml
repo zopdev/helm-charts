@@ -7,7 +7,7 @@ icon: "https://zop.dev/app/logo.svg"
 type: application
 dependencies:
   - name: postgres
-    version: 0.0.1
+    version: 0.0.3
     repository:  https://helm.zop.dev
   - name: redis
     version: 0.0.1
