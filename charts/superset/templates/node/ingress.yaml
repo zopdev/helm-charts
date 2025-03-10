@@ -1,4 +1,4 @@
-{{- if .Values.host }}
+{{- if and .Values.service.nginx .Values.service.nginx.host }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -13,7 +13,7 @@ metadata:
     nginx.ingress.kubernetes.io/auth-type: ""
 spec:
   rules:
-    - host: {{ .Values.host }}
+    - host: {{ .Values.service.nginx.host }}
       http:
         paths:
           - path: /
@@ -25,6 +25,6 @@ spec:
                   number: {{ .Values.service.port }}
   tls:
     - hosts:
-        - '{{ .Values.tlsHost | default .Values.host }}'
-      secretName: {{ .Values.tlsSecretName | default "tls-secret-replica" }}
+        - '{{ .Values.service.nginx.tlshost | default .Values.service.nginx.host }}'
+      secretName: {{ .Values.service.nginx.tlsSecretname | default "tls-secret-replica" }}
 {{- end }}
