@@ -1,16 +1,18 @@
 postgres:
-  postgresRootPassword: 
-  services: 
+  services:
+    - name: "outline"
+      database: "outline"
+redis:
+  services:
+    - name: "outline"
+      database: "outline"
+
 
 service:
   name: outline
   image: outlinewiki/outline
 
   minReplicas: 1
-  minCPU: "250m"
-  minMemory: "1000Mi"
-  maxCPU: "500m"
-  maxMemory: "1500Mi"
 
   nginx:
     host : 
@@ -29,12 +31,15 @@ service:
     FORCE_HTTPS: false
     PGSSLMODE: disable
     PORT: 3000
-    URL: 
     FILE_STORAGE_LOCAL_ROOT_DIR : /data
 
   datastores:
     postgres:
+      - datastore: outline
+        database: outline
     redis:
+      - datastore: outline
+        database: outline
 
   heartbeatURL: /
   
