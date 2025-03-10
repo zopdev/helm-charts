@@ -1,7 +1,7 @@
 mysql:
-  mysqlRootPassword:
   services:
-
+    - name: wordpress
+      database: wordpress
 
 service:
   name: wordpress
@@ -10,20 +10,12 @@ service:
   minReplicas: 1
   maxReplicas: 1
 
-  minCPU: "500m"
-  minMemory: "500Mi"
-  maxCPU: "1000m"
-  maxMemory: "1000Mi"
-
   nginx:
-    host : 
     annotations:
       kubernetes.io/ingress.class: "nginx"
       nginx.ingress.kubernetes.io/auth-realm: ''
       nginx.ingress.kubernetes.io/auth-secret: ''
       nginx.ingress.kubernetes.io/auth-type: ''
-    tlsHost : 
-    tlsSecretName: 
 
   env:
     WORDPRESS_DB_HOST: "$(DB_HOST):$(DB_PORT)"
@@ -33,21 +25,8 @@ service:
 
   datastores:
     mysql:
+      - datastore: wordpress
+        database: wordpress
   
-  heartbeatURL: 
 
   httpPort: 80
-
-  readinessProbe:
-    enable: true
-    initialDelaySeconds: 40
-    periodSeconds: 5
-    timeoutSeconds: 3
-    failureThreshold: 3
-
-  livenessProbe:
-    enable: true
-    initialDelaySeconds: 40
-    periodSeconds: 10
-    timeoutSeconds: 5
-    failureThreshold: 3    
