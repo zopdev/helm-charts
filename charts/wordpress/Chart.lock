@@ -1,0 +1,9 @@
+dependencies:
+- name: mysql
+  repository: https://helm.zop.dev
+  version: v0.0.3
+- name: service
+  repository: https://helm.zop.dev
+  version: v0.0.17
+digest: sha256:6d0631affe044d16df531011a7c84c0f73d4f6f4be5bfac2503881e6e0381407
+generated: "2025-03-10T12:07:57.005141+05:30"
