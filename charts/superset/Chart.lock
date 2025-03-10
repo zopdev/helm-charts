@@ -6,4 +6,4 @@ dependencies:
   repository: https://helm.zop.dev
   version: v0.0.1
 digest: sha256:c3e78b661b576da72da950cfa8f6666a0cfcd717c399a0f5c4453f2f85a3e461
-generated: "2025-02-26T11:04:20.772974+05:30"
+generated: "2025-03-10T13:00:59.544213+05:30"
