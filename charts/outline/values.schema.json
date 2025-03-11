@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "postgres": {
+      "type": "object",
+      "properties": {
+        "services": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string", "enum": ["outline"] },
+              "database": { "type": "string", "enum": ["outline"] }
+            }
+          }
+        }
+      }
+    },
+    "redis": {
+      "type": "object",
+      "properties": {
+        "services": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string", "enum": ["outline"] },
+              "database": { "type": "string", "enum": ["outline"] }
+            }
+          }
+        }
+      }
+    },
+    "service": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "enum": ["outline"] },
+        "image": { "type": "string", "enum": ["outlinewiki/outline"] },
+        "minCPU": { "type": "string" ,"default": "250m"},
+        "minMemory": { "type": "string","default": "1000Mi" },
+        "maxCPU": { "type": "string","default": "500m" },
+        "maxMemory": { "type": "string","default": "1500Mi" },
+        "minReplicas": { "type": "integer", "enum": [1] },
+        "nginx": {
+          "type": "object",
+          "properties": {
+            "annotations": {
+              "type": "object",
+              "properties": {
+                "kubernetes.io/ingress.class": { "type": "string", "enum": ["nginx"] },
+                "nginx.ingress.kubernetes.io/auth-realm": { "type": "string", "enum": [""] },
+                "nginx.ingress.kubernetes.io/auth-secret": { "type": "string", "enum": [""] },
+                "nginx.ingress.kubernetes.io/auth-type": { "type": "string", "enum": [""] }
+              }
+            }
+          }
+        }
+      },
+      "required": ["minCPU", "minMemory", "maxCPU", "maxMemory", "minReplicas"]
+    }
+  }
+}
