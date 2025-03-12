@@ -5,18 +5,6 @@
     "configOverrides": {
       "type": "object"
     },
-    "service": {
-      "type": "object",
-      "properties": {
-        "nginx": {
-          "type": "object",
-          "properties": {
-            "host": { "type": "string", "enum": [""] },
-            "tlshost": { "type": "string", "enum": [""] }
-          }
-        }
-      }
-    },
     "resources": {
       "type": "object",
       "properties": {
