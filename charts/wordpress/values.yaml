@@ -6,7 +6,10 @@ mysql:
 service:
   name: wordpress
   image: wordpress:latest
-
+  minCPU: "250m"
+  minMemory: "1000Mi"
+  maxCPU: "500m"
+  maxMemory: "1500Mi"
   minReplicas: 1
   maxReplicas: 1
 

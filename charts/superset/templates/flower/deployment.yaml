@@ -9,7 +9,7 @@ metadata:
     chart: {{ template "superset.chart" . }}
     release: {{ .Release.Name }}
 spec:
-  replicas: {{ .Values.supersetCeleryFlower.replicaCount }}
+  replicas: 1
   selector:
     matchLabels:
     {{- include "supersetCeleryFlower.selectorLabels" . | nindent 6 }}
@@ -17,26 +17,32 @@ spec:
     metadata:
       annotations:
         checksum/config: {{ include "superset-config" . | sha256sum }}
-        checksum/secrets: {{ tpl (toJson .Values.extraSecretEnv) . | sha256sum }}
       labels:
         app: "{{ template "superset.name" . }}-flower"
         release: {{ .Release.Name }}
     spec:
       securityContext:
-        runAsUser: {{ .Values.runAsUser }}
-      {{- if .Values.supersetCeleryFlower.initContainers }}
-      initContainers: {{-  tpl (toYaml .Values.supersetCeleryFlower.initContainers) . | nindent 6 }}
-      {{- end }}
+        runAsUser: 0
+      initContainers:
+        - name: wait-for-postgres-redis
+          image: apache/superset:dockerize
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - secretRef:
+                name: '{{ template "superset.fullname" . }}-env'
+          command:
+            - /bin/sh
+            - -c
+            - dockerize -wait "tcp://$DB_HOST:$DB_PORT" -wait "tcp://$REDIS_HOST:$REDIS_PORT" -timeout 120s
       containers:
         - name: "{{ .Chart.Name }}-flower"
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
-          command: {{  tpl (toJson .Values.supersetCeleryFlower.command) . }}
-          env:
-            {{- range $key, $value := .Values.extraEnv }}
-            - name: {{ $key | quote}}
-              value: {{ $value | quote }}
-            {{- end }}
+          image: "apachesuperset.docker.scarf.sh/apache/superset:4.1.1"
+          imagePullPolicy: IfNotPresent
+          command: 
+            - "/bin/sh"
+            - "-c"
+            - pip install psycopg2-binary==2.9.6 
+            - "celery --app=superset.tasks.celery_app:app flower"
           envFrom:
             - secretRef:
                 name: {{ template "superset.fullname" . }}-env
@@ -46,29 +52,42 @@ spec:
               protocol: TCP
           volumeMounts:
             - name: superset-config
-              mountPath: {{ .Values.configMountPath | quote }}
+              mountPath: "/app/pythonpath"
               readOnly: true
-          {{- if .Values.supersetCeleryFlower.startupProbe }}
-          startupProbe: {{- .Values.supersetCeleryFlower.startupProbe | toYaml | nindent 12 }}
-          {{- end }}
-          {{- if .Values.supersetCeleryFlower.readinessProbe }}
-          readinessProbe: {{- .Values.supersetCeleryFlower.readinessProbe | toYaml | nindent 12 }}
-          {{- end }}
-          {{- if .Values.supersetCeleryFlower.livenessProbe }}
-          livenessProbe: {{- .Values.supersetCeleryFlower.livenessProbe | toYaml | nindent 12 }}
-          {{- end }}
+          startupProbe:
+            httpGet:
+              path: /api/workers
+              port: flower
+            initialDelaySeconds: 5
+            timeoutSeconds: 1
+            failureThreshold: 60
+            periodSeconds: 5
+            successThreshold: 1
+          readinessProbe:
+            httpGet:
+              path: /api/workers
+              port: flower
+            initialDelaySeconds: 5
+            timeoutSeconds: 1
+            failureThreshold: 3
+            periodSeconds: 5
+            successThreshold: 1
+          livenessProbe:
+            httpGet:
+              path: /api/workers
+              port: flower
+            initialDelaySeconds: 5
+            timeoutSeconds: 1
+            failureThreshold: 3
+            periodSeconds: 5
+            successThreshold: 1
           resources:
-            {{- if .Values.supersetCeleryFlower.resources }}
-              {{- toYaml .Values.supersetCeleryFlower.resources | nindent 12 }}
-            {{- else }}
-              {{- toYaml .Values.resources | nindent 12 }}
-            {{- end }}
-      {{- if .Values.supersetCeleryFlower.priorityClassName }}
-      priorityClassName: {{ .Values.supersetCeleryFlower.priorityClassName }}
-      {{- end }}
-      {{- if .Values.imagePullSecrets }}
-      imagePullSecrets: {{- toYaml .Values.imagePullSecrets | nindent 8 }}
-      {{- end }}
+            requests:
+              cpu: 250m
+              memory: 250Mi 
+            limits:
+              cpu: 500m
+              memory: 500Mi
       volumes:
         - name: superset-config
           secret:

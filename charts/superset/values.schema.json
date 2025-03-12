@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "configOverrides": {
+      "type": "object"
+    },
+    "resources": {
+      "type": "object",
+      "properties": {
+        "requests": {
+          "type": "object",
+          "properties": {
+            "cpu": { "type": "string", "enum": ["250m"] },
+            "memory": { "type": "string", "enum": ["250Mi"] }
+          }
+        },
+        "limits": {
+          "type": "object",
+          "properties": {
+            "cpu": { "type": "string", "enum": ["500m"] },
+            "memory": { "type": "string", "enum": ["500Mi"] }
+          }
+        }
+      }
+    },
+    "supersetNode": {
+      "type": "object",
+      "properties": {
+        "connections": {
+          "type": "object",
+          "properties": {
+            "redis_host": { "type": "string", "enum": ["{{ .Release.Name }}-redis-headless-service"] },
+            "redis_port": { "type": "string", "enum": ["6379"] },
+            "redis_user": { "type": "string", "enum": [""] },
+            "redis_cache_db": { "type": "string", "enum": ["1"] },
+            "redis_celery_db": { "type": "string", "enum": ["0"] },
+            "redis_ssl": {
+              "type": "object",
+              "properties": {
+                "enabled": { "type": "boolean", "enum": [false] },
+                "ssl_cert_reqs": { "type": "string", "enum": ["CERT_NONE"] }
+              }
+            },
+            "db_host": { "type": "string", "enum": ["{{ .Release.Name }}-postgres"] },
+            "db_port": { "type": "string", "enum": ["5432"] },
+            "db_user": { "type": "string", "enum": ["superset_user"] },
+            "db_pass": { "type": "string", "enum": ["superset"] },
+            "db_name": { "type": "string", "enum": ["superset"] }
+          }
+        }
+      }
+    },
+    "supersetCeleryBeat": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean", "enum": [false] }
+      }
+    },
+    "supersetCeleryFlower": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean", "enum": [false] }
+      }
+    },
+    "init": {
+      "type": "object",
+      "properties": {
+        "createAdmin": { "type": "boolean", "enum": [true] },
+        "adminUser": {
+          "type": "object",
+          "properties": {
+            "username": { "type": "string", "enum": ["admin"] },
+            "firstname": { "type": "string", "enum": ["Superset"] },
+            "lastname": { "type": "string", "enum": ["Admin"] },
+            "email": { "type": "string", "enum": ["admin@superset.com"] },
+            "password": { "type": "string", "enum": ["admin"] }
+          }
+        },
+        "initscript": { "type": "string", "enum": ["#!/bin/sh\nset -eu\necho \"Upgrading DB schema...\"\nsuperset db upgrade\necho \"Initializing roles...\"\nsuperset init\n{{ if .Values.init.createAdmin }}\necho \"Creating admin user...\"\nsuperset fab create-admin \\\n    --username {{ .Values.init.adminUser.username }} \\\n    --firstname {{ .Values.init.adminUser.firstname }} \\\n    --lastname {{ .Values.init.adminUser.lastname }} \\\n    --email {{ .Values.init.adminUser.email }} \\\n    --password {{ .Values.init.adminUser.password }} \\\n    || true\n{{- end }}\nif [ -f \"/app/configs/import_datasources.yaml\" ]; then\n  echo \"Importing database connections.... \"\n  superset import_datasources -p /app/configs/import_datasources.yaml\nfi"] }
+      }
+    },
+    "postgres": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean", "enum": [true] },
+        "postgresRootPassword": { "type": "string", "enum": ["superset"] },
+        "services": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string", "enum": ["superset"] },
+              "password": { "type": "string", "enum": ["superset"] },
+              "database": { "type": "string", "enum": ["superset"] }
+            }
+          }
+        }
+      }
+    },
+    "redis": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean", "enum": [true] }
+      }
+    }
+  }
+}

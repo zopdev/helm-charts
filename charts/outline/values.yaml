@@ -11,7 +11,10 @@ redis:
 service:
   name: outline
   image: outlinewiki/outline
-
+  minCPU: "250m"
+  minMemory: "1000Mi"
+  maxCPU: "500m"
+  maxMemory: "1500Mi"
   minReplicas: 1
 
   nginx:

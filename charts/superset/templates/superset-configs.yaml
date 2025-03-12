@@ -14,5 +14,8 @@ stringData:
   superset_init.sh: |
     {{- tpl .Values.init.initscript . | nindent 4 }}
   superset_bootstrap.sh: |
-    {{- tpl .Values.bootstrapScript . | nindent 4 }}
-
+    #!/bin/bash
+    pip install psycopg2-binary==2.9.6 \
+      sqlalchemy-bigquery==1.6.1 \
+      elasticsearch-dbapi==0.2.5 &&\
+    if [ ! -f ~/bootstrap ]; then echo "Running Superset with uid 0" > ~/bootstrap; fi
