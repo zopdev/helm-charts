@@ -40,26 +40,10 @@
         "minCPU": { "type": "string" ,"default": "250m", "mutable": true},
         "minMemory": { "type": "string","default": "1000Mi", "mutable": true },
         "maxCPU": { "type": "string","default": "500m", "mutable": true },
-        "maxMemory": { "type": "string","default": "1500Mi",
-          "mutable": true
+        "maxMemory": { "type": "string","default": "1500Mi", "mutable": true
         },
-        "minReplicas": { "type": "integer", "enum": [1] },
-        "nginx": {
-          "type": "object",
-          "properties": {
-            "annotations": {
-              "type": "object",
-              "properties": {
-                "kubernetes.io/ingress.class": { "type": "string", "enum": ["nginx"] },
-                "nginx.ingress.kubernetes.io/auth-realm": { "type": "string", "enum": [""] },
-                "nginx.ingress.kubernetes.io/auth-secret": { "type": "string", "enum": [""] },
-                "nginx.ingress.kubernetes.io/auth-type": { "type": "string", "enum": [""] }
-              }
-            }
-          }
-        }
-      },
-      "required": ["minCPU", "minMemory", "maxCPU", "maxMemory"]
+        "minReplicas": { "type": "integer", "enum": [1] }
+      }
     }
   }
 }
