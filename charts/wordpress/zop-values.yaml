@@ -1,0 +1,5 @@
+service:
+  minCPU: "250m"
+  minMemory: "1000Mi"
+  maxCPU: "500m"
+  maxMemory: "1500Mi"
