@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "mysql": {
+      "type": "object",
+      "properties": {
+        "services": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string", "enum": ["wordpress"] },
+              "database": { "type": "string", "enum": ["wordpress"] }
+            },
+            "required": ["name", "database"]
+          }
+        }
+      }
+    },
+    "service": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "enum": ["wordpress"] },
+        "image": { "type": "string", "enum": ["wordpress:latest"] },
+        "minCPU": { "type": "string", "default": "250m", "mutable": true },
+        "minMemory": { "type": "string", "default": "1000Mi", "mutable": true },
+        "maxCPU": { "type": "string", "default": "500m", "mutable": true },
+        "maxMemory": { "type": "string", "default": "1500Mi", "mutable": true },
+        "minReplicas": { "type": "integer", "enum": [1]  },
+        "maxReplicas": { "type": "integer", "enum": [1] },
+        "env": {
+          "type": "object",
+          "properties": {
+            "WORDPRESS_DB_HOST": { "type": "string",
+              "enum": ["$(DB_HOST):$(DB_PORT)"]
+            },
+            "WORDPRESS_DB_USER": { "type": "string",
+              "enum": ["$(DB_USER)"]
+            },
+            "WORDPRESS_DB_PASSWORD": { "type": "string",
+              "enum": ["$(DB_PASSWORD)"]
+            },
+            "WORDPRESS_DB_NAME": { "type": "string",
+              "enum": ["$(DB_NAME)"]
+            }
+          },
+          "required": ["WORDPRESS_DB_HOST", "WORDPRESS_DB_USER", "WORDPRESS_DB_PASSWORD", "WORDPRESS_DB_NAME"]
+        },
+        "datastores": {
+          "type": "object",
+          "properties": {
+            "mysql": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "datastore": { "type": "string", "enum": ["wordpress"] },
+                  "database": { "type": "string", "enum": ["wordpress"] }
+                },
+                "required": ["datastore", "database"]
+              }
+            }
+          }
+        },
+        "httpPort": { "type": "integer", "enum": [80] }
+      }
+    }
+  }
+}
