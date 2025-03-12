@@ -8,12 +8,7 @@ metadata:
     chart: {{ template "superset.chart" . }}
     release: {{ .Release.Name }}
 spec:
-  {{- if and (not .Values.supersetNode.autoscaling.enabled) .Values.supersetNode.replicas.enabled }}
-  replicas: {{ .Values.supersetNode.replicas.replicaCount }}
-  {{- end }}
-  {{- if .Values.supersetNode.strategy }}
-  strategy: {{- toYaml .Values.supersetNode.strategy | nindent 4 }}
-  {{- end }}
+  replicas: 1
   selector:
     matchLabels:
     {{- include "supersetNode.selectorLabels" . | nindent 6 }}
@@ -22,31 +17,36 @@ spec:
       annotations:
         checksum/superset_config.py: {{ include "superset-config" . | sha256sum }}
         checksum/superset_init.sh: {{ tpl .Values.init.initscript . | sha256sum }}
-        checksum/superset_bootstrap.sh: {{ tpl .Values.bootstrapScript . | sha256sum }}
         checksum/connections: {{ .Values.supersetNode.connections | toYaml | sha256sum }}
-        checksum/extraConfigs: {{ .Values.extraConfigs | toYaml | sha256sum }}
-        checksum/extraSecretEnv: {{ .Values.extraSecretEnv | toYaml | sha256sum }}
         checksum/configOverrides: {{ .Values.configOverrides | toYaml | sha256sum }}
-        {{- if .Values.supersetNode.forceReload }}
-        force-reload: {{ randAlphaNum 5 | quote }}
-        {{- end }}
       labels:
         app: {{ template "superset.name" . }}
         release: {{ .Release.Name }}
     spec:
       securityContext:
-        runAsUser: {{ .Values.runAsUser }}
-      {{- if .Values.supersetNode.initContainers }}
-      initContainers: {{- tpl (toYaml .Values.supersetNode.initContainers) . | nindent 6 }}
-      {{- end }}
+        runAsUser: 0
+      initContainers:
+        - name: wait-for-postgres
+          image: apache/superset:dockerize
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - secretRef:
+                name: '{{ template "superset.fullname" . }}-env'
+          command:
+            - /bin/sh
+            - -c
+            - dockerize -wait "tcp://$DB_HOST:$DB_PORT" -timeout 120s
       containers:
         - name: {{ .Chart.Name }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
-          command: {{  tpl (toJson .Values.supersetNode.command) . }}
+          image: "apachesuperset.docker.scarf.sh/apache/superset:4.1.1"
+          imagePullPolicy: IfNotPresent
+          command:
+            - "/bin/sh"
+            - "-c"
+            - ". /app/pythonpath/superset_bootstrap.sh; /usr/bin/run-server.sh"
           env:
             - name: "SUPERSET_PORT"
-              value: {{ .Values.service.port | quote}}
+              value: "8088"
             {{- range $key, $value := .Values.extraEnv }}
             - name: {{ $key | quote}}
               value: {{ $value | quote }}
@@ -56,44 +56,48 @@ spec:
                 name: {{ template "superset.fullname" . }}-env
           volumeMounts:
             - name: superset-config
-              mountPath: {{ .Values.configMountPath | quote }}
+              mountPath: "/app/pythonpath"
               readOnly: true
-            {{- if .Values.extraConfigs }}
-            - name: superset-extra-config
-              mountPath: {{ .Values.extraConfigMountPath | quote }}
-              readOnly: true
-            {{- end }}
           ports:
             - name: http
-              containerPort: {{ .Values.service.port }}
+              containerPort: 8088
               protocol: TCP
-          {{- if .Values.supersetNode.startupProbe }}
-          startupProbe: {{- .Values.supersetNode.startupProbe | toYaml | nindent 12 }}
-          {{- end }}
-          {{- if .Values.supersetNode.readinessProbe }}
-          readinessProbe: {{- .Values.supersetNode.readinessProbe | toYaml | nindent 12 }}
-          {{- end }}
-          {{- if .Values.supersetNode.livenessProbe }}
-          livenessProbe: {{- .Values.supersetNode.livenessProbe | toYaml | nindent 12 }}
-          {{- end }}
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 15
+            timeoutSeconds: 1
+            failureThreshold: 60
+            periodSeconds: 5
+            successThreshold: 1
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 15
+            timeoutSeconds: 1
+            failureThreshold: 3
+            periodSeconds: 15
+            successThreshold: 1
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 15
+            timeoutSeconds: 1
+            failureThreshold: 3
+            periodSeconds: 15
+            successThreshold: 1
           resources:
-            {{- if .Values.supersetNode.resources }}
-              {{- toYaml .Values.supersetNode.resources | nindent 12 }}
-            {{- else }}
-              {{- toYaml .Values.resources | nindent 12 }}
-            {{- end }}
-      {{- if .Values.priorityClassName }}
-      priorityClassName: {{ .Values.priorityClassName }}
-      {{- end }}
-      {{- if .Values.imagePullSecrets }}
-      imagePullSecrets: {{- toYaml .Values.imagePullSecrets | nindent 8 }}
-      {{- end }}
+            requests:
+              cpu: 250m
+              memory: 250Mi
+            limits:
+              cpu: 500m
+              memory: 500Mi
       volumes:
         - name: superset-config
           secret:
             secretName: {{ template "superset.fullname" . }}-config
-        {{- if .Values.extraConfigs }}
-        - name: superset-extra-config
-          configMap:
-            name: {{ template "superset.fullname" . }}-extra-config
-        {{- end }}

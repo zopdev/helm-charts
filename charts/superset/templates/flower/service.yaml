@@ -11,7 +11,7 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - port: {{ .Values.supersetCeleryFlower.service.port }}
+    - port: 5555
       targetPort: flower
       protocol: TCP
       name: flower

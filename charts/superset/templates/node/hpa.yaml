@@ -1,4 +1,3 @@
-{{- if .Values.supersetNode.autoscaling.enabled }}
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -12,23 +11,18 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: {{ include "superset.fullname" . }}
-  minReplicas: {{ .Values.supersetNode.autoscaling.minReplicas }}
-  maxReplicas: {{ .Values.supersetNode.autoscaling.maxReplicas }}
+  minReplicas: 1
+  maxReplicas: 15
   metrics:
-    {{- if .Values.supersetNode.autoscaling.targetCPUUtilizationPercentage }}
     - type: Resource
       resource:
         name: cpu
         target:
           type: Utilization
-          averageUtilization: {{ .Values.supersetNode.autoscaling.targetCPUUtilizationPercentage }}
-    {{- end }}
-    {{- if .Values.supersetNode.autoscaling.targetMemoryUtilizationPercentage }}
+          averageUtilization: 80
     - type: Resource
       resource:
         name: memory
         target:
           type: Utilization
-          averageUtilization: {{ .Values.supersetNode.autoscaling.targetMemoryUtilizationPercentage }}
-    {{- end }}
-{{- end }}
+          averageUtilization: 80
