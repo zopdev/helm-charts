@@ -22,7 +22,7 @@ spec:
               service:
                 name: {{ template "superset.fullname" . }}
                 port:
-                  number: {{ .Values.service.port }}
+                  number: 8088
   tls:
     - hosts:
         - '{{ .Values.service.nginx.tlshost | default .Values.service.nginx.host }}'
