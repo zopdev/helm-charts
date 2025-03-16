@@ -1,4 +1,4 @@
-{{- if and .Values.nginx .Values.nginx.host }}
+{{- if and .Values.service.nginx .Values.service.nginx.host }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -6,9 +6,14 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "jupyterhub.labels" . | nindent 4 }}
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/auth-realm: ""
+    nginx.ingress.kubernetes.io/auth-secret: ""
+    nginx.ingress.kubernetes.io/auth-type: ""
 spec:
   rules:
-    - host: {{ .Values.nginx.host }}
+    - host: {{ .Values.service.nginx.host }}
       http:
         paths:
           - path: /
@@ -17,9 +22,9 @@ spec:
               service:
                 name: {{ include "jupyterhub.proxy-public.fullname" $ }}
                 port:
-                  name : http
+                  number: 80
   tls:
     - hosts:
-        - '{{ .Values.nginx.tlsHost | default .Values.nginx.host }}'
-      secretName: {{ .Values.nginx.tlsSecretName | default "tls-secret-replica" }}
+        - '{{ .Values.service.nginx.tlsHost | default .Values.service.nginx.host }}'
+      secretName: {{ .Values.service.nginx.tlsSecretName | default "tls-secret-replica" }}
 {{- end }}

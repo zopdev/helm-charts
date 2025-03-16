@@ -13,6 +13,12 @@ spec:
     - Ingress
     - Egress
   ingress:
+    {{- with .Values.singleuser.networkPolicy.allowedIngressPorts }}
+    - ports:
+      {{- range $port := . }}
+      - port: {{ $port }}
+      {{- end }}
+    {{- end }}
     - ports:
         - port: notebook-port
       from:
@@ -20,6 +26,9 @@ spec:
         - podSelector:
             matchLabels:
               hub.jupyter.org/network-access-singleuser: "true"
+    {{- with .Values.singleuser.networkPolicy.ingress }}
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
   egress:
     # singleuser-server --> hub
     - to:
@@ -44,3 +53,6 @@ spec:
       ports:
         - port: 8080
         - port: 8443
+    {{- with (include "jupyterhub.networkPolicy.renderEgressRules" (list . .Values.singleuser.networkPolicy)) }}
+    {{- . | nindent 4 }}
+    {{- end }}

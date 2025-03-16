@@ -68,7 +68,34 @@
             "ip": { "type": "string", "enum": ["169.254.169.254"] }
           }
         },
+        "networkPolicy": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean", "enum": [true] },
+            "egressAllowRules": {
+              "type": "object",
+              "properties": {
+                "cloudMetadataServer": { "type": "boolean", "enum": [false] },
+                "dnsPortsCloudMetadataServer": { "type": "boolean", "enum": [true] },
+                "dnsPortsKubeSystemNamespace": { "type": "boolean", "enum": [true] },
+                "dnsPortsPrivateIPs": { "type": "boolean", "enum": [true] },
+                "nonPrivateIPs": { "type": "boolean", "enum": [true] },
+                "privateIPs": { "type": "boolean", "enum": [false] }
+              }
+            },
+            "interNamespaceAccessLabels": { "type": "string", "enum": ["ignore"] }
+          }
+        },
+        "events": { "type": "boolean", "enum": [true] },
+        "extraLabels": {
+          "type": "object",
+          "properties": {
+            "hub.jupyter.org/network-access-hub": { "type": "string", "enum": ["true"] }
+          }
+        },
         "allowPrivilegeEscalation": { "type": "boolean", "enum": [false] },
+        "uid": { "type": "integer", "enum": [1000] },
+        "fsGid": { "type": "integer", "enum": [100] },
         "storage": {
           "type": "object",
           "properties": {
@@ -96,7 +123,8 @@
             "name": { "type": "string", "enum": ["quay.io/jupyterhub/k8s-singleuser-sample"] },
             "tag": { "type": "string", "enum": ["4.1.1-0.dev.git.6957.h0e735928"] }
           }
-        }
+        },
+        "cmd": { "type": "string", "enum": ["jupyterhub-singleuser"] }
       }
     },
     "scheduling": {

@@ -11,7 +11,7 @@
   {{- if $netpol.egressAllowRules.dnsPortsCloudMetadataServer }}
     # Allow outbound connections to DNS ports on the cloud metadata server
     - ipBlock:
-        cidr: 169.254.169.254/32
+        cidr: {{ $root.Values.singleuser.cloudMetadata.ip }}/32
   {{- end }}
   {{- if $netpol.egressAllowRules.dnsPortsKubeSystemNamespace }}
     # Allow outbound connections to DNS ports on pods in the kube-system
@@ -44,7 +44,7 @@
           - 172.16.0.0/12
           - 192.168.0.0/16
           # - don't allow outbound connections to the cloud metadata server
-          - 169.254.169.254/32
+          - {{ $root.Values.singleuser.cloudMetadata.ip }}/32
 {{- end }}
 
 {{- if $netpol.egressAllowRules.privateIPs }}
@@ -62,7 +62,7 @@
 # Allow outbound connections to the cloud metadata server
 - to:
     - ipBlock:
-        cidr: 169.254.169.254/32
+        cidr: {{ $root.Values.singleuser.cloudMetadata.ip }}/32
 {{- end }}
 
 {{- with $netpol.egress }}
