@@ -1,0 +1,65 @@
+{{- /*
+This job has a part to play in a helm upgrade process. It simply waits for the
+hook-image-puller daemonset which is started slightly before this job to get
+its' pods running. If all those pods are running they must have pulled all the
+required images on all nodes as they are used as init containers with a dummy
+command.
+*/}}
+{{- if (include "jupyterhub.imagePuller.daemonset.hook.install" .) -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "jupyterhub.hook-image-awaiter.fullname" . }}
+  labels:
+    {{- include "jupyterhub.labels" . | nindent 4 }}
+    hub.jupyter.org/deletable: "true"
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+    "helm.sh/hook-weight": "10"
+spec:
+  template:
+    # The hook-image-awaiter Job and hook-image-puller DaemonSet was
+    # conditionally created based on this state:
+    #
+    {{- include "jupyterhub.imagePuller.daemonset.hook.install" . | nindent 4 }}
+    #
+    metadata:
+      labels:
+        {{- /* Changes here will cause the Job to restart the pods. */}}
+        {{- include "jupyterhub.matchLabelsLegacyAndModern" . | nindent 8 }}
+    spec:
+      restartPolicy: Never
+      {{- with include "jupyterhub.hook-image-awaiter-serviceaccount.fullname" . }}
+      serviceAccountName: {{ . }}
+      {{- end }}
+      tolerations:
+        - key: hub.jupyter.org/dedicated
+          operator: Equal
+          value: core
+          effect: NoSchedule
+        - key: hub.jupyter.org_dedicated
+          operator: Equal
+          value: core
+          effect: NoSchedule
+      containers:
+        - image: quay.io/jupyterhub/k8s-image-awaiter:4.1.1-0.dev.git.6943.hedd63d38
+          name: {{ include "jupyterhub.hook-image-awaiter.fullname" . }}
+          command:
+            - /image-awaiter
+            - -ca-path=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+            - -auth-token-path=/var/run/secrets/kubernetes.io/serviceaccount/token
+            - -api-server-address=https://kubernetes.default.svc:$(KUBERNETES_SERVICE_PORT)
+            - -namespace={{ .Release.Namespace }}
+            - -daemonset={{ include "jupyterhub.hook-image-puller.fullname" . }}
+            - -pod-scheduling-wait-duration=10
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534 # nobody user
+            runAsGroup: 65534 # nobody group
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: "RuntimeDefault"
+{{- end }}

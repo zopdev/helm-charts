@@ -1,0 +1,52 @@
+{{- if .Values.scheduling.userScheduler.enabled -}}
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{ include "jupyterhub.user-scheduler-deploy.fullname" . }}
+  labels:
+    {{- include "jupyterhub.labels" . | nindent 4 }}
+data:
+  {{- /*
+    This is configuration of a k8s official kube-scheduler binary running in the
+    user-scheduler.
+
+    ref: https://kubernetes.io/docs/reference/scheduling/config/
+    ref: https://kubernetes.io/docs/reference/config-api/kube-scheduler-config.v1/
+  */}}
+  config.yaml: |
+    apiVersion: kubescheduler.config.k8s.io/v1
+    kind: KubeSchedulerConfiguration
+    leaderElection:
+      resourceLock: leases
+      resourceName: {{ include "jupyterhub.user-scheduler-lock.fullname" . }}
+      resourceNamespace: "{{ .Release.Namespace }}"
+    profiles:
+      - schedulerName: {{ include "jupyterhub.user-scheduler.fullname" . }}
+        plugins:
+          score:
+            disabled:
+              - name: NodeResourcesBalancedAllocation
+              - name: NodeAffinity
+              - name: InterPodAffinity
+              - name: NodeResourcesFit
+              - name: ImageLocality
+            enabled:
+              - name: NodeAffinity
+                weight: 14631
+              - name: InterPodAffinity
+                weight: 1331
+              - name: NodeResourcesFit
+                weight: 121
+              - name: ImageLocality
+                weight: 11
+        pluginConfig:
+          - name: NodeResourcesFit
+            args:
+              scoringStrategy:
+                type: MostAllocated
+                resources:
+                  - name: cpu
+                    weight: 1
+                  - name: memory
+                    weight: 1
+{{- end }}
