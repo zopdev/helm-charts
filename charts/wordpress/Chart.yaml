@@ -15,3 +15,5 @@ maintainers:
   - name: ZopDev
     url: zop.dev
 type: application
+annotations:
+  type: application
