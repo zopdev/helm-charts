@@ -18,3 +18,5 @@ dependencies:
 maintainers:
   - name: ZopDev
     url: zop.dev
+annotations:
+  type: application

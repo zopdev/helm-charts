@@ -8,3 +8,5 @@ icon: "https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/202
 maintainers:
   - name: ZopDev
     url: zop.dev
+annotations:
+  type: application
