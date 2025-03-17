@@ -1,0 +1,60 @@
+{{- define "jupyterhub.dynamic.yaml" -}}
+http:
+  middlewares:
+    hsts:
+      headers:
+        stsIncludeSubdomains: flase
+        stsPreload: false
+        stsSeconds: 15724800
+    redirect:
+      redirectScheme:
+        permanent: true
+        scheme: https
+    scheme:
+      headers:
+        customRequestHeaders:
+          X-Scheme: https
+  routers:
+    default:
+      entrypoints:
+        - "https"
+      middlewares:
+        - "hsts"
+        - "scheme"
+      rule: PathPrefix(`/`)
+      service: default
+      tls:
+        certResolver: default
+        domains:
+          {{- range $host := .Values.proxy.https.hosts }}
+          - main: {{ $host }}
+          {{- end }}
+        options: default
+
+    insecure:
+      entrypoints:
+        - "http"
+      middlewares:
+        - "redirect"
+      rule: PathPrefix(`/`)
+      service: default
+
+  services:
+    default:
+      loadBalancer:
+        servers:
+          - url: 'http://proxy-http:8000/'
+
+tls:
+  options:
+    default:
+      cipherSuites:
+        - TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+        - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+        - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+        - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+        - TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
+        - TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305
+      minVersion: VersionTLS12
+      sniStrict: true
+{{- end }}

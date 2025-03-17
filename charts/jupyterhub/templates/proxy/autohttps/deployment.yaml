@@ -1,0 +1,106 @@
+{{- $HTTPS := (and .Values.proxy.https.hosts .Values.proxy.https.enabled) }}
+{{- $autoHTTPS := (and $HTTPS (eq .Values.proxy.https.type "letsencrypt")) }}
+{{- if $autoHTTPS -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "jupyterhub.autohttps.fullname" . }}
+  labels:
+    {{- include "jupyterhub.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "jupyterhub.matchLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "jupyterhub.matchLabelsLegacyAndModern" . | nindent 8 }}
+        hub.jupyter.org/network-access-proxy-http: "true"
+      annotations:
+        checksum/static-config: {{ include "jupyterhub.traefik.yaml" . | fromYaml | toYaml | sha256sum }}
+    spec:
+      {{- with include "jupyterhub.autohttps-serviceaccount.fullname" . }}
+      serviceAccountName: {{ . }}
+      {{- end }}
+      {{- include "jupyterhub.coreAffinity" . | nindent 6 }}
+      volumes:
+        - name: certificates
+          emptyDir: {}
+        - name: traefik-config
+          configMap:
+            name: {{ include "jupyterhub.autohttps.fullname" . }}
+      initContainers:
+        - name: load-acme
+          image: "quay.io/jupyterhub/k8s-secret-sync:4.1.1-0.dev.git.6949.h78d62c2f"
+          args:
+            - load
+            - {{ include "jupyterhub.proxy-public-tls.fullname" . }}
+            - acme.json
+            - /etc/acme/acme.json
+          env:
+            # We need this to get logs immediately
+            - name: PYTHONUNBUFFERED
+              value: "True"
+          volumeMounts:
+            - name: certificates
+              mountPath: /etc/acme
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534 # nobody user
+            runAsGroup: 65534 # nobody group
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: "RuntimeDefault"
+      containers:
+        - name: traefik
+          image: "traefik:v3.3.4"
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: https
+              containerPort: 8443
+          volumeMounts:
+            - name: traefik-config
+              mountPath: /etc/traefik
+            - name: certificates
+              mountPath: /etc/acme
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534 # nobody user
+            runAsGroup: 65534 # nobody group
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: "RuntimeDefault"
+        - name: secret-sync
+          image: "quay.io/jupyterhub/k8s-secret-sync:4.1.1-0.dev.git.6949.h78d62c2f"
+          args:
+            - watch-save
+            - --label=app.kubernetes.io/name={{ include "jupyterhub.appLabel" . }}
+            - --label=app.kubernetes.io/instance={{ .Release.Name }}
+            - --label=helm.sh/chart={{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+            - --label=app.kubernetes.io/managed-by=secret-sync
+            - {{ include "jupyterhub.proxy-public-tls.fullname" . }}
+            - acme.json
+            - /etc/acme/acme.json
+          env:
+          # We need this to get logs immediately
+          - name: PYTHONUNBUFFERED
+            value: "True"
+          volumeMounts:
+            - name: certificates
+              mountPath: /etc/acme
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534 # nobody user
+            runAsGroup: 65534 # nobody group
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: "RuntimeDefault"
+{{- end }}

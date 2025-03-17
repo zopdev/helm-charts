@@ -1,0 +1,134 @@
+{{- $manualHTTPS := and .Values.proxy.https.enabled (eq .Values.proxy.https.type "manual") -}}
+{{- $manualHTTPSwithsecret := and .Values.proxy.https.enabled (eq .Values.proxy.https.type "secret") -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "jupyterhub.proxy.fullname" . }}
+  labels:
+    {{- include "jupyterhub.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "jupyterhub.matchLabels" . | nindent 6 }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        {{- include "jupyterhub.matchLabelsLegacyAndModern" . | nindent 8 }}
+        hub.jupyter.org/network-access-hub: "true"
+        hub.jupyter.org/network-access-singleuser: "true"
+      annotations:
+        # We want to restart proxy only if the auth token changes
+        # Other changes to the hub config should not restart.
+        # We truncate to 4 chars to avoid leaking auth token info,
+        # since someone could brute force the hash to obtain the token
+        #
+        # Note that if auth_token has to be generated at random, it will be
+        # generated at random here separately from being generated at random in
+        # the k8s Secret template. This will cause this annotation to change to
+        # match the k8s Secret during the first upgrade following an auth_token
+        # was generated.
+    spec:
+      terminationGracePeriodSeconds: 60
+      {{- include "jupyterhub.coreAffinity" . | nindent 6 }}
+      {{- if $manualHTTPS }}
+      volumes:
+        - name: tls-secret
+          secret:
+            secretName: {{ include "jupyterhub.proxy-public-manual-tls.fullname" . }}
+      {{- else if $manualHTTPSwithsecret }}
+      volumes:
+        - name: tls-secret
+          secret:
+            secretName: {{ .Values.proxy.https.secret.name }}
+      {{- end }}
+      containers:
+        - name: chp
+          image: quay.io/jupyterhub/configurable-http-proxy:4.6.3
+          {{- $hubNameAsEnv := include "jupyterhub.hub.fullname" . | upper | replace "-" "_" }}
+          {{- $hubHost := printf "http://%s:$(%s_SERVICE_PORT)" (include "jupyterhub.hub.fullname" .) $hubNameAsEnv }}
+          command:
+            - configurable-http-proxy
+            - "--ip="
+            - "--api-ip="
+            - --api-port=8001
+            - --default-target= $hubHost
+            - --error-target= printf "%s/hub/error" $hubHost)
+            {{- if $manualHTTPS }}
+            - --port=8443
+            - --redirect-port=8000
+            - --redirect-to=443
+            - --ssl-key=/etc/chp/tls/tls.key
+            - --ssl-cert=/etc/chp/tls/tls.crt
+            {{- else if $manualHTTPSwithsecret }}
+            - --port=8443
+            - --redirect-port=8000
+            - --redirect-to=443
+            - --ssl-key=/etc/chp/tls/{{ .Values.proxy.https.secret.key }}
+            - --ssl-cert=/etc/chp/tls/{{ .Values.proxy.https.secret.crt }}
+            {{- else }}
+            - --port=8000
+            {{- end }}
+          {{- if or $manualHTTPS $manualHTTPSwithsecret }}
+          volumeMounts:
+            - name: tls-secret
+              mountPath: /etc/chp/tls
+              readOnly: true
+          {{- end }}
+          env:
+            - name: CONFIGPROXY_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  # NOTE: References the chart managed k8s Secret even if
+                  #       hub.existingSecret is specified to avoid using the
+                  #       lookup function on the user managed k8s Secret.
+                  name: jupyterhub-secrets
+                  key: hub.config.ConfigurableHTTPProxy.auth_token
+          ports:
+            {{- if or $manualHTTPS $manualHTTPSwithsecret }}
+            - name: https
+              containerPort: 8443
+            {{- end }}
+            - name: http
+              containerPort: 8000
+            - name: api
+              containerPort: 8001
+          livenessProbe:
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 30
+            failureThreshold: 3
+            httpGet:
+              path: /_chp_healthz
+              {{- if or $manualHTTPS $manualHTTPSwithsecret }}
+              port: https
+              scheme: HTTPS
+              {{- else }}
+              port: http
+              scheme: HTTP
+              {{- end }}
+          readinessProbe:
+            initialDelaySeconds: 0
+            periodSeconds: 2
+            timeoutSeconds: 1000
+            failureThreshold: 1
+            httpGet:
+              path: /_chp_healthz
+              {{- if or $manualHTTPS $manualHTTPSwithsecret }}
+              port: https
+              scheme: HTTPS
+              {{- else }}
+              port: http
+              scheme: HTTP
+              {{- end }}
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534 # nobody user
+            runAsGroup: 65534 # nobody group
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: "RuntimeDefault"

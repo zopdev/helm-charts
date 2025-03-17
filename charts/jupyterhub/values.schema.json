@@ -1,0 +1,175 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "hub": {
+      "type": "object",
+      "properties": {
+        "config": {
+          "type": "object",
+          "properties": {
+            "JupyterHub": {
+              "type": "object",
+              "properties": {
+                "admin_access": { "type": "boolean", "enum": [true] },
+                "authenticator_class": { "type": "string", "enum": ["dummy"] }
+              }
+            }
+          }
+        },
+        "baseUrl": { "type": "string", "enum": ["/"] }
+      }
+    },
+    "proxy": {
+      "type": "object",
+      "properties": {
+        "https": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean", "enum": [false] },
+            "type": { "type": "string", "enum": ["letsencrypt"] },
+            "letsencrypt": {
+              "type": "object",
+              "properties": {
+                "acmeServer": { "type": "string", "enum": ["https://acme-v02.api.letsencrypt.org/directory"] }
+              }
+            },
+            "secret": {
+              "type": "object",
+              "properties": {
+                "key": { "type": "string", "enum": ["tls.key"] },
+                "crt": { "type": "string", "enum": ["tls.crt"] }
+              }
+            },
+            "hosts": { "type": "array", "enum": [[]] }
+          }
+        }
+      }
+    },
+    "singleuser": {
+      "type": "object",
+      "properties": {
+        "networkTools": {
+          "type": "object",
+          "properties": {
+            "image": {
+              "type": "object",
+              "properties": {
+                "name": { "type": "string", "enum": ["quay.io/jupyterhub/k8s-network-tools"] },
+                "tag": { "type": "string", "enum": ["4.1.1-0.dev.git.6949.h138f95a8"] }
+              }
+            }
+          }
+        },
+        "cloudMetadata": {
+          "type": "object",
+          "properties": {
+            "blockWithIptables": { "type": "boolean", "enum": [true] },
+            "ip": { "type": "string", "enum": ["169.254.169.254"] }
+          }
+        },
+        "networkPolicy": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean", "enum": [true] },
+            "egressAllowRules": {
+              "type": "object",
+              "properties": {
+                "cloudMetadataServer": { "type": "boolean", "enum": [false] },
+                "dnsPortsCloudMetadataServer": { "type": "boolean", "enum": [true] },
+                "dnsPortsKubeSystemNamespace": { "type": "boolean", "enum": [true] },
+                "dnsPortsPrivateIPs": { "type": "boolean", "enum": [true] },
+                "nonPrivateIPs": { "type": "boolean", "enum": [true] },
+                "privateIPs": { "type": "boolean", "enum": [false] }
+              }
+            },
+            "interNamespaceAccessLabels": { "type": "string", "enum": ["ignore"] }
+          }
+        },
+        "events": { "type": "boolean", "enum": [true] },
+        "extraLabels": {
+          "type": "object",
+          "properties": {
+            "hub.jupyter.org/network-access-hub": { "type": "string", "enum": ["true"] }
+          }
+        },
+        "allowPrivilegeEscalation": { "type": "boolean", "enum": [false] },
+        "uid": { "type": "integer", "enum": [1000] },
+        "fsGid": { "type": "integer", "enum": [100] },
+        "storage": {
+          "type": "object",
+          "properties": {
+            "type": { "type": "string", "enum": ["dynamic"] },
+            "static": {
+              "type": "object",
+              "properties": {
+                "subPath": { "type": "string", "enum": ["{username}"] }
+              }
+            },
+            "capacity": { "type": "string", "enum": ["10Gi"] },
+            "homeMountPath": { "type": "string", "enum": ["/home/jovyan"] },
+            "dynamic": {
+              "type": "object",
+              "properties": {
+                "volumeNameTemplate": { "type": "string", "enum": ["volume-{user_server}"] },
+                "storageAccessModes": { "type": "array", "items": { "type": "string", "enum": ["ReadWriteOnce"] } }
+              }
+            }
+          }
+        },
+        "image": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string", "enum": ["quay.io/jupyterhub/k8s-singleuser-sample"] },
+            "tag": { "type": "string", "enum": ["4.1.1-0.dev.git.6957.h0e735928"] }
+          }
+        },
+        "cmd": { "type": "string", "enum": ["jupyterhub-singleuser"] }
+      }
+    },
+    "scheduling": {
+      "type": "object",
+      "properties": {
+        "userScheduler": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean", "enum": [true] },
+            "replicas": { "type": "integer", "enum": [2] },
+            "logLevel": { "type": "integer", "enum": [4] }
+          }
+        }
+      }
+    },
+    "prePuller": {
+      "type": "object",
+      "properties": {
+        "hook": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean", "enum": [true] },
+            "pullOnlyOnChanges": { "type": "boolean", "enum": [true] }
+          }
+        },
+        "continuous": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean", "enum": [true] }
+          }
+        }
+      }
+    },
+    "cull": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean", "enum": [true] },
+        "users": { "type": "boolean", "enum": [false] },
+        "adminUsers": { "type": "boolean", "enum": [true] },
+        "removeNamedServers": { "type": "boolean", "enum": [false] },
+        "timeout": { "type": "integer", "enum": [3600] },
+        "every": { "type": "integer", "enum": [600] },
+        "concurrency": { "type": "integer", "enum": [10] },
+        "maxAge": { "type": "integer", "enum": [0] }
+      }
+    }
+  }
+}
