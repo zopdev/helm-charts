@@ -1,0 +1,92 @@
+hub:
+  config:
+    JupyterHub:
+      admin_access: true
+      authenticator_class: dummy
+  baseUrl: /
+
+proxy:
+  https:
+    enabled: false
+    type: letsencrypt
+    letsencrypt:
+      contactEmail:
+      acmeServer: https://acme-v02.api.letsencrypt.org/directory
+    secret:
+      name:
+      key: tls.key
+      crt: tls.crt
+    hosts: []
+
+singleuser:
+  networkTools:
+    image:
+      name: quay.io/jupyterhub/k8s-network-tools
+      tag: "4.1.1-0.dev.git.6949.h138f95a8"
+
+  cloudMetadata:
+    blockWithIptables: true
+    ip: 169.254.169.254
+  networkPolicy:
+    enabled: true
+    egressAllowRules:
+      cloudMetadataServer: false
+      dnsPortsCloudMetadataServer: true
+      dnsPortsKubeSystemNamespace: true
+      dnsPortsPrivateIPs: true
+      nonPrivateIPs: true
+      privateIPs: false
+    interNamespaceAccessLabels: ignore
+  events: true
+  extraLabels:
+    hub.jupyter.org/network-access-hub: "true"
+  allowPrivilegeEscalation: false
+  uid: 1000
+  fsGid: 100
+  storage:
+    type: dynamic
+    static:
+      pvcName:
+      subPath: "{username}"
+    capacity: 10Gi
+    homeMountPath: /home/jovyan
+    dynamic:
+      storageClass:
+      pvcNameTemplate:
+      volumeNameTemplate: volume-{user_server}
+      storageAccessModes: [ReadWriteOnce]
+
+  image:
+    name: quay.io/jupyterhub/k8s-singleuser-sample
+    tag: "4.1.1-0.dev.git.6957.h0e735928"
+  cmd: jupyterhub-singleuser
+
+scheduling:
+  userScheduler:
+    enabled: true
+    replicas: 2
+    logLevel: 4
+
+prePuller:
+  hook:
+    enabled: true
+    pullOnlyOnChanges: true
+
+  continuous:
+    enabled: true
+
+service: 
+  nginx:
+    host: 
+    tlsHost: 
+    tlsSecretName: 
+
+cull:
+  enabled: true
+  users: false 
+  adminUsers: true 
+  removeNamedServers: false 
+  timeout: 3600 
+  every: 600 
+  concurrency: 10 
+  maxAge: 0 
