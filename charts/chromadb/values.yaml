@@ -6,6 +6,6 @@ resources:
     cpu: "100m"
   limits:
     memory: "2Gi"
-    cpu: "1"
+    cpu: "1000m"
 
 diskSize: 10
