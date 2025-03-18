@@ -7,6 +7,8 @@ replicaCount: 2
 # Docker container image with tag
 image: "zopdev/sample-go-api:latest"
 
+extraAnnotations:
+
 Containers:
   privileged: false
 
@@ -69,18 +71,25 @@ env:
 
 appSecrets: false
 
+command :
+
 volumeMounts:
   emptyDir:
 #    - name: zopdev-emptydir
   configmaps:
 #    - name: zopdev-configmap
 #      mountPath: /etc/env
+#      configName:
+#      readOnly: true
   secrets:
 #    - name: zopdev-secret
 #      mountPath: /etc/secret
+#      readOnly: true
+#      secretName: 
   pvc:
 #    - name: zopdev-volume
 #      mountPath: /etc/data
+#      pvcName: zopdev-pvc
 
 alerts:
   standard:
