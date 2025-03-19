@@ -1,9 +1,3 @@
-service:
-  nginx:
-    host :
-    tlshost :
-    tlsSecretname :
-
 resources:
   requests:
     cpu: 250m
@@ -32,42 +26,85 @@ supersetNode:
     db_pass: superset
     db_name: superset
 
+service:
+  name : "superset-node-service"
+  image: "apachesuperset.docker.scarf.sh/apache/superset:4.1.1"
+  minReplicas : 1
+    
+  httpPort: 8088
+  metricsPort :
+
+  hpa_enable : true
+  hpaCPU : "80"
+  hpaMemory : "80"
+
+  initContainer:
+    image: "apache/superset:dockerize"
+    envFrom:
+       secrets:
+          - '{{ template "superset.fullname" . }}-env'
+    command:
+      - /bin/sh
+      - -c
+      - dockerize -wait "tcp://$DB_HOST:$DB_PORT" -timeout 120s 
+
+  command:
+    - "/bin/sh"
+    - "-c"
+    - ". /app/pythonpath/superset_bootstrap.sh; /usr/bin/run-server.sh"
+
+  env :
+    SUPERSET_PORT : 8088
+
+  envFrom:
+    secrets: 
+      - '{{ template "superset.fullname" . }}-env'
+
+  volumeMounts:
+    secrets:
+      - name: superset-config
+        secretName : '{{ template "superset.fullname" . }}-config'
+        mountPath: "/app/pythonpath"
+        readOnly: true
+  
+  heartbeatURL : /health
+  
+  livenessProbe:
+    enable : true
+    initialDelaySeconds: 15
+    timeoutSeconds: 1
+    failureThreshold: 60
+    periodSeconds: 5
+    successThreshold: 1
+
+  readinessProbe:
+    enable : true
+    initialDelaySeconds: 15
+    timeoutSeconds: 1
+    failureThreshold: 3
+    periodSeconds: 15
+    successThreshold: 1
+  
+  minCPU: "250m"
+  minMemory: "250Mi"
+  maxCPU: "500m"
+  maxMemory: "500Mi"
+
+  nginx:
+    host : 
+    tlshost : 
+    tlsSecretname :
+    annotations:
+      kubernetes.io/ingress.class: "nginx"
+      nginx.ingress.kubernetes.io/auth-realm: ''
+      nginx.ingress.kubernetes.io/auth-secret: ''
+      nginx.ingress.kubernetes.io/auth-type: ''
+
 supersetCeleryBeat:
   enabled: false
 
 supersetCeleryFlower:
   enabled: false
-
-init:
-  createAdmin: true
-  adminUser:
-    username: admin
-    firstname: Superset
-    lastname: Admin
-    email: admin@superset.com
-    password: admin
-
-  initscript: |-
-    #!/bin/sh
-    set -eu
-    echo "Upgrading DB schema..."
-    superset db upgrade
-    echo "Initializing roles..."
-    superset init
-    {{ if .Values.init.createAdmin }}
-    echo "Creating admin user..."
-    superset fab create-admin \
-                    --username {{ .Values.init.adminUser.username }} \
-                    --firstname {{ .Values.init.adminUser.firstname }} \
-                    --lastname {{ .Values.init.adminUser.lastname }} \
-                    --email {{ .Values.init.adminUser.email }} \
-                    --password {{ .Values.init.adminUser.password }} \
-                    || true
-    {{- end }}
-    if [ -f "/app/configs/import_datasources.yaml" ]; then
-      echo "Importing database connections.... "
-      superset import_datasources -p /app/configs/import_datasources.yaml
-    fi
 
 postgres:
   enabled: true
@@ -79,3 +116,6 @@ postgres:
 
 redis:
   enabled: true
+
+
+  

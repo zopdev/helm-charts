@@ -34,6 +34,8 @@ spec:
         envFrom:
           - secretRef:
               name: {{ template "superset.fullname" . }}-env
+          - secretRef:
+              name: {{ .Release.Name }}-login-credentials
         imagePullPolicy: IfNotPresent
         volumeMounts:
           - name: superset-config

@@ -48,21 +48,49 @@
         }
       }
     },
-    "init": {
+    "service": {
       "type": "object",
       "properties": {
-        "createAdmin": { "type": "boolean", "enum": [true] },
-        "adminUser": {
+        "name": { "type": "string", "enum": ["superset-node-service"] },
+        "image": { "type": "string", "enum": ["apachesuperset.docker.scarf.sh/apache/superset:4.1.1"] },
+        "minReplicas": { "type": "integer", "enum": [1] },
+        "httpPort": { "type": "integer", "enum": [8088] },
+        "hpa_enable": { "type": "boolean", "enum": [true] },
+        "hpaCPU": { "type": "string", "enum": ["80"] },
+        "hpaMemory": { "type": "string", "enum": ["80"] },
+        "env": {
           "type": "object",
           "properties": {
-            "username": { "type": "string", "enum": ["admin"] },
-            "firstname": { "type": "string", "enum": ["Superset"] },
-            "lastname": { "type": "string", "enum": ["Admin"] },
-            "email": { "type": "string", "enum": ["admin@superset.com"] },
-            "password": { "type": "string", "enum": ["admin"] }
+            "SUPERSET_PORT": { "type": "integer", "enum": [8088] }
           }
         },
-        "initscript": { "type": "string" }
+        "heartbeatURL": { "type": "string", "enum": ["/health"] },
+        "livenessProbe": {
+          "type": "object",
+          "properties": {
+            "enable": { "type": "boolean", "enum": [true] },
+            "initialDelaySeconds": { "type": "integer", "enum": [15] },
+            "timeoutSeconds": { "type": "integer", "enum": [1] },
+            "failureThreshold": { "type": "integer", "enum": [60] },
+            "periodSeconds": { "type": "integer", "enum": [5] },
+            "successThreshold": { "type": "integer", "enum": [1] }
+          }
+        },
+        "readinessProbe": {
+          "type": "object",
+          "properties": {
+            "enable": { "type": "boolean", "enum": [true] },
+            "initialDelaySeconds": { "type": "integer", "enum": [15] },
+            "timeoutSeconds": { "type": "integer", "enum": [1] },
+            "failureThreshold": { "type": "integer", "enum": [3] },
+            "periodSeconds": { "type": "integer", "enum": [15] },
+            "successThreshold": { "type": "integer", "enum": [1] }
+          }
+        },
+        "minCPU": { "type": "string", "enum": ["250m"] },
+        "minMemory": { "type": "string", "enum": ["250Mi"] },
+        "maxCPU": { "type": "string", "enum": ["500m"] },
+        "maxMemory": { "type": "string", "enum": ["500Mi"] }
       }
     },
     "postgres": {
