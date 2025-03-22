@@ -6,9 +6,11 @@ metadata:
     app: {{ .Values.name }}
 spec:
   ports:
+    {{- if and .Values.httpPort (ne (int .Values.httpPort) 0) }}
     - name: http-port
       port: 80
       targetPort: {{ .Values.httpPort}}
+    {{- end }}
     {{- if and .Values.metricsPort (ne (int .Values.metricsPort) 0) }}
     - name: metrics-port
       port: 2121
@@ -17,8 +19,8 @@ spec:
     {{- range $k, $v := .Values.ports}}
     - name: {{ $k}}
       port: {{ $v }}
-      targetPort: {{ $v }}
-      {{- end }}
+      targetPort: {{ if and (hasKey $.Values "targetPort") (hasKey $.Values.targetPort $k) }}{{ index $.Values.targetPort $k }}{{ else }}{{ $v }}{{ end }}
+    {{- end }}
   selector:
     app: {{ .Values.name }}
   type: NodePort
