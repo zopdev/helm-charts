@@ -8,6 +8,7 @@ replicaCount: 2
 image: "zopdev/sample-go-api:latest"
 
 extraAnnotations:
+# extraLabels:
 
 Containers:
   privileged: false
@@ -21,8 +22,11 @@ imagePullSecrets:
 httpPort: 8000
 metricsPort: 2121
 
-ports: # Provide the ports on which container runs its services
-# grpc: 9100
+# ports:
+#   https: 8001
+
+# targetPort:
+#   https: http
 
 nginx:
   host:
@@ -50,7 +54,7 @@ cliService: false
 
 # Heartbeat URL
 heartbeatURL: ""
-
+# healthPort : 8000
 readinessProbe:
   enable: false
 #  initialDelaySeconds: 3

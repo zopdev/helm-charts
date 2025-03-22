@@ -20,6 +20,11 @@ spec:
     metadata:
       labels:
         app: {{ .Values.name }}
+        {{- if .Values.extraLabels }}
+        {{- range $key, $value := .Values.extraLabels }}
+        {{ $key }}: {{ $value | quote }}
+        {{- end }}
+        {{- end }}
     spec:
       securityContext:
         {{- if and (hasKey .Values.volumeMounts "pvc") (not (empty .Values.volumeMounts.pvc)) }}
@@ -31,8 +36,8 @@ spec:
         - name: {{ . }}
         {{- end }}
       {{- end }}
-      {{- if .Values.appSecrets }}
-      serviceAccountName: secrets-account
+      {{- if or .Values.serviceAccountName .Values.appSecrets }}
+      serviceAccountName: {{ tpl (.Values.serviceAccountName | default "secrets-account") . }}
       {{- end }}
       volumes:
       {{- if .Values.volumeMounts }}
@@ -97,7 +102,9 @@ spec:
       containers:
         - name: {{ .Values.name }}
           image: {{ .Values.image }}
-
+          {{- if .Values.args }}
+          args: {{  tpl (toJson .Values.args) . }}
+          {{- end}}
           {{- if .Values.command }}
           command: {{  tpl (toJson .Values.command) . }}
           {{- end}}
@@ -112,8 +119,10 @@ spec:
             runAsGroup: 1000
             {{- end }}
           ports:
+            {{- if and .Values.httpPort (ne (int .Values.httpPort) 0) }}
             - name: http-port
               containerPort: {{ .Values.httpPort }}
+            {{- end }}
             {{- if and .Values.metricsPort (ne (int .Values.metricsPort) 0) }}
             - name: metrics-port
               containerPort: {{ .Values.metricsPort }}
@@ -229,8 +238,15 @@ spec:
             {{- range $k,$v := .Values.env }}
               {{- if ne (toString $v) ""}}
             - name: {{ $k | quote }}
+              {{- if kindIs "map" $v }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $v.name | quote }}
+                  key: {{ $v.key | quote }}
+              {{- else }}
               value: {{ $v | quote }}
               {{- end }}
+            {{- end }}
             {{- end }}
           volumeMounts:
           {{- if .Values.volumeMounts }}
@@ -295,7 +311,7 @@ spec:
             {{- else if ne .Values.heartbeatURL "" }}
             httpGet:
               path: {{ .Values.heartbeatURL | quote}}
-              port: {{ .Values.httpPort }}
+              port: {{ default .Values.healthPort .Values.httpPort }}
             {{- end }}
             initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds | default 3 }}
             timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds | default 3 }}
@@ -311,7 +327,7 @@ spec:
             {{ else if ne .Values.heartbeatURL ""}}
             httpGet:
               path: {{ .Values.heartbeatURL | quote }}
-              port: {{ .Values.httpPort }}
+              port: {{ default .Values.healthPort .Values.httpPort }}
             {{- end }}
             initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds | default 3 }}
             timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds | default 3 }}
