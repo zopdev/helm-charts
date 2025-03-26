@@ -75,11 +75,7 @@ envList:
   #   value: hello-api
   # - name: DB_HOST
   #   value: localhost
-  # - name: API_KEY
-  #   valueFrom:
-  #     secretKeyRef:
-  #       name: my-secret
-  #       key: api-key
+
 
 appSecrets: false
 
