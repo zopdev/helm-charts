@@ -69,6 +69,18 @@ livenessProbe:
 env:
   # APP_NAME: hello-api
 
+# Environment variables as a list (new format)
+envList:
+  # - name: APP_NAME
+  #   value: hello-api
+  # - name: DB_HOST
+  #   value: localhost
+  # - name: API_KEY
+  #   valueFrom:
+  #     secretKeyRef:
+  #       name: my-secret
+  #       key: api-key
+
 appSecrets: false
 
 command :
