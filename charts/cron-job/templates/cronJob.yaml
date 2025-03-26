@@ -178,6 +178,9 @@ spec:
                   value: {{ $v | quote }}
                   {{- end }}
                 {{- end }}
+                {{- if .Values.envList }}
+                {{- toYaml .Values.envList | nindent 12 }}
+                {{- end }}
               volumeMounts:
               {{- if .Values.volumeMounts }}
               {{- range $k,$v := .Values.volumeMounts.configmaps }}

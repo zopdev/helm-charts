@@ -33,6 +33,14 @@ envFrom:
 env:
   APP_NAME: hello-api
 
+# Environment variables as a list (new format)
+envList:
+  # - name: APP_NAME
+  #   value: hello-api
+  # - name: DB_HOST
+  #   value: localhost
+
+
 appSecrets: false
 
 volumeMounts:
