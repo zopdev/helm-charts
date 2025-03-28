@@ -7,3 +7,5 @@ icon: "https://zop.dev/logo.png"
 maintainers:
   - name: ZopDev
     url: zop.dev
+annotations:
+  type: datasource
