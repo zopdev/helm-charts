@@ -7,6 +7,8 @@ replicaCount: 2
 # Docker container image with tag
 image: "zopdev/sample-go-api:latest"
 
+extraAnnotations:
+
 Containers:
   privileged: false
 
@@ -67,7 +69,17 @@ livenessProbe:
 env:
   # APP_NAME: hello-api
 
+# Environment variables as a list (new format)
+envList:
+  # - name: APP_NAME
+  #   value: hello-api
+  # - name: DB_HOST
+  #   value: localhost
+
+
 appSecrets: false
+
+command :
 
 volumeMounts:
   emptyDir:
@@ -75,12 +87,17 @@ volumeMounts:
   configmaps:
 #    - name: zopdev-configmap
 #      mountPath: /etc/env
+#      configName:
+#      readOnly: true
   secrets:
 #    - name: zopdev-secret
 #      mountPath: /etc/secret
+#      readOnly: true
+#      secretName: 
   pvc:
 #    - name: zopdev-volume
 #      mountPath: /etc/data
+#      pvcName: zopdev-pvc
 
 alerts:
   standard:

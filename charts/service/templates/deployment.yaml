@@ -3,6 +3,11 @@ kind: Deployment
 metadata:
   annotations:
     configmap.reloader.stakater.com/reload: "{{ .Values.name }}"
+    {{- if .Values.extraAnnotations }}
+    {{- range $key, $value := .Values.extraAnnotations }}
+    {{ $key }}: {{ tpl $value $ }}
+    {{- end }}
+    {{- end }}
   name: {{ .Values.name }}
   labels:
     app: {{ .Values.name }}
@@ -38,17 +43,17 @@ spec:
       {{- range $k,$v := .Values.volumeMounts.configmaps }}
         - name: {{ $v.name }}
           configMap:
-            name: {{ $v.name }}
+            name: {{ tpl ($v.configName | default $v.name) $ }}
       {{- end }}
       {{- range $k,$v := .Values.volumeMounts.secrets }}
         - name: {{ $v.name }}
           secret:
-            secretName: {{ $v.name }}
+            secretName: {{ tpl ($v.secretName | default $v.name) $ }}
       {{- end }}
       {{- range $k,$v := .Values.volumeMounts.pvc }}
         - name: {{ $v.name }}
           persistentVolumeClaim:
-            claimName: {{ $v.name }}
+            claimName: {{ tpl ($v.pvcName | default $v.name) $ }}
       {{- end }}
       {{- end }}
       {{- if .Values.appSecrets }}
@@ -66,6 +71,16 @@ spec:
           {{- if .Values.initContainer.args }}
           args: {{ .Values.initContainer.args }}
           {{- end }}
+          {{- if .Values.initContainer.command }}
+          command: {{  tpl (toJson .Values.initContainer.command) . }}
+          {{- end }}
+          {{- if .Values.initContainer.envFrom }}
+          envFrom:
+          {{- range $i, $name := .Values.initContainer.envFrom.secrets }}
+            - secretRef:
+                name: {{ tpl $name $ }}
+          {{- end }}
+          {{- end}}
           env:
             {{- range $k,$v := .Values.initContainer.env }}
             - name: {{ $k | quote }}
@@ -83,6 +98,9 @@ spec:
         - name: {{ .Values.name }}
           image: {{ .Values.image }}
 
+          {{- if .Values.command }}
+          command: {{  tpl (toJson .Values.command) . }}
+          {{- end}}
           securityContext:
             {{- with .Values.Containers }}
             {{- if .privileged | default false }}
@@ -107,12 +125,12 @@ spec:
           envFrom:
             {{- range $i, $name := .Values.envFrom.configmaps }}
             - configMapRef:
-                name: {{ $name }}
+                name: {{ tpl $name $ }}
             {{- end }}
             {{- range $i, $name := .Values.envFrom.secrets }}
             - secretRef:
-                name: {{ $name }}
-                {{- end }}
+                name: {{ tpl $name $ }}
+            {{- end }}
             {{- if and .Values.datastores .Values.datastores.mysql }}
             {{- range $i, $k := .Values.datastores.mysql }}
             - configMapRef:
@@ -214,11 +232,17 @@ spec:
               value: {{ $v | quote }}
               {{- end }}
             {{- end }}
+            {{- if .Values.envList }}
+            {{- toYaml .Values.envList | nindent 12 }}
+            {{- end }}
           volumeMounts:
           {{- if .Values.volumeMounts }}
           {{- range $k,$v := .Values.volumeMounts.configmaps }}
             - name: {{ $v.name }}
               mountPath: {{ $v.mountPath }}
+            {{- if $v.readOnly }}
+              readOnly: {{ $v.readOnly }}
+            {{- end }}              
             {{- if ne $v.subPath "" }}
               subPath: {{ $v.subPath }}
             {{- end }}
@@ -233,6 +257,9 @@ spec:
           {{- range $k,$v := .Values.volumeMounts.secrets }}
             - name: {{ $v.name }}
               mountPath: {{ $v.mountPath }}
+            {{- if $v.readOnly }}
+              readOnly: {{ $v.readOnly }}
+            {{- end }}   
             {{- if ne $v.subPath "" }}
               subPath: {{ $v.subPath }}
             {{- end }}
