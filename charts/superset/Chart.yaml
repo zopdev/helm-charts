@@ -17,3 +17,5 @@ dependencies:
     name: redis
     version: 0.0.1
     repository: https://helm.zop.dev
+annotations:
+  type: application
