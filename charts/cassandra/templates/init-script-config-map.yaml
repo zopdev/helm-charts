@@ -1,4 +1,53 @@
 {{- range $index, $service := .Values.services }}
+{{- $maxLen := 27 }}
+{{- $randomSuffix := randAlphaNum 4 | lower }}
+{{- $trimmedName := trunc $maxLen $service.name }}
+{{- $generatedUsername := printf "%s-%s" $trimmedName $randomSuffix }}
+{{- $generatedPassword := printf "%s%s%s" (randAlpha 4) (randNumeric 4) (randAlpha 4 | upper) }}
+
+{{/* Define Secret Name */}}
+{{- $secretName := printf "%s-%s-%s-mysql-database-secret" $.Release.Name (replace "_" "-" $service.database) $service.name }}
+
+{{/* Retrieve existing secret (if any) */}}
+{{- $existingSecret := lookup "v1" "Secret" $.Release.Namespace $secretName }}
+
+{{/* Use existing values if available, otherwise generate new ones */}}
+{{- $username := $generatedUsername }}
+{{- $password := $generatedPassword }}
+
+{{- if $existingSecret }}
+  {{- with $existingSecret.data }}
+    {{- if hasKey . "CASSANDRA_USERNAME" }}
+      {{- $username = index . "CASSANDRA_USERNAME" | b64dec }}
+    {{- end }}
+    {{- if hasKey . "CASSANDRA_PASSWORD" }}
+      {{- $password = index . "CASSANDRA_PASSWORD" | b64dec }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $.Release.Name }}-{{ $service.database }}-{{ $service.name }}-cassandra-configmap
+  namespace: {{ $.Release.Namespace }}
+data:
+  CASSANDRA_HOST: {{ $.Release.Name }}-cassandra
+  CASSANDRA_KEYSPACE: "{{ $service.database }}"
+  CASSANDRA_PORT: "9042"
+---
+{{/* Create Secret for Cassandra credentials */}}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $secretName }}
+  namespace: {{ $.Release.Namespace }}
+type: Opaque
+data:
+  CASSANDRA_USERNAME: {{ $username | b64enc }}
+  CASSANDRA_PASSWORD: {{ $password | b64enc }}
+---
+{{/* Create ConfigMap for initialization script */}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -10,7 +59,8 @@ data:
     WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
 
     USE "{{ $service.database }}";
-    CREATE ROLE IF NOT EXISTS "{{ $service.name }}-user" WITH PASSWORD = '{{ $service.password }}' AND LOGIN = true;
-    GRANT ALL PERMISSIONS ON KEYSPACE "{{ $service.database }}" TO "{{ $service.name }}-user";
----
+    {{- if not $existingSecret }}
+    CREATE ROLE IF NOT EXISTS "{{ $username }}" WITH PASSWORD = '{{ $password }}' AND LOGIN = true;
+    GRANT ALL PERMISSIONS ON KEYSPACE "{{ $service.database }}" TO "{{ $username }}";
+    {{- end }}
 {{- end }}

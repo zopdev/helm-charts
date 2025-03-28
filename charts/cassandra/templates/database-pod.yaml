@@ -7,7 +7,7 @@ metadata:
 spec:
   containers:
     - name: cassandra-init
-      image: {{ $.Values.image }}
+      image: "bitnami/cassandra:5.0.2-debian-12-r3"
       command:
         - sh
         - -c
@@ -18,7 +18,7 @@ spec:
         - name: POD_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: {{ $.Release.Name }}-cassandra-database-secret
+              name: {{ $.Release.Name }}-cassandra-root-secret
               key: pod_password
       volumeMounts:
         - name: script-volume
