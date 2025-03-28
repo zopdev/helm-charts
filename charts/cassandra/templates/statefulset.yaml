@@ -57,7 +57,7 @@ spec:
             - name: CASSANDRA_USER
               value: "superuser"
             - name: CASSANDRA_DATACENTER
-              value: {{ .Values.config.datacenter }}
+              value: dc1
             - name: CASSANDRA_RACK
               value: rack1
             - name: CASSANDRA_KEYSTORE_LOCATION

@@ -38,14 +38,18 @@
         "default": "10Gi", "mutable": true
       },
       "services": {
-        "type" : "object",
-        "properties": {
-          "name": {
-            "type": "string"
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "database": {
+              "type": "string"
+            }
           },
-          "database" : {
-            "type": "string"
-          }
+          "required": ["name", "database"]
         }
       }
     }

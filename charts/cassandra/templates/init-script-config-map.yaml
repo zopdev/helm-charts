@@ -6,7 +6,7 @@
 {{- $generatedPassword := printf "%s%s%s" (randAlpha 4) (randNumeric 4) (randAlpha 4 | upper) }}
 
 {{/* Define Secret Name */}}
-{{- $secretName := printf "%s-%s-%s-cassandra-database-secret" $.Release.Name (replace "_" "-" $service.database) $service.name }}
+{{- $secretName := printf "%s-%s-%s-mysql-database-secret" $.Release.Name (replace "_" "-" $service.database) $service.name }}
 
 {{/* Retrieve existing secret (if any) */}}
 {{- $existingSecret := lookup "v1" "Secret" $.Release.Namespace $secretName }}
@@ -25,19 +25,18 @@
     {{- end }}
   {{- end }}
 {{- end }}
-
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ $.Release.Name }}-{{ replace "_" "-" $service.database }}-{{ $service.name }}-cassandra-configmap
+  name: {{ $.Release.Name }}-{{ $service.database }}-{{ $service.name }}-cassandra-configmap
   namespace: {{ $.Release.Namespace }}
 data:
   CASSANDRA_HOST: {{ $.Release.Name }}-cassandra
   CASSANDRA_KEYSPACE: "{{ $service.database }}"
   CASSANDRA_PORT: "9042"
-  CASSANDRA_USERNAME: "{{ $username }}"
 ---
+{{/* Create Secret for Cassandra credentials */}}
 apiVersion: v1
 kind: Secret
 metadata:
@@ -45,8 +44,10 @@ metadata:
   namespace: {{ $.Release.Namespace }}
 type: Opaque
 data:
+  CASSANDRA_USERNAME: {{ $username | b64enc }}
   CASSANDRA_PASSWORD: {{ $password | b64enc }}
 ---
+{{/* Create ConfigMap for initialization script */}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -58,6 +59,8 @@ data:
     WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
 
     USE "{{ $service.database }}";
+    {{- if not $existingSecret }}
     CREATE ROLE IF NOT EXISTS "{{ $username }}" WITH PASSWORD = '{{ $password }}' AND LOGIN = true;
     GRANT ALL PERMISSIONS ON KEYSPACE "{{ $service.database }}" TO "{{ $username }}";
+    {{- end }}
 {{- end }}
