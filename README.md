@@ -1,10 +1,8 @@
 <p align="center">
-  <img src="https://zop.dev/resources/cdn/newsletter/zopdev-transparent-logo.png" alt="zop.dev Logo" width="100">
+  <img src="https://zop.dev/resources/cdn/newsletter/zopdev-transparent-logo.png" alt="zop.dev Logo" width="200">
 </p>
 
-<h1 align="center">The Helm Charts Library for zop.dev</h1>
-
-<h2 align="center">An Extensive Collection of Helm Charts for Datastores & Applications</h2>
+<h2 align="center">Helm Charts : An Extensive Collection of Helm Charts for Datastores & Applications</h2>
 
 <p align="center">
   <a href="./LICENSE">
@@ -29,10 +27,7 @@ The zop.dev Helm Charts repository is designed to **simplify the deployment and 
    Users can override selected parameters through a dedicated `values.yaml` with a corresponding `values.schema.json` that marks user-modifiable fields with `"mutable": true`.
 3. **Automatic Integration:**  
    Every chart includes a required metadata annotation (`type: datasource` or `type: application`), ensuring automatic reflection in the zop.dev Applications and Datasources section.
-4. **Tailored for Applications & Datasources:**  
-   - **Applications:** Utilize the **service** Helm chart which bundles configurations for HPA, deployments, alerts, Grafana, ingress, pod-distribution budgets, PVCs, service monitors etc. Application-specific credentials (ID and password) are automatically handled via templated files (e.g. `<release-name>-login.yaml`), so users need not supply these values.
-   - **Datasources:** While supporting a broad range of configurable options, datasource charts are optimized to minimize required values, reducing user input to only the essentials.
-5. **Scalability & Flexibility:**  
+4. **Scalability & Flexibility:**  
    Designed to adapt to various production workloads with ease.
 
 ---
@@ -42,7 +37,6 @@ The zop.dev Helm Charts repository is designed to **simplify the deployment and 
 ### **Prerequisites**
 - **Helm:** Ensure [Helm](https://helm.sh/docs/intro/install/) is installed.
 - **Kubernetes:** Access to a running Kubernetes cluster.
-- **kubectl:** Configured to interact with your cluster.
 
 ### **Installation**
 
@@ -52,8 +46,6 @@ To add the zop.dev repository and install a chart, run:
 helm repo add zop https://helm.zop.dev
 helm install <release-name> zop/<chartname>
 ```
-
-Replace `<release-name>` with your desired release name and `<chartname>` with the name of the chart (e.g., `redis` for datasource or `service` for an application).
 
 ---
 
@@ -92,7 +84,6 @@ Replace `<release-name>` with your desired release name and `<chartname>` with t
 
   ```bash
   helm list
-  kubectl get pods
   ```
 
 ---
