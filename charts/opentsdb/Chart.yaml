@@ -3,7 +3,7 @@ appVersion: "1.0"
 description: Helm chart for deploying opentsdb
 name: opentsdb
 version: 0.0.1
-icon: "https://zop.dev/logo.png"
+icon: "https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20241122/42ea9c53-055c-4441-8438-95d639dfc2f4-2086220.png"
 maintainers:
   - name: ZopDev
     url: zop.dev
