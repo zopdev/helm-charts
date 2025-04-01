@@ -1,9 +1,8 @@
-<table width="100%">
-  <tr>
-    <td><h1>Helm Charts</h1></td>
-    <td align="right"><img src="https://zop.dev/resources/cdn/newsletter/zopdev-transparent-logo.png" alt="zop.dev Logo" width="100"></td>
-  </tr>
-</table>
+<p align="right">
+  <img src="https://zop.dev/resources/cdn/newsletter/zopdev-transparent-logo.png" alt="zop.dev Logo" width="100">
+</p>
+
+# Helm Charts
 
 ## 📜 **An Extensive Collection of Helm Charts for Datastores & Applications**
 
