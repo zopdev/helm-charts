@@ -353,6 +353,21 @@ entries:
     - https://helm.zop.dev/mariadb-v0.0.1.tgz
     version: v0.0.1
   mysql:
+  - annotations:
+      type: datasource
+    apiVersion: v2
+    appVersion: "1.0"
+    created: "2025-04-01T18:42:58.623869+05:30"
+    description: Helm chart for deploying mysql datastore
+    digest: 22a84b7172e1424845524d9c2a06a3ec7c29f445349ff4650531001bd50fb5a8
+    icon: https://zop.dev/logo.png
+    maintainers:
+    - name: ZopDev
+      url: zop.dev
+    name: mysql
+    urls:
+    - https://helm.zop.dev/mysql-v0.0.4.tgz
+    version: v0.0.4
   - apiVersion: v1
     appVersion: "1.0"
     created: "2025-04-01T18:13:37.493296+05:30"
