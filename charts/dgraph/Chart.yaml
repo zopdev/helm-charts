@@ -3,7 +3,7 @@ appVersion: "1.0"
 description: Helm chart for deploying dgraph datastore
 name: dgraph
 version: 0.0.1
-icon: "https://zop.dev/logo.png"
+icon: "https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20241122/6547ae1a-39da-4651-84ce-a9c771304b9d-dgraphlogoFC04AA7851seeklogocom.png"
 maintainers:
   - name: ZopDev
     url: zop.dev

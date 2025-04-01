@@ -3,7 +3,7 @@ appVersion: "1.0"
 description: Helm chart deploys kafka 
 name: kafka
 version: 0.0.1
-icon: "https://zop.dev/logo.png"
+icon: "https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20250206/800a8c94-a94d-4dbe-9b71-f8e21963da2f-kafka.png"
 maintainers:
   - name: ZopDev
     url: zop.dev
