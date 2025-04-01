@@ -1,6 +1,10 @@
-<img src="https://zop.dev/resources/cdn/newsletter/zopdev-transparent-logo.png" alt="zop.dev Logo" width="100">
-# The Helm Charts Library for zop.dev
-## An Extensive Collection of Helm Charts for Datastores & Applications
+<p align="center">
+  <img src="https://zop.dev/resources/cdn/newsletter/zopdev-transparent-logo.png" alt="zop.dev Logo" width="100">
+</p>
+
+<h1 align="center">The Helm Charts Library for zop.dev</h1>
+
+<h2 align="center">An Extensive Collection of Helm Charts for Datastores & Applications</h2>
 
 <p align="center">
   <a href="./LICENSE">
@@ -10,7 +14,6 @@
     <img src="https://img.shields.io/badge/Contribute-Guide-orange?style=for-the-badge" alt="Contributing">
   </a>
 </p>
-
 
 ## 🎯 **Goal**
 
