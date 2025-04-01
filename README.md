@@ -1,167 +1,136 @@
-# Helm Charts
+<h1 style="text-align: center; font-size: 100px; font-weight: 500;">
+    Helm Charts
+</h1>
 
-This repository contains the Helm charts for various datastores. Users can easily install these charts and use it in the Kubernetes Clusters.
+<p align="center">
+  <img src="https://zop.dev/app/logo.svg" alt="zop.dev Logo" width="300">
+</p>
 
-## Description
+<div align="center">
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-blue?style=for-the-badge" alt="Apache 2.0 License"></a>
+  <a href="./CONTRIBUTING.md"><img src="https://img.shields.io/badge/Contribute-Guide-orange?style=for-the-badge" alt="Contributing"></a>
+</div>
 
-This project provides Helm charts for setting up and managing popular datastores with ease. Each chart is pre-configured to help users deploy, manage, and scale these datastores efficiently in their Kubernetes environments.
+<h2 align="center" style="font-size: 28px;"><b>An Extensive Collection of Helm Charts for Datastores & Applications</b></h2>
 
-## Table of Contents
+---
 
-- [Installation](#installation)
-- [Usage](#usage)
-- [Datastores](#datastores)
-- [Features](#features)
-- [Contributing](#contributing)
-- [Code of Conduct](#code-of-conduct)
-- [License](#license)
+## 🎯 **Goal**
 
-## Installation
+The zop.dev Helm Charts repository is designed to **simplify the deployment and management** of popular datastores and applications on Kubernetes. With pre-configured charts that work out-of-the-box and allow for explicit overrides, our goal is to streamline operations and integrate seamlessly with the zop.dev ecosystem.
 
-To install a specific datastore's Helm chart, use the following command:
+---
+
+## 💡 **Key Features**
+
+1. **Zero Configuration Required:**  
+   Charts deploy with default values—no manual configuration is needed to get started.
+2. **Explicit Override Options:**  
+   Users can override selected parameters through a dedicated `values.yaml` with a corresponding `values.schema.json` that marks user-modifiable fields with `"mutable": true`.
+3. **Automatic Integration:**  
+   Every chart includes a required metadata annotation (`type: datasource` or `type: application`), ensuring automatic reflection in the zop.dev Applications and Datasources section.
+4. **Tailored for Applications & Datasources:**  
+   - **Applications:** Utilize the **service** Helm chart which bundles configurations for HPA, deployments, alerts, Grafana, ingress, pod-distribution budgets, PVCs, service monitors etc. Application-specific credentials (ID and password) are automatically handled via templated files (e.g. `<release-name>-login.yaml`), so users need not supply these values.
+   - **Datasources:** While supporting a broad range of configurable options, datasource charts are optimized to minimize required values, reducing user input to only the essentials.
+5. **Scalability & Flexibility:**  
+   Designed to adapt to various production workloads with ease.
+
+---
+
+## 🚀 **Getting Started**
+
+### **Prerequisites**
+- **Helm:** Ensure [Helm](https://helm.sh/docs/intro/install/) is installed.
+- **Kubernetes:** Access to a running Kubernetes cluster.
+- **kubectl:** Configured to interact with your cluster.
+
+### **Installation**
+
+To add the zop.dev repository and install a chart, run:
 
 ```bash
 helm repo add zop https://helm.zop.dev
 helm install <release-name> zop/<chartname>
 ```
 
-Replace `<release-name>` with your desired release name and `<chartname>` with the name of the datastore chart.
+Replace `<release-name>` with your desired release name and `<chartname>` with the name of the chart (e.g., `redis` for datasource or `service` for an application).
 
-## Usage
+---
 
-Each datastore comes with a Helm chart that supports various configurable parameters. Below are examples for specific use cases:
+### **Examples**
 
-### Install a Datastore Chart
+### **Deploying an Application Chart:**
 
-To install a specific datastore, such as `redis`, run:
+  ```bash
+  helm repo add zop https://helm.zop.dev
+  helm install my-app zop/service
+  ```
 
-```bash
-helm repo add zop https://helm.zop.dev
-helm install my-redis zop/redis
-```
+### **Overriding Values:**
 
-This will deploy a `redis` instance with the default configuration.
+  To customize certain values that are marked mutable, provide a custom `values.yaml`:
 
-### Customize Values
+  ```bash
+  helm install my-app zop/service -f values.yaml
+  ```
 
-You can override default values during installation by providing a `values.yaml` file:
+### **Upgrading & Uninstalling:**
 
-```bash
-helm install my-redis zop/redis -f values.yaml
-```
+  Upgrade an existing release:
 
-Alternatively, you can pass parameters directly via the command line:
+  ```bash
+  helm upgrade my-app zop/service --set ingress.enabled=true
+  ```
 
-```bash
-helm install my-redis zop/redis --set image="redis:6.2.13"
-```
+###  Uninstall a release:
 
-### Upgrade a Chart
+  ```bash
+  helm uninstall my-app
+  ```
 
-To upgrade an existing chart deployment, use:
+###  Verify your deployments:
 
-```bash
-helm upgrade my-redis zop/redis --set diskSize="5Gi"
-```
+  ```bash
+  helm list
+  kubectl get pods
+  ```
 
-### Uninstall a Chart
+---
 
-To uninstall a datastore deployment, use:
 
-```bash
-helm uninstall my-redis
-```
+## 📂 **Available Charts**
 
-### Verify Installation
+Below is a list of available charts along with their links:
 
-To verify the installation, check the status of the release:
+| **Name**      | **Link**                                          | **Description**                                                                                                                                                           |
+|---------------|----------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **MySQL**     | [helm.zop.dev/mysql](https://helm.zop.dev/mysql)   | A widely-used open-source relational database system known for its reliability and ease of use.                                                                           |
+| **PostgreSQL**| [helm.zop.dev/postgres](https://helm.zop.dev/postgres) | A powerful, open-source object-relational database system ideal for handling complex queries and transactional workloads.                                                |
+| **MariaDB**   | [helm.zop.dev/mariadb](https://helm.zop.dev/mariadb) | A popular open-source relational database, highly compatible with MySQL, suitable for both master-slave replication and standalone setups.                               |
+| **Redis**     | [helm.zop.dev/redis](https://helm.zop.dev/redis)   | An in-memory data structure store used as a database, cache, and message broker, with support for persistence.                                                           |
+| **SurrealDB** | [helm.zop.dev/surrealdb](https://helm.zop.dev/surrealdb) | A cloud-native database designed for modern, highly scalable applications and real-time analytics.                                                                     |
+| **Dgraph**    | [helm.zop.dev/dgraph](https://helm.zop.dev/dgraph) | A distributed, fast, and scalable graph database for efficient graph-based querying and data visualization.                                                              |
+| **Solr**      | [helm.zop.dev/solr](https://helm.zop.dev/solr)     | An open-source search platform built for enterprise-scale full-text search and analytics.                                                                               |
+| **OpenTSDB**  | [helm.zop.dev/opentsdb](https://helm.zop.dev/opentsdb) | A distributed, scalable time-series database ideal for managing and querying large-scale time-series data.                                                                |
+| **ChromaDB**  | [helm.zop.dev/chromadb](https://helm.zop.dev/chromadb) | A specialized datastore designed for AI and machine learning workloads, including managing vector embeddings.                                                           |
+| **Cron-Job**  | [helm.zop.dev/cron-job](https://helm.zop.dev/cron-job) | A Helm chart for scheduling and managing cron jobs to handle background tasks efficiently.                                                                              |
+| **Service**   | [helm.zop.dev/service](https://helm.zop.dev/service)  | A generic service chart for deploying and managing custom services with built-in configurations for HPA, deployments, alerts, Grafana, ingress, pod budgets, PVCs, etc. |
 
-```bash
-helm list
-kubectl get pods
-```
+---
 
-## Datastores
 
-This repository provides Helm charts for a wide variety of datastores. Each chart is tailored to simplify the deployment and management of specific technologies. Below is an overview:
+## 👍 **Contribute**
 
-### Relational Databases
+We welcome contributions to improve and expand our Helm charts. To contribute please refer to the [CONTRIBUTING.md](./CONTRIBUTING.md) file.
 
-- **[MySQL](./charts/mysql):** A widely-used open-source relational database system known for its reliability and ease of use.
-  - URL: `https://helm.zop.dev/mysql`
-  - Example: Use this chart to deploy MySQL for a high-availability setup.
+---
 
-- **[PostgreSQL](./charts/postgres):** A powerful, open-source object-relational database system.
-  - URL: `https://helm.zop.dev/postgres`
-  - Example: Ideal for handling complex queries and transactional workloads.
+## 🔒 **License**
 
-- **[MariaDB](./charts/mariadb):** A popular open-source relational database, highly compatible with MySQL.  
-  - URL: `https://helm.zop.dev/mariadb`  
-  - Example: Use this chart to deploy MariaDB for master-slave replication or standalone setups.
+This project is licensed under the [Apache 2.0 License](./LICENSE).
 
-### NoSQL Databases
+---
 
-- **[Redis](./charts/redis):** An in-memory data structure store, used as a database, cache, and message broker.
-  - URL: `https://helm.zop.dev/redis`
-  - Example: Deploy a Redis cluster with persistence enabled for caching and session storage.
+## 📣 **Stay Connected**
 
-- **[SurrealDB](./charts/surrealdb):** A cloud-native database for modern, highly-scalable applications.
-  - URL: `https://helm.zop.dev/surrealdb`
-  - Example: Use this chart to deploy SurrealDB for high-speed real-time analytics.
-
-### Graph Databases
-
-- **[Dgraph](./charts/dgraph):** A distributed, fast, and scalable graph database.
-  - URL: `https://helm.zop.dev/dgraph`
-  - Example: Use this chart for graph-based querying and data visualization.
-
-### Search and Analytics
-
-- **[Solr](./charts/solr):** An open-source search platform for enterprise-scale applications.
-  - URL: `https://helm.zop.dev/solr`
-  - Example: Deploy Solr for full-text search and analytics.
-
-- **[OpenTSDB](./charts/opentsdb):** A distributed, scalable time-series database.
-  - URL: `https://helm.zop.dev/opentsdb`
-  - Example: Ideal for managing and querying large-scale time-series data.
-
-### Specialized Services
-
-- **[ChromaDB](./charts/chromadb):** A specialized datastore designed for AI and machine learning workloads.
-  - URL: `https://helm.zop.dev/chromadb`
-  - Example: Use this chart for managing vector embeddings in ML applications.
-
-- **[Cron-Job](./charts/cron-job):** A datastore setup for scheduling and managing cron jobs.
-  - URL: `https://helm.zop.dev/cron-job`
-  - Example: Deploy this chart to handle background tasks in your application.
-
-- **[Service](./charts/service):** A generic service chart to deploy and manage custom services.
-  - URL: `https://helm.zop.dev/service`
-  - Example: Extend this chart to suit your unique service deployment needs.
-
-## Features
-
-- **Wide Range of Datastores:** Helm charts available for relational, NoSQL, graph, and other specialized databases.
-- **Ease of Use:** Simplified installation process using Helm.
-- **Pre-configured Settings:** Default configurations tailored for most use cases.
-- **Scalability:** Easily scale datastores to meet your requirements.
-- **Extensibility:** Modify the charts to suit your custom needs.
-
-## Contributing
-
-We welcome contributions! Please follow the guidelines below:
-
-1. Fork the repository and clone it locally.
-2. Create a branch for your feature or bug fix.
-3. Commit your changes with descriptive messages.
-4. Submit a pull request.
-
-For more details, check the [CONTRIBUTING.md](./CONTRIBUTING.md) file.
-
-## Code of Conduct
-
-Please adhere to our [Code of Conduct](./CODE_OF_CONDUCT.md) to ensure a respectful and inclusive community.
-
-## License
-
-This project is licensed under the terms of the [LICENSE](./LICENSE). Please review it for more information.
+For updates and support, visit the [zop.dev website](https://helm.zop.dev) or join our community discussions.
