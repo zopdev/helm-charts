@@ -393,6 +393,21 @@ entries:
     - https://helm.zop.dev/mysql-v0.0.1.tgz
     version: v0.0.1
   opentsdb:
+  - annotations:
+      type: datasource
+    apiVersion: v2
+    appVersion: "1.0"
+    created: "2025-04-01T18:45:46.721286+05:30"
+    description: Helm chart for deploying opentsdb
+    digest: 7ebb0ee5475da00381a3c8161d00c8cfd1431c0dedb91759f2b6b4fd0c432a44
+    icon: https://zop.dev/logo.png
+    maintainers:
+    - name: ZopDev
+      url: zop.dev
+    name: opentsdb
+    urls:
+    - https://helm.zop.dev/opentsdb-v0.0.2.tgz
+    version: v0.0.4
   - apiVersion: v1
     appVersion: "1.0"
     created: "2025-04-01T18:13:37.493423+05:30"
