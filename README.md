@@ -1,17 +1,15 @@
-<h1 style="text-align: center; font-size: 100px; font-weight: 500;">
-    Helm Charts
-</h1>
+# Helm Charts <img src="https://zop.dev/resources/cdn/newsletter/zopdev-transparent-logo.png" alt="zop.dev Logo" width="100" align="right">
+
+## **An Extensive Collection of Helm Charts for Datastores & Applications**
 
 <p align="center">
-  <img src="https://zop.dev/app/logo.svg" alt="zop.dev Logo" width="300">
+  <a href="./LICENSE">
+    <img src="https://img.shields.io/badge/License-Apache_2.0-blue?style=for-the-badge" alt="Apache 2.0 License">
+  </a>
+  <a href="./CONTRIBUTING.md">
+    <img src="https://img.shields.io/badge/Contribute-Guide-orange?style=for-the-badge" alt="Contributing">
+  </a>
 </p>
-
-<div align="center">
-  <a href="./LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-blue?style=for-the-badge" alt="Apache 2.0 License"></a>
-  <a href="./CONTRIBUTING.md"><img src="https://img.shields.io/badge/Contribute-Guide-orange?style=for-the-badge" alt="Contributing"></a>
-</div>
-
-<h2 align="center" style="font-size: 28px;"><b>An Extensive Collection of Helm Charts for Datastores & Applications</b></h2>
 
 ---
 
