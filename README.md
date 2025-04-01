@@ -1,10 +1,6 @@
-<p align="right">
-  <img src="https://zop.dev/resources/cdn/newsletter/zopdev-transparent-logo.png" alt="zop.dev Logo" width="100">
-</p>
-
-# Helm Charts
-
-## 📜 **An Extensive Collection of Helm Charts for Datastores & Applications**
+<img src="https://zop.dev/resources/cdn/newsletter/zopdev-transparent-logo.png" alt="zop.dev Logo" width="100">
+# The Helm Charts Library for zop.dev
+## An Extensive Collection of Helm Charts for Datastores & Applications
 
 <p align="center">
   <a href="./LICENSE">
