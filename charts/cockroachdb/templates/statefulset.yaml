@@ -91,8 +91,8 @@ spec:
       terminationGracePeriodSeconds: 60
       containers:
         - name: cockroachdb
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
+          image: "cockroachdb/cockroach:latest"
+          imagePullPolicy: "IfNotPresent"
           args:
             - shell
             - -ecx
@@ -114,18 +114,11 @@ spec:
             # https://github.com/helm/charts/pull/18993#issuecomment-558795102
             - >-
               exec /cockroach/cockroach
-            {{- if index .Values.conf `single-node` }}
-              start-single-node
-            {{- else }}
               start --join=
-              {{- if .Values.conf.join }}
-                {{- join `,` .Values.conf.join -}}
-              {{- else }}
                 {{- range $i, $_ := until 3 -}}
                   {{- if gt $i 0 -}},{{- end -}}
-                  ${STATEFULSET_NAME}-{{ $i }}.${STATEFULSET_FQDN}:{{ $.Values.service.ports.grpc.internal.port | int64 -}}
+                  ${STATEFULSET_NAME}-{{ $i }}.${STATEFULSET_FQDN}:26257
                 {{- end -}}
-              {{- end }}
               --advertise-host=$(hostname).${STATEFULSET_FQDN}
             {{- with index .Values.conf `cluster-name` }}
               --cluster-name={{ . }}
@@ -133,24 +126,14 @@ spec:
               --disable-cluster-name-verification
             {{- end }}
             {{- end }}
-            {{- end }}
-              --logtostderr={{ .Values.conf.logtostderr }}
+              --logtostderr=INFO
               --insecure
-            {{- with .Values.conf.attrs }}
-              --attrs={{ join `:` . }}
-            {{- end }}
-              --http-port={{ index .Values.conf `http-port` | int64 }}
-              --port={{ .Values.conf.port | int64 }}
-              --cache={{ .Values.conf.cache }}
+              --http-port=8080
+              --port=26257
+              --cache=25%
               --max-disk-temp-storage={{ index .Values.conf `max-disk-temp-storage` }}
-              --max-offset={{ index .Values.conf `max-offset` }}
-              --max-sql-memory={{ index .Values.conf `max-sql-memory` }}
-            {{- with .Values.conf.locality }}
-              --locality={{ . }}
-            {{- end }}
-            {{- with index .Values.conf `sql-audit-dir` }}
-              --sql-audit-dir={{ . }}
-            {{- end }}
+              --max-offset=500ms
+              --max-sql-memory=25%
             {{- range .Values.statefulset.args }}
               {{ . }}
             {{- end }}
@@ -158,7 +141,7 @@ spec:
             - name: STATEFULSET_NAME
               value: {{ template "cockroachdb.fullname" . }}
             - name: STATEFULSET_FQDN
-              value: {{ template "cockroachdb.fullname" . }}.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}
+              value: "{{ template "cockroachdb.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local"
             - name: COCKROACH_CHANNEL
               value: kubernetes-helm
           {{- with .Values.statefulset.env }}
@@ -166,10 +149,10 @@ spec:
           {{- end }}
           ports:
             - name: grpc
-              containerPort: {{ .Values.conf.port | int64 }}
+              containerPort: 26257
               protocol: TCP
             - name: http
-              containerPort: {{ index .Values.conf `http-port` | int64 }}
+              containerPort: 8080
               protocol: TCP
           volumeMounts:
             - name: datadir
@@ -199,10 +182,6 @@ spec:
         - name: datadir
           persistentVolumeClaim:
             claimName: datadir
-        {{- if .Values.storage.hostPath }}
-          hostPath:
-            path: {{ .Values.storage.hostPath | quote }}
-        {{- end }}
       {{- range .Values.statefulset.secretMounts }}
         - name: {{ printf "secret-%s" . | quote }}
           secret:

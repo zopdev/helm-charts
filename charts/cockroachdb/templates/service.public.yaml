@@ -23,12 +23,12 @@ spec:
   {{- $ports := .Values.service.ports }}
     # The main port, served by gRPC, serves Postgres-flavor SQL, inter-node
     # traffic and the CLI.
-    - name: {{ $ports.grpc.external.name | quote }}
-      port: {{ $ports.grpc.external.port | int64 }}
+    - name: "grpc"
+      port: 26257
       targetPort: grpc
   {{- if ne ($ports.grpc.internal.port | int64) ($ports.grpc.external.port | int64) }}
     - name: {{ $ports.grpc.internal.name | quote }}
-      port: {{ $ports.grpc.internal.port | int64 }}
+      port: 26257
       targetPort: grpc
   {{- end }}
     # The secondary port serves the UI as well as health and debug endpoints.
