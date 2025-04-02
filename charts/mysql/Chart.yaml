@@ -2,7 +2,7 @@ apiVersion: v2
 appVersion: "1.0"
 description: Helm chart for deploying mysql datastore
 name: mysql
-version: 0.0.4
+version: 0.0.5
 icon: "https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20241119/c647e8cc-f958-4e6b-ba08-22dc79ca703a-pngtransparentmysqldatabasemariadbdolphinmarinemammalanimalstextthumbnail.png"
 maintainers:
   - name: ZopDev

@@ -8,6 +8,10 @@
       "default": "10Gi",
       "mutable": true
     },
+    "version": {
+      "default": "8.0",
+      "mutable": true
+    },
     "resources": {
       "type": "object",
       "properties": {
