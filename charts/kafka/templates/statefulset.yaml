@@ -9,9 +9,11 @@ spec:
     matchLabels:
       {{- include "kafka.selectorLabels" . | nindent 6 }}
   serviceName: {{ include "kafka.fullname" . }}-headless
-  replicas: {{ .Values.replicaCount }}
+  replicas: 3
   updateStrategy:
     type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
   podManagementPolicy: Parallel
   template:
     metadata:
@@ -19,7 +21,7 @@ spec:
         {{- include "kafka.selectorLabels" . | nindent 8 }}
     spec:
       securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+        fsGroup: 1000
       affinity:
       {{- if .Values.affinity }}
         {{ toYaml .Values.affinity | indent 8 }}
@@ -42,8 +44,8 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-        imagePullPolicy: {{ .Values.image.pullPolicy }}
-        image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag | default "latest" }}"
+        imagePullPolicy: "IfNotPresent"
+        image: "docker.io/confluentinc/cp-kafka:{{ .Values.version }}"
         env:
         - name: POD_IP
           valueFrom:
@@ -68,94 +70,76 @@ spec:
         - name: KAFKA_ZOOKEEPER_CONNECT
           value: {{ include "kafka.zookeeper.ensemble" . | quote }}
         - name: KAFKA_HEAP_OPTS
-          value: {{ .Values.heapOpts | quote }}
+          value: "-XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=50.0"
         - name: KAFKA_CONFLUENT_SUPPORT_METRICS_ENABLE
-          value: {{ .Values.confluentSupportMetricsEnable | quote }}
+          value: "false"
         - name: KAFKA_LOG_DIRS
           value: "/var/lib/kafka/data"
         - name: KAFKA_AUTO_CREATE_TOPICS_ENABLE
-          value: {{ .Values.autoCreateTopicsEnable | quote }}
+          value: "false"
         - name: KAFKA_DELETE_TOPIC_ENABLE
-          value: {{ .Values.deleteTopicEnable | quote }}
+          value: "true"
         - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
-          value: {{ .Values.offsetsTopicReplicationFactor | int | quote }}
+          value: "3"
         - name: KAFKA_NUM_PARTITIONS
-          value: {{ .Values.numPartitions | int | quote }}
+          value: "3"
         - name: KAFKA_DEFAULT_REPLICATION_FACTOR
-          value: {{ .Values.defaultReplicationFactor | int | quote }}
+          value: "3"
         - name: KAFKA_MIN_INSYNC_REPLICAS
-          value: {{ .Values.minInsyncReplicas | int | quote }}
+          value: "2"
         - name: KAFKA_UNCLEAN_LEADER_ELECTION.ENABLE
-          value: {{ .Values.uncleanLeaderElectionEnable | quote }}
+          value: "false"
         - name: KAFKA_LOG_FLUSH_INTERVAL_MESSAGES
-          value: {{ .Values.logFlushIntervalMessages | int | quote }}
+          value: "10000"
         - name: KAFKA_LOG_FLUSH_INTERVAL_MS
-          value: {{ .Values.logFlushIntervalMs | int | quote }}
+          value: "1000"
         - name: KAFKA_LOG_RETENTION_BYTES
-          value: {{ .Values.logRetentionBytes | int | quote }}
+          value: "1073741824"
         - name: KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS
-          value: {{ .Values.logRetentionCheckIntervalMs | int | quote }}
+          value: "300000"
         - name: KAFKA_LOG_RETENTION_HOURS
-          value: {{ .Values.logRetentionHours | int | quote }}
+          value: "168"
         - name: KAFKA_LOG_SEGMENT_BYTES
-          value: {{ .Values.logSegmentBytes | int | quote }}
+          value: "1073741824"
         - name: KAFKA_MESSAGE_MAX_BYTES
-          value: {{ .Values.messageMaxBytes | int | quote }}
+          value: "1048588"
         - name: KAFKA_LOG4J_ROOT_LOGLEVEL
-          value: {{ .Values.log4jRootLoglevel | quote }}
+          value: "INFO"
         - name: KAFKA_LOG4J_LOGGERS
-          value: {{ .Values.log4jLoggers | quote }}
+          value: "kafka.authorizer.logger=INFO,kafka.controller=INFO"
         - name: KAFKA_LISTENERS
-          value: "PLAINTEXT://:{{ .Values.port.kafkaInternal }},EXTERNAL://:{{ .Values.port.kafkaExternal }}"
+          value: "PLAINTEXT://:9092,EXTERNAL://:9093"
         - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
           value: "PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT"
-        {{- if .Values.acls.enabled }}
-        - name: KAFKA_ZOOKEEPER_SET_ACL
-          value: "true"
-        - name: KAFKA_SUPER_USERS
-          value: "User:kafka"
-        - name: KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND
-          value: "false"
-        - name: KAFKA_AUTHORIZER_CLASS_NAME
-          value: "kafka.security.authorizer.AclAuthorizer"
-        {{- end }}
         command:
         - "sh"
         - "-exc"
         - |
           export KAFKA_BROKER_ID=${HOSTNAME##*-} && \
-          {{- if .Values.isDocker }}
-          export KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://{{ include "kafka.listener" . }}:{{ .Values.port.kafkaInternal }},EXTERNAL://127.0.0.1:$(({{ .Values.externalAccess.initNodePort }} + ${KAFKA_BROKER_ID})) && \
-          {{- else }}
-          export KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://{{ include "kafka.listener" . }}:{{ .Values.port.kafkaInternal }},EXTERNAL://${HOST_IP}:$(({{ .Values.externalAccess.initNodePort }} + ${KAFKA_BROKER_ID})) && \
-          {{- end }}
+          export KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://{{ include "kafka.listener" . }}:9092,EXTERNAL://127.0.0.1:$((32400 + ${KAFKA_BROKER_ID})) && \
           rm -rf /var/lib/kafka/data/lost+found && \
           exec /etc/confluent/docker/run
         ports:
         - name: tcp-kafka-int
-          containerPort: {{ .Values.port.kafkaInternal }}
+          containerPort: 9092
         - name: tcp-kafka-ext
-          containerPort: {{ .Values.port.kafkaExternal }}
-        {{- if .Values.livenessProbe.enabled }}
+          containerPort: 9093
         livenessProbe:
           tcpSocket:
             port: tcp-kafka-int
-          initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
-          periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
-          timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
-          successThreshold: {{ .Values.livenessProbe.successThreshold }}
-          failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
-        {{- end }}
-        {{- if .Values.readinessProbe.enabled }}
+          initialDelaySeconds: 300
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 6
+          successThreshold: 1
         readinessProbe:
           tcpSocket:
             port: tcp-kafka-int
-          initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
-          periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
-          timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
-          successThreshold: {{ .Values.readinessProbe.successThreshold }}
-          failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
-        {{- end }}
+          initialDelaySeconds: 120
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 6
+          successThreshold: 1
         volumeMounts:
         - name: data
           mountPath: /var/lib/kafka/data
@@ -164,7 +148,13 @@ spec:
         - name: logs
           mountPath: /var/log
         securityContext:
-          {{- toYaml .Values.securityContext | nindent 12 }}
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsUser: 1000
+          runAsGroup: 1000
+          capabilities:
+            drop:
+            - ALL
         resources:
           {{- toYaml .Values.resources | nindent 12 }}
       volumes:
