@@ -1,0 +1,42 @@
+kind: Job
+apiVersion: batch/v1
+metadata:
+  name: {{ template "cockroachdb.fullname" . }}-init
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    helm.sh/chart: {{ template "cockroachdb.chart" . }}
+    app.kubernetes.io/name: {{ template "cockroachdb.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+    app.kubernetes.io/component: init
+spec:
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ template "cockroachdb.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name | quote }}
+        app.kubernetes.io/component: init
+    spec:
+      restartPolicy: OnFailure
+      terminationGracePeriodSeconds: 0
+      containers:
+        - name: cluster-init
+          image: "cockroachdb/cockroach:latest"
+          imagePullPolicy:  IfNotPresent
+          command:
+            - /bin/bash
+            - -c
+            - >-
+              while true; do
+              initOUT=$(set -x;
+              /cockroach/cockroach init
+              --insecure
+              --host={{ template "cockroachdb.fullname" . }}-0.{{ template "cockroachdb.fullname" . -}}
+                     :26257
+              2>&1);
+              initRC="$?";
+              echo $initOUT;
+              [[ "$initRC" == "0" ]] && exit 0;
+              [[ "$initOUT" == *"cluster has already been initialized"* ]] && exit 0;
+              sleep 5;
+              done

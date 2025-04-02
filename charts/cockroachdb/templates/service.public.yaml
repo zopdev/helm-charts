@@ -8,36 +8,18 @@ metadata:
     app.kubernetes.io/name: {{ template "cockroachdb.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name | quote }}
     app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
-  {{- with .Values.service.public.labels }}
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
-  {{- with .Values.labels }}
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
-{{- with .Values.service.public.annotations }}
-  annotations: {{- toYaml . | nindent 4 }}
-{{- end }}
+    app.kubernetes.io/component: cockroachdb
 spec:
-  type: {{ .Values.service.public.type | quote }}
+  type: ClusterIP
   ports:
-  {{- $ports := .Values.service.ports }}
-    # The main port, served by gRPC, serves Postgres-flavor SQL, inter-node
-    # traffic and the CLI.
-    - name: "grpc"
+    - name: grpc
       port: 26257
       targetPort: grpc
-  {{- if ne ($ports.grpc.internal.port | int64) ($ports.grpc.external.port | int64) }}
-    - name: {{ $ports.grpc.internal.name | quote }}
-      port: 26257
-      targetPort: grpc
-  {{- end }}
-    # The secondary port serves the UI as well as health and debug endpoints.
-    - name: {{ $ports.http.name | quote }}
-      port: {{ $ports.http.port | int64 }}
+    - name: http
+      port: 8080
       targetPort: http
   selector:
     app.kubernetes.io/name: {{ template "cockroachdb.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name | quote }}
-  {{- with .Values.statefulset.labels }}
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
+    app.kubernetes.io/component: cockroachdb
+

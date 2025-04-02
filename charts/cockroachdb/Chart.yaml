@@ -3,7 +3,7 @@ appVersion: "1.0"
 description: Helm chart for deploying cockroachdb datastore
 name: cockroachdb
 version: 0.0.2
-icon: "https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20241119/cockroachdb-icon.png"
+icon: "https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20250402/331014cf-f38d-484f-9246-1c9a045cb9a0-cockroachicon.png"
 maintainers:
   - name: ZopDev
     url: zop.dev

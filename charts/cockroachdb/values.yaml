@@ -1,37 +1,3 @@
-statefulset:
-  replicas: 3
-  updateStrategy:
-    type: RollingUpdate
-  podManagementPolicy: Parallel
-  budget:
-    maxUnavailable: 1
-
-  args: []
-    # - --disable-cluster-name-verification
-
-  env: []
-    # - name: COCKROACH_ENGINE_MAX_SYNC_DURATION
-    #   value: "24h"
-
-  secretMounts: []
-
-  labels:
-    app.kubernetes.io/component: cockroachdb
-
-  annotations: {}
-
-  nodeAffinity: {}
-
-  podAffinity: {}
-
-  podAntiAffinity:
-    type: soft
-    weight: 100
-
-  nodeSelector: {}
-
-  tolerations: []
-
 resources:
   limits:
     cpu: 100m
@@ -39,27 +5,5 @@ resources:
   requests:
     cpu: 100m
     memory: 512Mi
-
-service:
-  ports:
-    grpc:
-      external:
-        port: 26257
-        name: grpc
-      internal:
-        port: 26257
-        name: grpc-internal
-    http:
-      port: 8080
-      name: http
-  public:
-    type: ClusterIP
-    labels:
-      app.kubernetes.io/component: cockroachdb
-    annotations: {}
-  discovery:
-    labels:
-      app.kubernetes.io/component: cockroachdb
-    annotations: {}
 
 diskSize : 10Gi
