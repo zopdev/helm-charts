@@ -1,17 +1,66 @@
 {{- range $index, $service := .Values.services }}
+{{- $maxLen := 27 }}
+{{- $randomSuffix := randAlphaNum 4 | lower }}
+{{- $trimmedName := trunc $maxLen $service.name }}
+{{- $generatedUsername := printf "%s-%s" $trimmedName $randomSuffix }}
+{{- $generatedPassword := printf "%s%s%s" (randAlpha 4) (randNumeric 4) (randAlpha 4 | upper) }}
+
+{{/* Define Secret Name */}}
+{{- $secretName := printf "%s-%s-%s-mariadb-database-secret" $.Release.Name (replace "_" "-" $service.database) $service.name }}
+
+{{/* Retrieve existing secret (if any) */}}
+{{- $existingSecret := lookup "v1" "Secret" $.Release.Namespace $secretName }}
+
+{{/* Use existing values if available, otherwise generate new ones */}}
+{{- $username := $generatedUsername }}
+{{- $password := $generatedPassword }}
+
+{{- if $existingSecret }}
+  {{- with $existingSecret.data }}
+    {{- if hasKey . "DB_USER" }}
+      {{- $username = index . "DB_USER" | b64dec }}
+    {{- end }}
+    {{- if hasKey . "DB_PASSWORD" }}
+      {{- $password = index . "DB_PASSWORD" | b64dec }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ $.Release.Name }}-{{ $service.name }}-init-script
+  name: {{ $.Release.Name }}-{{ replace "_" "-" $service.database }}-{{ $service.name }}-mariadb-configmap
+  namespace: {{ $.Release.Namespace }}
+data:
+  DB_DIALECT: "mariadb"
+  DB_USER: "{{ $username }}"
+  DB_PORT: "3306"
+  DB_NAME: "{{ $service.database }}"
+  DB_HOST: "{{ $.Release.Name }}-mariadb"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $secretName }}
+  namespace: {{ $.Release.Namespace }}
+type: Opaque
+data:
+  DB_PASSWORD: {{ $password | b64enc }}
+  DB_USER: {{ $username | b64enc }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $.Release.Name }}-{{ replace "_" "-" $service.database }}-{{ $service.name }}-mariadb-init-script
   namespace: {{ $.Release.Namespace }}
 data:
   db-init.sql: |
     CREATE DATABASE IF NOT EXISTS `{{ $service.database }}`;
     USE `{{ $service.database }}`;
 
-    CREATE USER IF NOT EXISTS '{{ $service.name }}-user'@'%' IDENTIFIED BY '{{ $service.password }}';
+    CREATE USER IF NOT EXISTS '{{ $username }}'@'%' IDENTIFIED BY '{{ $password }}';
 
-    GRANT CREATE, ALTER, USAGE ON `{{ $service.database }}`.* TO '{{ $service.name }}-user'@'%';
-    GRANT INSERT, INDEX, REFERENCES, SELECT, UPDATE, DELETE, DROP ON `{{ $service.database }}`.* TO '{{ $service.name }}-user'@'%';
----
+    GRANT CREATE, ALTER, USAGE ON `{{ $service.database }}`.* TO '{{ $username }}'@'%';
+    GRANT INSERT, INDEX, REFERENCES, SELECT, UPDATE, DELETE, DROP ON `{{ $service.database }}`.* TO '{{ $username }}'@'%';
 {{- end }}

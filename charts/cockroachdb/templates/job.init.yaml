@@ -1,4 +1,3 @@
-{{- if not (index .Values.conf `single-node`) }}
 kind: Job
 apiVersion: batch/v1
 metadata:
@@ -9,40 +8,21 @@ metadata:
     app.kubernetes.io/name: {{ template "cockroachdb.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name | quote }}
     app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
-  {{- with .Values.init.labels }}
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
-  {{- with .Values.labels }}
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
+    app.kubernetes.io/component: init
 spec:
   template:
     metadata:
       labels:
         app.kubernetes.io/name: {{ template "cockroachdb.name" . }}
         app.kubernetes.io/instance: {{ .Release.Name | quote }}
-      {{- with .Values.init.labels }}
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-    {{- with .Values.init.annotations }}
-      annotations: {{- toYaml . | nindent 8 }}
-    {{- end }}
+        app.kubernetes.io/component: init
     spec:
       restartPolicy: OnFailure
       terminationGracePeriodSeconds: 0
-    {{- with .Values.init.affinity }}
-      affinity: {{- toYaml . | nindent 8 }}
-    {{- end }}
-    {{- with .Values.init.nodeSelector }}
-      nodeSelector: {{- toYaml . | nindent 8 }}
-    {{- end }}
-    {{- with .Values.init.tolerations }}
-      tolerations: {{- toYaml . | nindent 8 }}
-    {{- end }}
       containers:
         - name: cluster-init
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
+          image: "cockroachdb/cockroach:latest"
+          imagePullPolicy:  IfNotPresent
           command:
             - /bin/bash
             - -c
@@ -52,7 +32,7 @@ spec:
               /cockroach/cockroach init
               --insecure
               --host={{ template "cockroachdb.fullname" . }}-0.{{ template "cockroachdb.fullname" . -}}
-                     :{{ .Values.service.ports.grpc.internal.port | int64 }}
+                     :26257
               2>&1);
               initRC="$?";
               echo $initOUT;
@@ -60,7 +40,3 @@ spec:
               [[ "$initOUT" == *"cluster has already been initialized"* ]] && exit 0;
               sleep 5;
               done
-        {{- with .Values.init.resources }}
-          resources: {{- toYaml . | nindent 12 }}
-        {{- end }}
-{{- end }}

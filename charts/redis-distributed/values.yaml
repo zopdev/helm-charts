@@ -1,7 +1,4 @@
-updateStrategy:
-  type: RollingUpdate
-
-image: "redis:6.2.13"
+version: "6.2.13"
 
 master:
   resources:
