@@ -1,10 +1,5 @@
 # values.yaml for OpenTSDB Helm chart
-
-replicaCount: 1
-
-image:
-  opentsdb: petergrace/opentsdb-docker:latest
-  pullPolicy: IfNotPresent
+version: 2.2
 
 # Resource configuration
 resources:
@@ -18,7 +13,4 @@ resources:
 diskSize: "10Gi"
 
 # Update strategy for the StatefulSet
-updateStrategy:
-  type: RollingUpdate
 
-opentsdb_port: 4242

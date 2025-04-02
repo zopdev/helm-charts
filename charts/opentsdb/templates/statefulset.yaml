@@ -14,7 +14,7 @@ spec:
       app: {{ $.Release.Name }}-opentsdb
   serviceName: {{ $.Release.Name }}-opentsdb
   updateStrategy:
-    type: {{ .Values.updateStrategy.type }}
+    type: RollingUpdate
   template:
     metadata:
       labels:
@@ -23,7 +23,7 @@ spec:
     spec:
       containers:
         - name: opentsdb
-          image: "{{ .Values.image.opentsdb }}"
+          image: "petergrace/opentsdb-docker:{{ .Values.version }}"
           imagePullPolicy: "IfNotPresent"
           ports:
             - containerPort: 4242

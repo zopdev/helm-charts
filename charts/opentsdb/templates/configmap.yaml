@@ -5,4 +5,4 @@ metadata:
   namespace: {{ .Release.Namespace | quote }}
 data:
   OPENTSDB_HOST: {{ $.Release.Name }}-opentsdb
-  OPENTSDB_PORT: "{{ .Values.opentsdb_port}}"
+  OPENTSDB_PORT: "4242"
