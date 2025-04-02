@@ -8,39 +8,24 @@ metadata:
     app.kubernetes.io/name: {{ template "cockroachdb.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name | quote }}
     app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
-  {{- with .Values.service.discovery.labels }}
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
-  {{- with .Values.labels }}
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
+    app.kubernetes.io/component: cockroachdb
   annotations:
     service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
     prometheus.io/scrape: "true"
     prometheus.io/path: _status/vars
-    prometheus.io/port: {{ .Values.service.ports.http.port | quote }}
-  {{- with .Values.service.discovery.annotations }}
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
+    prometheus.io/port: "8080"
 spec:
   clusterIP: None
   publishNotReadyAddresses: true
   ports:
-  {{- $ports := .Values.service.ports }}
-    - name: {{ $ports.grpc.external.name | quote }}
-      port: {{ $ports.grpc.external.port | int64 }}
+    - name: grpc
+      port: 26257
       targetPort: grpc
-  {{- if ne ($ports.grpc.internal.port | int64) ($ports.grpc.external.port | int64) }}
-    - name: {{ $ports.grpc.internal.name | quote }}
-      port: {{ $ports.grpc.internal.port | int64 }}
-      targetPort: grpc
-  {{- end }}
-    - name: {{ $ports.http.name | quote }}
-      port: {{ $ports.http.port | int64 }}
+    - name: http
+      port: 8080
       targetPort: http
   selector:
     app.kubernetes.io/name: {{ template "cockroachdb.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name | quote }}
-  {{- with .Values.statefulset.labels }}
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
+    app.kubernetes.io/component: cockroachdb
+

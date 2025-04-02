@@ -14,7 +14,7 @@ spec:
       app: {{ $.Release.Name }}-surrealdb
   serviceName: {{ $.Release.Name }}-surrealdb
   updateStrategy:
-    type: {{ .Values.updateStrategy.type }}
+    type: RollingUpdate
   template:
     metadata:
       labels:
@@ -23,7 +23,7 @@ spec:
     spec:
       containers:
         - name: surrealdb
-          image: "{{ .Values.image }}"
+          image: "surrealdb/surrealdb:{{ .Values.version }}"
           imagePullPolicy: "IfNotPresent"
           ports:
             - containerPort: 8000
@@ -37,7 +37,7 @@ spec:
           args: [start]
           env:
             - name: SURREAL_BIND
-              value: 0.0.0.0:{{ .Values.port }}
+              value: 0.0.0.0:8000
             - name: SURREALDB_DB_PATH
               value: "/var/lib/surrealdb/data/"
             - name: SURREAL_PATH

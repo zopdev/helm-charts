@@ -6,37 +6,20 @@ metadata:
   labels:
     app: {{ template "dgraph.name" . }}
     chart: {{ template "dgraph.chart" . }}
-    component: {{ .Values.alpha.name }}
+    component: "alpha"
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
-    monitor: {{ .Values.alpha.monitorLabel }}
-    {{- with .Values.alpha.service.labels }}
-    {{- toYaml . | trimSuffix "\n" | nindent 4 }}
-    {{- end }}
-  {{- with .Values.alpha.service.annotations }}
-  annotations:
-    {{- toYaml . | trimSuffix "\n" | nindent 4 }}
-  {{- end }}
+    monitor: "alpha-dgraph-io"
 spec:
-  type: {{ .Values.alpha.service.type }}
-  {{- if .Values.alpha.service.loadBalancerIP }}
-  loadBalancerIP: {{ .Values.alpha.service.loadBalancerIP }}
-  {{- end }}
-  {{- if .Values.alpha.service.externalTrafficPolicy }}
-  externalTrafficPolicy: {{ .Values.alpha.service.externalTrafficPolicy }}
-  {{- end }}
+  type: ClusterIP
   ports:
     - port: 8080
       targetPort: 8080
       name: http-alpha
     - port: 9080
       name: grpc-alpha
-  {{- with .Values.alpha.service.loadBalancerSourceRanges }}
-  loadBalancerSourceRanges:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
   selector:
     app: {{ template "dgraph.name" . }}
     chart: {{ template "dgraph.chart" . }}
-    component: {{ .Values.alpha.name }}
+    component: "alpha"
     release: {{ .Release.Name }}

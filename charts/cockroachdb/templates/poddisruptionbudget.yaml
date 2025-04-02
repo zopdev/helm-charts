@@ -16,7 +16,5 @@ spec:
     matchLabels:
       app.kubernetes.io/name: {{ template "cockroachdb.name" . }}
       app.kubernetes.io/instance: {{ .Release.Name | quote }}
-    {{- with .Values.statefulset.labels }}
-      {{- toYaml . | nindent 6 }}
-    {{- end }}
-  maxUnavailable: {{ .Values.statefulset.budget.maxUnavailable | int64 }}
+      app.kubernetes.io/component: cockroachdb
+  maxUnavailable: 1
