@@ -6,7 +6,8 @@
     "version": {
       "type": "string",
       "description": "MariaDB version to deploy",
-      "mutable": true
+      "mutable": true,
+      "default": "10.3.22-debian-10-r27"
     },
     "replication": {
       "type": "object",
@@ -15,8 +16,12 @@
         "enabled": {
           "type": "boolean",
           "description": "Enable MariaDB replication",
-          "mutable": true
+          "mutable": true,
+          "default": true
         }
+      },
+      "default": {
+        "enabled": true
       }
     },
     "master": {
@@ -35,14 +40,20 @@
                   "type": "string",
                   "pattern": "^[0-9]+m?$",
                   "description": "CPU request for master pod",
-                  "mutable": true
+                  "mutable": true,
+                  "default": "500m"
                 },
                 "memory": {
                   "type": "string",
                   "pattern": "^[0-9]+[KMGTPEZYkmgtpezy]i?$",
                   "description": "Memory request for master pod",
-                  "mutable": true
+                  "mutable": true,
+                  "default": "256M"
                 }
+              },
+              "default": {
+                "cpu": "500m",
+                "memory": "256M"
               }
             },
             "limits": {
@@ -53,15 +64,31 @@
                   "type": "string",
                   "pattern": "^[0-9]+m?$",
                   "description": "CPU limit for master pod",
-                  "mutable": true
+                  "mutable": true,
+                  "default": "1500m"
                 },
                 "memory": {
                   "type": "string",
                   "pattern": "^[0-9]+[KMGTPEZYkmgtpezy]i?$",
                   "description": "Memory limit for master pod",
-                  "mutable": true
+                  "mutable": true,
+                  "default": "1Gi"
                 }
+              },
+              "default": {
+                "cpu": "1500m",
+                "memory": "1Gi"
               }
+            }
+          },
+          "default": {
+            "requests": {
+              "cpu": "500m",
+              "memory": "256M"
+            },
+            "limits": {
+              "cpu": "1500m",
+              "memory": "1Gi"
             }
           }
         },
@@ -73,9 +100,28 @@
               "type": "string",
               "pattern": "^[0-9]+[KMGTPEZYkmgtpezy]i?$",
               "description": "Size of the persistent volume for master",
-              "mutable": true
+              "mutable": true,
+              "default": "10Gi"
             }
+          },
+          "default": {
+            "size": "10Gi"
           }
+        }
+      },
+      "default": {
+        "resources": {
+          "requests": {
+            "cpu": "500m",
+            "memory": "256M"
+          },
+          "limits": {
+            "cpu": "1500m",
+            "memory": "1Gi"
+          }
+        },
+        "persistence": {
+          "size": "10Gi"
         }
       }
     },
@@ -87,7 +133,8 @@
           "type": "integer",
           "minimum": 1,
           "description": "Number of slave replicas",
-          "mutable": true
+          "mutable": true,
+          "default": 1
         },
         "resources": {
           "type": "object",
@@ -101,14 +148,20 @@
                   "type": "string",
                   "pattern": "^[0-9]+m?$",
                   "description": "CPU request for slave pod",
-                  "mutable": true
+                  "mutable": true,
+                  "default": "500m"
                 },
                 "memory": {
                   "type": "string",
                   "pattern": "^[0-9]+[KMGTPEZYkmgtpezy]i?$",
                   "description": "Memory request for slave pod",
-                  "mutable": true
+                  "mutable": true,
+                  "default": "256M"
                 }
+              },
+              "default": {
+                "cpu": "500m",
+                "memory": "256M"
               }
             },
             "limits": {
@@ -119,15 +172,31 @@
                   "type": "string",
                   "pattern": "^[0-9]+m?$",
                   "description": "CPU limit for slave pod",
-                  "mutable": true
+                  "mutable": true,
+                  "default": "1500m"
                 },
                 "memory": {
                   "type": "string",
                   "pattern": "^[0-9]+[KMGTPEZYkmgtpezy]i?$",
                   "description": "Memory limit for slave pod",
-                  "mutable": true
+                  "mutable": true,
+                  "default": "1Gi"
                 }
+              },
+              "default": {
+                "cpu": "1500m",
+                "memory": "1Gi"
               }
+            }
+          },
+          "default": {
+            "requests": {
+              "cpu": "500m",
+              "memory": "256M"
+            },
+            "limits": {
+              "cpu": "1500m",
+              "memory": "1Gi"
             }
           }
         },
@@ -139,26 +208,46 @@
               "type": "string",
               "pattern": "^[0-9]+[KMGTPEZYkmgtpezy]i?$",
               "description": "Size of the persistent volume for slave",
-              "mutable": true
+              "mutable": true,
+              "default": "10Gi"
             }
+          },
+          "default": {
+            "size": "10Gi"
           }
+        }
+      },
+      "default": {
+        "replicas": 1,
+        "resources": {
+          "requests": {
+            "cpu": "500m",
+            "memory": "256M"
+          },
+          "limits": {
+            "cpu": "1500m",
+            "memory": "1Gi"
+          }
+        },
+        "persistence": {
+          "size": "10Gi"
         }
       }
     },
     "services": {
-        "type": "array",
-        "items": {
-          "type": "object",
-          "properties": {
-            "name": {
-              "type": "string"
-            },
-            "database": {
-              "type": "string"
-            }
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
           },
-          "required": ["name", "database"]
-        }
+          "database": {
+            "type": "string"
+          }
+        },
+        "required": ["name", "database"]
       }
+    }
   }
-} 
+}
