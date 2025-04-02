@@ -14,7 +14,7 @@ spec:
       app.kubernetes.io/part-of: redis
       app: "{{ .Release.Name }}-redis"
   updateStrategy:
-    type: {{ .Values.updateStrategy.type }}
+    type: RollingUpdate
   template:
     metadata:
       labels:
@@ -23,7 +23,7 @@ spec:
     spec:
       containers:
         - name: redis
-          image: {{ .Values.image }}
+          image: "redis:{{ .Values.version }}"
           command:
           - /bin/bash
           - -c
