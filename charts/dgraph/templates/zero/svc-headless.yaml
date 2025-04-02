@@ -6,12 +6,9 @@ metadata:
   labels:
     app: {{ template "dgraph.name" . }}
     chart: {{ template "dgraph.chart" . }}
-    component: {{ .Values.zero.name }}
+    component: "zero"
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
-    {{- with .Values.zero.serviceHeadless.labels }}
-    {{- toYaml . | trimSuffix "\n" | nindent 4 }}
-    {{- end }}
 spec:
   type: ClusterIP
   clusterIP: None
@@ -23,5 +20,5 @@ spec:
     app: {{ template "dgraph.name" . }}
     chart: {{ template "dgraph.chart" . }}
     release: {{ .Release.Name }}
-    component: {{ .Values.zero.name }}
-  publishNotReadyAddresses: {{ .Values.zero.service.publishNotReadyAddresses }}
+    component: "zero"
+  publishNotReadyAddresses: true

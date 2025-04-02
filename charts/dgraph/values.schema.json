@@ -1,0 +1,71 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "zero": {
+      "type": "object",
+      "properties": {
+        "resources": {
+          "type": "object",
+          "properties": {
+            "requests": {
+              "type": "object",
+              "properties": {
+                "cpu": { "type": "string" ,"default" : "100m","mutable": true},
+                "memory": { "type": "string" ,"default" : "100M","mutable": true}
+              },
+              "required": ["cpu", "memory"]
+            },
+            "limits": {
+              "type": "object",
+              "properties": {
+                "cpu": { "type": "string" ,"default" : "1000m","mutable": true},
+                "memory": { "type": "string" ,"default" : "1Gi","mutable": true}
+              },
+              "required": ["cpu", "memory"]
+            }
+          },
+          "required": ["requests", "limits"]
+        },
+        "diskSize": {
+          "type": "string",
+          "default": "10Gi", "mutable": true
+        }
+      },
+      "required": ["resources", "diskSize"]
+    },
+    "alpha": {
+      "type": "object",
+      "properties": {
+        "resources": {
+          "type": "object",
+          "properties": {
+            "requests": {
+              "type": "object",
+              "properties": {
+                "cpu": { "type": "string" ,"default" : "100m","mutable": true},
+                "memory": { "type": "string" ,"default" : "100M","mutable": true}
+              },
+              "required": ["cpu", "memory"]
+            },
+            "limits": {
+              "type": "object",
+              "properties": {
+                "cpu": { "type": "string" ,"default" : "1000m","mutable": true},
+                "memory": { "type": "string" ,"default" : "1Gi","mutable": true}
+              },
+              "required": ["cpu", "memory"]
+            }
+          },
+          "required": ["requests", "limits"]
+        },
+        "diskSize": {
+          "type": "string",
+          "default": "10Gi", "mutable": true
+        }
+      },
+      "required": ["resources", "diskSize"]
+    }
+  },
+  "required": ["zero", "alpha"]
+}
