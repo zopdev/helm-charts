@@ -13,3 +13,5 @@ dependencies:
   name: zookeeper
   repository: "https://helm.zop.dev"
   version: 0.0.1
+annotations:
+  type: datasource

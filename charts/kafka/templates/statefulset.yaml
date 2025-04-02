@@ -42,8 +42,8 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-        imagePullPolicy: {{ .Values.image.pullPolicy }}
-        image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag | default "latest" }}"
+        imagePullPolicy: "IfNotPresent"
+        image: "docker.io/confluentinc/cp-kafka:{{ .Values.version }}"
         env:
         - name: POD_IP
           valueFrom:

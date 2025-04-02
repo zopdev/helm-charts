@@ -1,9 +1,5 @@
-image:
-  registry: docker.io
-  repository: confluentinc/cp-kafka
-  tag: "7.8.0"
-  pullPolicy: IfNotPresent
-imagePullSecrets:  []
+
+version: "7.8.0"
 
 replicaCount: 3
 maxUnavailable: 1
