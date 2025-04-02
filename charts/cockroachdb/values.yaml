@@ -7,3 +7,5 @@ resources:
     memory: 512Mi
 
 diskSize : 10Gi
+
+version: v25.1.2

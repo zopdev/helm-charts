@@ -37,6 +37,10 @@
         "type": "string",
         "default": "10Gi", "mutable": true
       },
+      "version": {
+      "default": "v25.1.2",
+      "mutable": true
+    },
       "services": {
         "type": "array",
         "items": {
