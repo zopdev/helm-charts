@@ -1,0 +1,164 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["version"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "MariaDB version to deploy",
+      "mutable": true
+    },
+    "replication": {
+      "type": "object",
+      "mutable": true,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable MariaDB replication",
+          "mutable": true
+        }
+      }
+    },
+    "master": {
+      "type": "object",
+      "mutable": true,
+      "properties": {
+        "resources": {
+          "type": "object",
+          "mutable": true,
+          "properties": {
+            "requests": {
+              "type": "object",
+              "mutable": true,
+              "properties": {
+                "cpu": {
+                  "type": "string",
+                  "pattern": "^[0-9]+m?$",
+                  "description": "CPU request for master pod",
+                  "mutable": true
+                },
+                "memory": {
+                  "type": "string",
+                  "pattern": "^[0-9]+[KMGTPEZYkmgtpezy]i?$",
+                  "description": "Memory request for master pod",
+                  "mutable": true
+                }
+              }
+            },
+            "limits": {
+              "type": "object",
+              "mutable": true,
+              "properties": {
+                "cpu": {
+                  "type": "string",
+                  "pattern": "^[0-9]+m?$",
+                  "description": "CPU limit for master pod",
+                  "mutable": true
+                },
+                "memory": {
+                  "type": "string",
+                  "pattern": "^[0-9]+[KMGTPEZYkmgtpezy]i?$",
+                  "description": "Memory limit for master pod",
+                  "mutable": true
+                }
+              }
+            }
+          }
+        },
+        "persistence": {
+          "type": "object",
+          "mutable": true,
+          "properties": {
+            "size": {
+              "type": "string",
+              "pattern": "^[0-9]+[KMGTPEZYkmgtpezy]i?$",
+              "description": "Size of the persistent volume for master",
+              "mutable": true
+            }
+          }
+        }
+      }
+    },
+    "slave": {
+      "type": "object",
+      "mutable": true,
+      "properties": {
+        "replicas": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of slave replicas",
+          "mutable": true
+        },
+        "resources": {
+          "type": "object",
+          "mutable": true,
+          "properties": {
+            "requests": {
+              "type": "object",
+              "mutable": true,
+              "properties": {
+                "cpu": {
+                  "type": "string",
+                  "pattern": "^[0-9]+m?$",
+                  "description": "CPU request for slave pod",
+                  "mutable": true
+                },
+                "memory": {
+                  "type": "string",
+                  "pattern": "^[0-9]+[KMGTPEZYkmgtpezy]i?$",
+                  "description": "Memory request for slave pod",
+                  "mutable": true
+                }
+              }
+            },
+            "limits": {
+              "type": "object",
+              "mutable": true,
+              "properties": {
+                "cpu": {
+                  "type": "string",
+                  "pattern": "^[0-9]+m?$",
+                  "description": "CPU limit for slave pod",
+                  "mutable": true
+                },
+                "memory": {
+                  "type": "string",
+                  "pattern": "^[0-9]+[KMGTPEZYkmgtpezy]i?$",
+                  "description": "Memory limit for slave pod",
+                  "mutable": true
+                }
+              }
+            }
+          }
+        },
+        "persistence": {
+          "type": "object",
+          "mutable": true,
+          "properties": {
+            "size": {
+              "type": "string",
+              "pattern": "^[0-9]+[KMGTPEZYkmgtpezy]i?$",
+              "description": "Size of the persistent volume for slave",
+              "mutable": true
+            }
+          }
+        }
+      }
+    },
+    "services": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "database": {
+              "type": "string"
+            }
+          },
+          "required": ["name", "database"]
+        }
+      }
+  }
+} 
