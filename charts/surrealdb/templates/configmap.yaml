@@ -4,5 +4,5 @@ metadata:
   name: "{{ .Release.Name }}-surrealdb-service-configmap"
   namespace: {{ .Release.Namespace | quote }}
 data:
-  SURREAL_PORT: "{{ .Values.port}}"
+  SURREAL_PORT: "8000"
   SURREAL_HOST: "{{ $.Release.Name}}-surrealdb"
