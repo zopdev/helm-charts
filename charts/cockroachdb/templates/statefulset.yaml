@@ -8,177 +8,71 @@ metadata:
     app.kubernetes.io/name: {{ template "cockroachdb.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name | quote }}
     app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
-  {{- with .Values.statefulset.labels }}
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
-  {{- with .Values.labels }}
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
+    app.kubernetes.io/component: cockroachdb
 spec:
   serviceName: {{ template "cockroachdb.fullname" . }}
-  replicas: {{ .Values.statefulset.replicas | int64 }}
-  updateStrategy: {{- toYaml .Values.statefulset.updateStrategy | nindent 4 }}
-  podManagementPolicy: {{ .Values.statefulset.podManagementPolicy | quote }}
+  replicas: 3
+  updateStrategy:
+    type: RollingUpdate
+  podManagementPolicy: Parallel
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ template "cockroachdb.name" . }}
       app.kubernetes.io/instance: {{ .Release.Name | quote }}
-    {{- with .Values.statefulset.labels }}
-      {{- toYaml . | nindent 6 }}
-    {{- end }}
+      app.kubernetes.io/component: cockroachdb
+
   template:
     metadata:
       labels:
         app.kubernetes.io/name: {{ template "cockroachdb.name" . }}
         app.kubernetes.io/instance: {{ .Release.Name | quote }}
-      {{- with .Values.statefulset.labels }}
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.labels }}
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-    {{- with .Values.statefulset.annotations }}
-      annotations: {{- toYaml . | nindent 8 }}
-    {{- end }}
+        app.kubernetes.io/component: cockroachdb
     spec:
-    {{- if or .Values.statefulset.nodeAffinity .Values.statefulset.podAffinity .Values.statefulset.podAntiAffinity }}
       affinity:
-      {{- with .Values.statefulset.nodeAffinity }}
-        nodeAffinity: {{- toYaml . | nindent 10 }}
-      {{- end }}
-      {{- with .Values.statefulset.podAffinity }}
-        podAffinity: {{- toYaml . | nindent 10 }}
-      {{- end }}
-      {{- if .Values.statefulset.podAntiAffinity }}
         podAntiAffinity:
-        {{- if .Values.statefulset.podAntiAffinity.type }}
-        {{- if eq .Values.statefulset.podAntiAffinity.type "hard" }}
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - topologyKey: kubernetes.io/hostname
-              labelSelector:
-                matchLabels:
-                  app.kubernetes.io/name: {{ template "cockroachdb.name" . }}
-                  app.kubernetes.io/instance: {{ .Release.Name | quote }}
-                {{- with .Values.statefulset.labels }}
-                  {{- toYaml . | nindent 18 }}
-                {{- end }}
-        {{- else if eq .Values.statefulset.podAntiAffinity.type "soft" }}
           preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: {{ .Values.statefulset.podAntiAffinity.weight | int64 }}
+            - weight: 100
               podAffinityTerm:
                 topologyKey: kubernetes.io/hostname
                 labelSelector:
                   matchLabels:
                     app.kubernetes.io/name: {{ template "cockroachdb.name" . }}
                     app.kubernetes.io/instance: {{ .Release.Name | quote }}
-                  {{- with .Values.statefulset.labels }}
-                    {{- toYaml . | nindent 20 }}
-                  {{- end }}
-        {{- end }}
-        {{- else }}
-          {{- toYaml .Values.statefulset.podAntiAffinity | nindent 10 }}
-        {{- end }}
-      {{- end }}
-    {{- end }}
-    {{- with .Values.statefulset.nodeSelector }}
-      nodeSelector: {{- toYaml . | nindent 8 }}
-    {{- end }}
-    {{- with .Values.statefulset.tolerations }}
-      tolerations: {{- toYaml . | nindent 8 }}
-    {{- end }}
+                    app.kubernetes.io/component: cockroachdb
       # No pre-stop hook is required, a SIGTERM plus some time is all that's
       # needed for graceful shutdown of a node.
       terminationGracePeriodSeconds: 60
       containers:
         - name: cockroachdb
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
+          image: "cockroachdb/cockroach:{{ .Values.version }}"
+          imagePullPolicy: "IfNotPresent"
           args:
             - shell
-            - -ecx
-            # The use of qualified `hostname -f` is crucial:
-            # Other nodes aren't able to look up the unqualified hostname.
-            #
-            # `--join` CLI flag is hardcoded to exactly 3 Pods, because:
-            # 1. Having `--join` value depending on `statefulset.replicas`
-            #    will trigger undesired restart of existing Pods when
-            #    StatefulSet is scaled up/down. We want to scale without
-            #    restarting existing Pods.
-            # 2. At least one Pod in `--join` is enough to successfully
-            #    join CockroachDB cluster and gossip with all other existing
-            #    Pods, even if there are 3 or more Pods.
-            # 3. It's harmless for `--join` to have 3 Pods even for 1-Pod
-            #    clusters, while it gives us opportunity to scale up even if
-            #    some Pods of existing cluster are down (for whatever reason).
-            # See details explained here:
-            # https://github.com/helm/charts/pull/18993#issuecomment-558795102
+            - '-ecx'
             - >-
-              exec /cockroach/cockroach
-            {{- if index .Values.conf `single-node` }}
-              start-single-node
-            {{- else }}
-              start --join=
-              {{- if .Values.conf.join }}
-                {{- join `,` .Values.conf.join -}}
-              {{- else }}
-                {{- range $i, $_ := until 3 -}}
-                  {{- if gt $i 0 -}},{{- end -}}
-                  ${STATEFULSET_NAME}-{{ $i }}.${STATEFULSET_FQDN}:{{ $.Values.service.ports.grpc.internal.port | int64 -}}
-                {{- end -}}
-              {{- end }}
+              exec /cockroach/cockroach start
+              --join=${STATEFULSET_NAME}-0.${STATEFULSET_FQDN}:26257,${STATEFULSET_NAME}-1.${STATEFULSET_FQDN}:26257,${STATEFULSET_NAME}-2.${STATEFULSET_FQDN}:26257
               --advertise-host=$(hostname).${STATEFULSET_FQDN}
-            {{- with index .Values.conf `cluster-name` }}
-              --cluster-name={{ . }}
-            {{- if index $.Values.conf `disable-cluster-name-verification` }}
-              --disable-cluster-name-verification
-            {{- end }}
-            {{- end }}
-            {{- end }}
-              --logtostderr={{ .Values.conf.logtostderr }}
-              --insecure
-            {{- with .Values.conf.attrs }}
-              --attrs={{ join `:` . }}
-            {{- end }}
-              --http-port={{ index .Values.conf `http-port` | int64 }}
-              --port={{ .Values.conf.port | int64 }}
-              --cache={{ .Values.conf.cache }}
-              --max-disk-temp-storage={{ index .Values.conf `max-disk-temp-storage` }}
-              --max-offset={{ index .Values.conf `max-offset` }}
-              --max-sql-memory={{ index .Values.conf `max-sql-memory` }}
-            {{- with .Values.conf.locality }}
-              --locality={{ . }}
-            {{- end }}
-            {{- with index .Values.conf `sql-audit-dir` }}
-              --sql-audit-dir={{ . }}
-            {{- end }}
-            {{- range .Values.statefulset.args }}
-              {{ . }}
-            {{- end }}
+              --logtostderr=INFO --insecure --http-port=8080 --port=26257
+              --cache=25% --max-disk-temp-storage=0 --max-offset=500ms
+              --max-sql-memory=25%
           env:
             - name: STATEFULSET_NAME
               value: {{ template "cockroachdb.fullname" . }}
             - name: STATEFULSET_FQDN
-              value: {{ template "cockroachdb.fullname" . }}.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}
+              value: {{ template "cockroachdb.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
             - name: COCKROACH_CHANNEL
               value: kubernetes-helm
-          {{- with .Values.statefulset.env }}
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
           ports:
             - name: grpc
-              containerPort: {{ .Values.conf.port | int64 }}
+              containerPort: 26257
               protocol: TCP
             - name: http
-              containerPort: {{ index .Values.conf `http-port` | int64 }}
+              containerPort: 8080
               protocol: TCP
           volumeMounts:
             - name: datadir
               mountPath: /cockroach/cockroach-data/
-          {{- range .Values.statefulset.secretMounts }}
-            - name: {{ printf "secret-%s" . | quote }}
-              mountPath: {{ printf "/etc/cockroach/secrets/%s" . | quote }}
-              readOnly: true
-          {{- end }}
           livenessProbe:
             httpGet:
               path: /health
@@ -192,22 +86,12 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 5
             failureThreshold: 2
-        {{- with .Values.statefulset.resources }}
-          resources: {{- toYaml . | nindent 12 }}
-        {{- end }}
       volumes:
         - name: datadir
           persistentVolumeClaim:
             claimName: datadir
-        {{- if .Values.storage.hostPath }}
           hostPath:
-            path: {{ .Values.storage.hostPath | quote }}
-        {{- end }}
-      {{- range .Values.statefulset.secretMounts }}
-        - name: {{ printf "secret-%s" . | quote }}
-          secret:
-            secretName: {{ . | quote }}
-      {{- end }}
+            path: ""
   volumeClaimTemplates:
     - metadata:
         name: datadir

@@ -1,24 +1,7 @@
-image:
-  registry: docker.io
-  repository: bitnami/mariadb
-  tag: 10.3.22-debian-10-r27
-  pullPolicy: IfNotPresent
-  debug: false
-
-
-rootUser:
-  password: "root"
-  forcePassword: false
-  injectSecretsAsVolume: false
-
-
+version: 10.3.22-debian-10-r27
 
 replication:
   enabled: true
-  user: replicator
-  password: "root"
-  forcePassword: false
-  injectSecretsAsVolume: false
 
 master:
   resources:
@@ -28,22 +11,6 @@ master:
     limits:
       cpu: "1500m"
       memory: "1Gi"
-
-  livenessProbe:
-    enabled: true
-    initialDelaySeconds: 120
-    periodSeconds: 10
-    timeoutSeconds: 1
-    successThreshold: 1
-    failureThreshold: 3
-  readinessProbe:
-    enabled: true
-    initialDelaySeconds: 30
-    periodSeconds: 10
-    timeoutSeconds: 1
-    successThreshold: 1
-    failureThreshold: 3
-
   persistence:
     size: 10Gi
   
@@ -58,22 +25,5 @@ slave:
       cpu: "1500m"
       memory: "1Gi"
 
-  livenessProbe:
-    enabled: true
-    initialDelaySeconds: 120
-    periodSeconds: 10
-    timeoutSeconds: 1
-    successThreshold: 1
-    failureThreshold: 3
-  readinessProbe:
-    enabled: true
-    initialDelaySeconds: 30
-    periodSeconds: 10
-    timeoutSeconds: 1
-    successThreshold: 1
-    failureThreshold: 3
-
   persistence:
     size: 10Gi
-
-services:

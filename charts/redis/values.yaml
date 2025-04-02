@@ -1,9 +1,6 @@
-updateStrategy:
-  type: RollingUpdate
-
 diskSize: "10Gi"
 
-image: "redis:6.2.13"
+version: "6.2.13"
 
 # Resource configuration
 resources:

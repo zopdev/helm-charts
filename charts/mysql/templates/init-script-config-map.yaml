@@ -47,6 +47,7 @@ metadata:
 type: Opaque
 data:
   DB_PASSWORD: {{ $password | b64enc }}
+  DB_USER: {{ $username | b64enc }}
 ---
 apiVersion: v1
 kind: ConfigMap
