@@ -8,6 +8,10 @@
       "default": "10Gi",
       "mutable": true
     },
+    "version": {
+      "default": "8.0",
+      "mutable": true
+    },
     "resources": {
       "type": "object",
       "properties": {
@@ -45,6 +49,21 @@
             }
           }
         }
+      }
+    },
+    "services": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "database": {
+            "type": "string"
+          }
+        },
+        "required": ["name", "database"]
       }
     }
   }
