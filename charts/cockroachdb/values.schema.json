@@ -44,12 +44,9 @@
           "properties": {
             "name": {
               "type": "string"
-            },
-            "database": {
-              "type": "string"
             }
           },
-          "required": ["name", "database"]
+          "required": ["name"]
         }
       }
     }
