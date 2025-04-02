@@ -4,4 +4,5 @@ metadata:
   name: {{ include "kafka.fullname" . }}-configmap
   namespace: {{ .Release.Namespace }}
 data:
-  BOOTSTRAP_SERVER: {{ include "kafka.bootstrap.server" . }}:{{ .Values.port.kafkaInternal }}
+  BOOTSTRAP_SERVER: {{ include "kafka.bootstrap.server" . }}:9092
+

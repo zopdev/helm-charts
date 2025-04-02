@@ -13,26 +13,3 @@ resources:
     memory: "1500Mi"
 
 diskSize : 10Gi
-
-## Kafka Configs
-heapOpts: -XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=50.0
-confluentSupportMetricsEnable: false
-autoCreateTopicsEnable: false
-deleteTopicEnable: true
-offsetsTopicReplicationFactor: 3
-numPartitions: 3
-defaultReplicationFactor: 3
-minInsyncReplicas: 2
-uncleanLeaderElectionEnable: false
-logFlushIntervalMessages: 10000
-logFlushIntervalMs: 1000
-logRetentionBytes: 1073741824
-logRetentionCheckIntervalMs: 300000
-logRetentionHours: 168
-logSegmentBytes: 1073741824
-messageMaxBytes: 1048588
-
-log4jRootLoglevel: INFO
-log4jLoggers: "kafka.authorizer.logger=INFO,kafka.controller=INFO"
-
-
