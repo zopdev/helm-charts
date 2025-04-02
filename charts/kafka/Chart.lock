@@ -1,6 +1,0 @@
-dependencies:
-- name: zookeeper
-  repository: https://helm.zop.dev
-  version: v0.0.1
-digest: sha256:f1743292ec799f57235166cd4fb6e97a1eaeafbe18baa97221a744eafbfa943f
-generated: "2025-04-02T13:34:37.775898+05:30"
