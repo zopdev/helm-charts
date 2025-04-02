@@ -1,11 +1,5 @@
-
 version: "7.8.0"
 
-replicaCount: 3
-maxUnavailable: 1
-
-acls:
-  enabled: false
 
 zookeeper:
   enabled: true

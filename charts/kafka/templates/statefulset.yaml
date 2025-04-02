@@ -9,9 +9,11 @@ spec:
     matchLabels:
       {{- include "kafka.selectorLabels" . | nindent 6 }}
   serviceName: {{ include "kafka.fullname" . }}-headless
-  replicas: {{ .Values.replicaCount }}
+  replicas: 3
   updateStrategy:
     type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
   podManagementPolicy: Parallel
   template:
     metadata:
@@ -109,16 +111,6 @@ spec:
           value: "PLAINTEXT://:{{ .Values.port.kafkaInternal }},EXTERNAL://:{{ .Values.port.kafkaExternal }}"
         - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
           value: "PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT"
-        {{- if .Values.acls.enabled }}
-        - name: KAFKA_ZOOKEEPER_SET_ACL
-          value: "true"
-        - name: KAFKA_SUPER_USERS
-          value: "User:kafka"
-        - name: KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND
-          value: "false"
-        - name: KAFKA_AUTHORIZER_CLASS_NAME
-          value: "kafka.security.authorizer.AclAuthorizer"
-        {{- end }}
         command:
         - "sh"
         - "-exc"
