@@ -6,22 +6,12 @@ metadata:
   labels:
     app: {{ template "dgraph.name" . }}
     chart: {{ template "dgraph.chart" . }}
-    component: {{ .Values.zero.name }}
+    component: "zero"
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
-    monitor: {{ .Values.zero.monitorLabel }}
-    {{- with .Values.zero.service.labels }}
-    {{- toYaml . | trimSuffix "\n" | nindent 4 }}
-    {{- end }}
-  {{- with .Values.zero.service.annotations }}
-  annotations:
-    {{- toYaml . | trimSuffix "\n" | nindent 4 }}
-  {{- end }}
+    monitor: "zero-dgraph-io"
 spec:
-  type: {{ .Values.zero.service.type }}
-  {{- if .Values.zero.service.loadBalancerIP }}
-  loadBalancerIP: {{ .Values.zero.service.loadBalancerIP }}
-  {{- end }}
+  type: ClusterIP
   {{- if .Values.zero.externalTrafficPolicy }}
   externalTrafficPolicy: {{ .Values.zero.externalTrafficPolicy }}
   {{- end }}
@@ -32,12 +22,8 @@ spec:
     - port: 6080
       targetPort: 6080
       name: http-zero
-  {{- with .Values.zero.service.loadBalancerSourceRanges }}
-  loadBalancerSourceRanges:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
   selector:
     app: {{ template "dgraph.name" . }}
     chart: {{ template "dgraph.chart" . }}
     release: {{ .Release.Name }}
-    component: {{ .Values.zero.name }}
+    component: "zero"
