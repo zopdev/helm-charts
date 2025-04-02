@@ -21,7 +21,7 @@ spec:
         {{- include "kafka.selectorLabels" . | nindent 8 }}
     spec:
       securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+        fsGroup: 1000
       affinity:
       {{- if .Values.affinity }}
         {{ toYaml .Values.affinity | indent 8 }}
@@ -152,7 +152,13 @@ spec:
         - name: logs
           mountPath: /var/log
         securityContext:
-          {{- toYaml .Values.securityContext | nindent 12 }}
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsUser: 1000
+          runAsGroup: 1000
+          capabilities:
+            drop:
+            - ALL
         resources:
           {{- toYaml .Values.resources | nindent 12 }}
       volumes:

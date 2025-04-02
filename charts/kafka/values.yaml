@@ -5,18 +5,6 @@ zookeeper:
   enabled: true
   url: "" ## If not enabled provide the zookeeper url
 
-podSecurityContext:
-  fsGroup: 1000
-
-securityContext:
-  allowPrivilegeEscalation: false
-  readOnlyRootFilesystem: true
-  runAsUser: 1000
-  runAsGroup: 1000
-  capabilities:
-    drop:
-    - ALL
-
 resources:
   requests:
     cpu: "500m"
