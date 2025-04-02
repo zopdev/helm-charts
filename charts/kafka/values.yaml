@@ -5,21 +5,6 @@ zookeeper:
   enabled: true
   url: "" ## If not enabled provide the zookeeper url
 
-livenessProbe:
-  enabled: true
-  initialDelaySeconds: 300
-  periodSeconds: 10
-  timeoutSeconds: 5
-  failureThreshold: 6
-  successThreshold: 1
-readinessProbe:
-  enabled: true
-  initialDelaySeconds: 120
-  periodSeconds: 10
-  timeoutSeconds: 5
-  failureThreshold: 6
-  successThreshold: 1
-
 podSecurityContext:
   fsGroup: 1000
 
@@ -66,7 +51,8 @@ log4jLoggers: "kafka.authorizer.logger=INFO,kafka.controller=INFO"
 
 port:
   kafkaInternal: 9092
-  kafkaExternal: 9094
+  kafkaExternal: 9093
+  zookeeper: 2181
 externalAccess:
   enabled: false
   initNodePort: 32400
