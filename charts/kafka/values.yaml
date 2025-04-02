@@ -1,6 +1,5 @@
 version: "7.8.0"
 
-
 zookeeper:
   enabled: true
   url: "" ## If not enabled provide the zookeeper url
@@ -14,7 +13,6 @@ resources:
     memory: "1500Mi"
 
 diskSize : 10Gi
-
 
 ## Kafka Configs
 heapOpts: -XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=50.0
@@ -36,14 +34,5 @@ messageMaxBytes: 1048588
 
 log4jRootLoglevel: INFO
 log4jLoggers: "kafka.authorizer.logger=INFO,kafka.controller=INFO"
-
-port:
-  kafkaInternal: 9092
-  kafkaExternal: 9093
-  zookeeper: 2181
-externalAccess:
-  enabled: false
-  initNodePort: 32400
-isDocker: true
 
 

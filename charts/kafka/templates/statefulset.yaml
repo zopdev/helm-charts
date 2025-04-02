@@ -108,7 +108,7 @@ spec:
         - name: KAFKA_LOG4J_LOGGERS
           value: {{ .Values.log4jLoggers | quote }}
         - name: KAFKA_LISTENERS
-          value: "PLAINTEXT://:{{ .Values.port.kafkaInternal }},EXTERNAL://:{{ .Values.port.kafkaExternal }}"
+          value: "PLAINTEXT://:9092,EXTERNAL://:9093"
         - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
           value: "PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT"
         command:
@@ -116,18 +116,14 @@ spec:
         - "-exc"
         - |
           export KAFKA_BROKER_ID=${HOSTNAME##*-} && \
-          {{- if .Values.isDocker }}
-          export KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://{{ include "kafka.listener" . }}:{{ .Values.port.kafkaInternal }},EXTERNAL://127.0.0.1:$(({{ .Values.externalAccess.initNodePort }} + ${KAFKA_BROKER_ID})) && \
-          {{- else }}
-          export KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://{{ include "kafka.listener" . }}:{{ .Values.port.kafkaInternal }},EXTERNAL://${HOST_IP}:$(({{ .Values.externalAccess.initNodePort }} + ${KAFKA_BROKER_ID})) && \
-          {{- end }}
+          export KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://{{ include "kafka.listener" . }}:9092,EXTERNAL://127.0.0.1:$((32400 + ${KAFKA_BROKER_ID})) && \
           rm -rf /var/lib/kafka/data/lost+found && \
           exec /etc/confluent/docker/run
         ports:
         - name: tcp-kafka-int
-          containerPort: {{ .Values.port.kafkaInternal }}
+          containerPort: 9092
         - name: tcp-kafka-ext
-          containerPort: {{ .Values.port.kafkaExternal }}
+          containerPort: 9093
         livenessProbe:
           tcpSocket:
             port: tcp-kafka-int
