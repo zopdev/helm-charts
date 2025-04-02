@@ -46,6 +46,21 @@
           }
         }
       }
+    },
+    "services": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "database": {
+            "type": "string"
+          }
+        },
+        "required": ["name", "database"]
+      }
     }
   }
 }
