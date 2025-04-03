@@ -1,6 +1,4 @@
-image: "solr:9.8"
-
-solrRootPassword: 
+version: 9.8
 
 resources:
   requests:
@@ -10,16 +8,4 @@ resources:
     memory: "3000Mi"
     cpu: "500m"
 
-securityContext:
-  runAsUser: 1001
-  fsGroup: 1001
-
-tlsSecretName: 
-
-host:   
-
-tlsHost:
-
 diskSize: "10Gi"
-
-services:

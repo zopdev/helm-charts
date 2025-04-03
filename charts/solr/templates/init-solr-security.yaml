@@ -1,4 +1,3 @@
-{{- if .Values.solrRootPassword }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -6,17 +5,17 @@ metadata:
 data:
   security.json: |
     {
-    "authentication":{
-      "blockUnknown": true,
-      "class":"solr.BasicAuthPlugin",
-      "credentials":{"admin":"{{ .Values.solrRootPassword}}"},
-      "realm":"Solr users",
-      "forwardCredentials": false
-    },
-    "authorization":{
-      "class":"solr.RuleBasedAuthorizationPlugin",
-      "permissions":[{"name":"security-edit",
-          "role":"admin"}],
-      "user-role":{ "admin":"admin"}
-    }}
-{{- end }}
+      "authentication":{
+        "blockUnknown": false,
+        "class":"solr.BasicAuthPlugin",
+        "credentials":{"admin":"{{ include "solr.hashPassword" . }}"},
+        "realm":"Solr users",
+        "forwardCredentials": false
+      },
+      "authorization":{
+        "class":"solr.RuleBasedAuthorizationPlugin",
+        "permissions":[{"name":"security-edit",
+            "role":"admin"}],
+        "user-role":{ "admin":"admin"}
+      }
+    }
