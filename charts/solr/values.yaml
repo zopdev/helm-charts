@@ -1,4 +1,4 @@
-version: 9.8
+version: "9.8"
 
 resources:
   requests:

@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "version": {
+      "default": "9.8",
+      "mutable": true
+    },
+    "resources": {
+      "type": "object",
+      "properties": {
+        "requests": {
+          "type": "object",
+          "properties": {
+            "memory": {
+              "type": "string",
+              "default": "2500Mi", "mutable": true
+            },
+            "cpu": {
+              "type": "string",
+              "default": "250m", "mutable": true
+            }
+          }
+        },
+        "limits": {
+          "type": "object",
+          "properties": {
+            "memory": {
+              "type": "string",
+              "default": "3000Mi", "mutable": true
+            },
+            "cpu": {
+              "type": "string",
+              "default": "500m", "mutable": true
+            }
+          }
+        }
+      }
+    },
+    "diskSize": {
+      "type": "string",
+      "default": "10Gi", "mutable": true
+    },
+    "services": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": ["name"]
+      }
+    }
+  }
+}
