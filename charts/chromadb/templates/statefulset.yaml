@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: chromadb
-          image: {{.Values.image}}
+          image: "ghcr.io/chroma-core/chroma:{{.Values.version}}"
           imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:

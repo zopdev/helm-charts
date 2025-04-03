@@ -2,7 +2,7 @@ apiVersion: v2
 appVersion: "1.0"
 description: Helm chart for deploying chromadb datastore
 name: chromadb
-version: 0.0.2
+version: 0.0.3
 icon: "https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20241205/f21ef909-e0ea-4969-8963-0848602a5e4b-ImageEditor.jpg"
 maintainers:
   - name: ZopDev
