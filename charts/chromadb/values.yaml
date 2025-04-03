@@ -1,4 +1,4 @@
-image: ghcr.io/chroma-core/chroma:latest
+version: 0.6.3
 
 resources:
   requests:
@@ -8,4 +8,4 @@ resources:
     memory: "2Gi"
     cpu: "1000m"
 
-diskSize: 10
+diskSize: "10Gi"
