@@ -2,12 +2,9 @@
   "$schema": "https://json-schema.org/draft-07/schema#",
   "type": "object",
   "properties": {
-    "postgresRootPassword": {
-      "type": "string"
-    },
-    "image": {
+    "version": {
       "type": "string",
-      "default": "postgres:15.9"
+      "default": "15.9"
     },
     "resources": {
       "type": "object",
@@ -64,10 +61,19 @@
       }
     },
     "services": {
-      "type": "array",
-      "items": {
-        "type": "object"
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "database": {
+              "type": "string"
+            }
+          },
+          "required": ["name", "database"]
+        }
       }
-    }
   }
 }
