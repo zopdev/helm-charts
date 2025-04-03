@@ -6,6 +6,18 @@
       "type": "string",
       "default": "6.2.13"
     },
+    "services": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": ["name"]
+      }
+    },
     "master": {
       "type": "object",
       "properties": {
@@ -127,13 +139,5 @@
       "required": ["enable", "count", "resources", "persistence"]
     }
   },
-  "required": ["version", "master", "slave"],
-  "services": {
-    "type": "object",
-    "properties": {
-      "name": {
-        "type": "string"
-      }
-    }
-  }
+  "required": ["version", "master", "slave"]
 }
