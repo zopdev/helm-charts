@@ -7,7 +7,7 @@ metadata:
 spec:
   containers:
     - name: postgres-init-role
-      image: postgres:15.9
+      image: "postgres:{{ $.Values.version }}"
       command: ["psql"]
       args:
         - "-h"

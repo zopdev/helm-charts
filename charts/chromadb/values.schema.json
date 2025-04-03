@@ -47,9 +47,21 @@
     },
     "diskSize": {
       "type": "string",
-      "pattern": "^[0-9]+$",
-      "default": "10",
+      "pattern": "^[0-9]+Gi$",
+      "default": "10Gi",
       "mutable": true
+    },
+    "services": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": ["name"]
+      }
     }
   }
 }
