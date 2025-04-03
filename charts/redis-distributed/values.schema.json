@@ -3,7 +3,20 @@
   "type": "object",
   "properties": {
     "version": {
-      "type": "string"
+      "type": "string",
+      "default": "6.2.13"
+    },
+    "services": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": ["name"]
+      }
     },
     "master": {
       "type": "object",
@@ -14,16 +27,32 @@
             "requests": {
               "type": "object",
               "properties": {
-                "cpu": { "type": "string" ,"mutable": true},
-                "memory": { "type": "string" ,"mutable": true}
+                "cpu": {
+                  "type": "string",
+                  "mutable": true,
+                  "default": "100m"
+                },
+                "memory": {
+                  "type": "string",
+                  "mutable": true,
+                  "default": "500Mi"
+                }
               },
               "required": ["cpu", "memory"]
             },
             "limits": {
               "type": "object",
               "properties": {
-                "cpu": { "type": "string" ,"mutable": true},
-                "memory": { "type": "string" ,"mutable": true}
+                "cpu": {
+                  "type": "string",
+                  "mutable": true,
+                  "default": "500m"
+                },
+                "memory": {
+                  "type": "string",
+                  "mutable": true,
+                  "default": "1000Mi"
+                }
               },
               "required": ["cpu", "memory"]
             }
@@ -33,7 +62,11 @@
         "persistence": {
           "type": "object",
           "properties": {
-            "size": { "type": "string" ,"mutable": true}
+            "size": {
+              "type": "string",
+              "mutable": true,
+              "default": "10Gi"
+            }
           },
           "required": ["size"]
         }
@@ -43,24 +76,48 @@
     "slave": {
       "type": "object",
       "properties": {
-        "enable": { "type": "boolean" ,"mutable": true},
-        "count": { "type": "integer" ,"mutable": true},
+        "enable": {
+          "type": "boolean",
+          "mutable": true,
+          "default": true
+        },
+        "count": {
+          "type": "integer",
+          "mutable": true,
+          "default": 1
+        },
         "resources": {
           "type": "object",
           "properties": {
             "requests": {
               "type": "object",
               "properties": {
-                "cpu": { "type": "string" ,"mutable": true},
-                "memory": { "type": "string" ,"mutable": true}
+                "cpu": {
+                  "type": "string",
+                  "mutable": true,
+                  "default": "100m"
+                },
+                "memory": {
+                  "type": "string",
+                  "mutable": true,
+                  "default": "500Mi"
+                }
               },
               "required": ["cpu", "memory"]
             },
             "limits": {
               "type": "object",
               "properties": {
-                "cpu": { "type": "string" , "mutable": true},
-                "memory": { "type": "string" , "mutable": true}
+                "cpu": {
+                  "type": "string",
+                  "mutable": true,
+                  "default": "500m"
+                },
+                "memory": {
+                  "type": "string",
+                  "mutable": true,
+                  "default": "1000Mi"
+                }
               },
               "required": ["cpu", "memory"]
             }
@@ -70,7 +127,11 @@
         "persistence": {
           "type": "object",
           "properties": {
-            "size": { "type": "string" , "mutable": true}
+            "size": {
+              "type": "string",
+              "mutable": true,
+              "default": "10Gi"
+            }
           },
           "required": ["size"]
         }
@@ -78,13 +139,5 @@
       "required": ["enable", "count", "resources", "persistence"]
     }
   },
-  "required": ["version", "master", "slave"],
-  "services": {
-    "type" : "object",
-    "properties": {
-      "name": {
-        "type": "string"
-      }
-    }
-  }
+  "required": ["version", "master", "slave"]
 }
