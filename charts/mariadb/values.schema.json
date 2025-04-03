@@ -1,252 +1,162 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema#",
   "type": "object",
-  "required": ["version"],
+  "title": "MariaDB Helm Chart Values",
+  "description": "Configuration values for MariaDB Helm chart",
   "properties": {
     "version": {
       "type": "string",
       "description": "MariaDB version to deploy",
-      "mutable": true,
-      "default": "10.3.22-debian-10-r27"
+      "default": "10.3.22-debian-10-r27",
+      "mutable": true
     },
     "replication": {
       "type": "object",
-      "mutable": true,
+      "description": "Replication configuration",
       "properties": {
         "enabled": {
           "type": "boolean",
           "description": "Enable MariaDB replication",
-          "mutable": true,
-          "default": true
+          "default": true,
+          "mutable": true
         }
-      },
-      "default": {
-        "enabled": true
       }
     },
     "master": {
       "type": "object",
-      "mutable": true,
+      "description": "Master node configuration",
       "properties": {
         "resources": {
           "type": "object",
-          "mutable": true,
+          "description": "Resource requests and limits for master pod",
           "properties": {
             "requests": {
               "type": "object",
-              "mutable": true,
+              "description": "Resource requests",
               "properties": {
                 "cpu": {
                   "type": "string",
-                  "pattern": "^[0-9]+m?$",
                   "description": "CPU request for master pod",
-                  "mutable": true,
-                  "default": "500m"
+                  "pattern": "^[0-9]+m?$",
+                  "default": "500m",
+                  "mutable": true
                 },
                 "memory": {
                   "type": "string",
-                  "pattern": "^[0-9]+[KMGTPEZYkmgtpezy]i?$",
                   "description": "Memory request for master pod",
-                  "mutable": true,
-                  "default": "256M"
+                  "pattern": "^[0-9]+[KMGTPEZYkmgtpezy]i?$",
+                  "default": "256M",
+                  "mutable": true
                 }
-              },
-              "default": {
-                "cpu": "500m",
-                "memory": "256M"
               }
             },
             "limits": {
               "type": "object",
-              "mutable": true,
+              "description": "Resource limits",
               "properties": {
                 "cpu": {
                   "type": "string",
-                  "pattern": "^[0-9]+m?$",
                   "description": "CPU limit for master pod",
-                  "mutable": true,
-                  "default": "1500m"
+                  "pattern": "^[0-9]+m?$",
+                  "default": "1500m",
+                  "mutable": true
                 },
                 "memory": {
                   "type": "string",
-                  "pattern": "^[0-9]+[KMGTPEZYkmgtpezy]i?$",
                   "description": "Memory limit for master pod",
-                  "mutable": true,
-                  "default": "1Gi"
+                  "pattern": "^[0-9]+[KMGTPEZYkmgtpezy]i?$",
+                  "default": "1Gi",
+                  "mutable": true
                 }
-              },
-              "default": {
-                "cpu": "1500m",
-                "memory": "1Gi"
               }
-            }
-          },
-          "default": {
-            "requests": {
-              "cpu": "500m",
-              "memory": "256M"
-            },
-            "limits": {
-              "cpu": "1500m",
-              "memory": "1Gi"
             }
           }
         },
         "persistence": {
           "type": "object",
-          "mutable": true,
+          "description": "Persistence configuration for master",
           "properties": {
             "size": {
               "type": "string",
-              "pattern": "^[0-9]+[KMGTPEZYkmgtpezy]i?$",
               "description": "Size of the persistent volume for master",
-              "mutable": true,
-              "default": "10Gi"
+              "pattern": "^[0-9]+[KMGTPEZYkmgtpezy]i?$",
+              "default": "10Gi",
+              "mutable": true
             }
-          },
-          "default": {
-            "size": "10Gi"
           }
-        }
-      },
-      "default": {
-        "resources": {
-          "requests": {
-            "cpu": "500m",
-            "memory": "256M"
-          },
-          "limits": {
-            "cpu": "1500m",
-            "memory": "1Gi"
-          }
-        },
-        "persistence": {
-          "size": "10Gi"
         }
       }
     },
     "slave": {
       "type": "object",
-      "mutable": true,
+      "description": "Slave node configuration",
       "properties": {
         "replicas": {
           "type": "integer",
-          "minimum": 1,
           "description": "Number of slave replicas",
-          "mutable": true,
-          "default": 1
+          "minimum": 1,
+          "default": 1,
+          "mutable": true
         },
         "resources": {
           "type": "object",
-          "mutable": true,
+          "description": "Resource requests and limits for slave pods",
           "properties": {
             "requests": {
               "type": "object",
-              "mutable": true,
+              "description": "Resource requests",
               "properties": {
                 "cpu": {
                   "type": "string",
-                  "pattern": "^[0-9]+m?$",
                   "description": "CPU request for slave pod",
-                  "mutable": true,
-                  "default": "500m"
+                  "pattern": "^[0-9]+m?$",
+                  "default": "500m",
+                  "mutable": true
                 },
                 "memory": {
                   "type": "string",
-                  "pattern": "^[0-9]+[KMGTPEZYkmgtpezy]i?$",
                   "description": "Memory request for slave pod",
-                  "mutable": true,
-                  "default": "256M"
+                  "pattern": "^[0-9]+[KMGTPEZYkmgtpezy]i?$",
+                  "default": "256M",
+                  "mutable": true
                 }
-              },
-              "default": {
-                "cpu": "500m",
-                "memory": "256M"
               }
             },
             "limits": {
               "type": "object",
-              "mutable": true,
+              "description": "Resource limits",
               "properties": {
                 "cpu": {
                   "type": "string",
-                  "pattern": "^[0-9]+m?$",
                   "description": "CPU limit for slave pod",
-                  "mutable": true,
-                  "default": "1500m"
+                  "pattern": "^[0-9]+m?$",
+                  "default": "1500m",
+                  "mutable": true
                 },
                 "memory": {
                   "type": "string",
-                  "pattern": "^[0-9]+[KMGTPEZYkmgtpezy]i?$",
                   "description": "Memory limit for slave pod",
-                  "mutable": true,
-                  "default": "1Gi"
+                  "pattern": "^[0-9]+[KMGTPEZYkmgtpezy]i?$",
+                  "default": "1Gi",
+                  "mutable": true
                 }
-              },
-              "default": {
-                "cpu": "1500m",
-                "memory": "1Gi"
               }
-            }
-          },
-          "default": {
-            "requests": {
-              "cpu": "500m",
-              "memory": "256M"
-            },
-            "limits": {
-              "cpu": "1500m",
-              "memory": "1Gi"
             }
           }
         },
         "persistence": {
           "type": "object",
-          "mutable": true,
+          "description": "Persistence configuration for slave",
           "properties": {
             "size": {
               "type": "string",
-              "pattern": "^[0-9]+[KMGTPEZYkmgtpezy]i?$",
               "description": "Size of the persistent volume for slave",
-              "mutable": true,
-              "default": "10Gi"
+              "pattern": "^[0-9]+[KMGTPEZYkmgtpezy]i?$",
+              "default": "10Gi",
+              "mutable": true
             }
-          },
-          "default": {
-            "size": "10Gi"
           }
         }
-      },
-      "default": {
-        "replicas": 1,
-        "resources": {
-          "requests": {
-            "cpu": "500m",
-            "memory": "256M"
-          },
-          "limits": {
-            "cpu": "1500m",
-            "memory": "1Gi"
-          }
-        },
-        "persistence": {
-          "size": "10Gi"
-        }
-      }
-    },
-    "services": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "database": {
-            "type": "string"
-          }
-        },
-        "required": ["name", "database"]
       }
     }
   }
