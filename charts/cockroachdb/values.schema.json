@@ -48,9 +48,12 @@
           "properties": {
             "name": {
               "type": "string"
+            },
+            "database": {
+              "type": "string"
             }
           },
-          "required": ["name"]
+          "required": ["name", "database"]
         }
       }
     }
