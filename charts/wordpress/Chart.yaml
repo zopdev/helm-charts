@@ -2,7 +2,7 @@ apiVersion: v2
 appVersion: "1.0"
 description: Helm chart for deploying WordPress app
 name: wordpress
-version: 0.0.3
+version: 0.0.4
 icon: "https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20241129/9f2ff083-4ba6-4494-91d4-c6c7c96c8ab0-download.jpeg"
 dependencies:
   - name: mysql
@@ -14,4 +14,5 @@ dependencies:
 maintainers:
   - name: ZopDev
     url: zop.dev
-type: application
+annotations:
+  type: application
