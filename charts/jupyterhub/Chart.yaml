@@ -2,7 +2,8 @@ apiVersion: v2
 appVersion: "1.0"
 description: Helm chart for Deploying JupyterHub
 name: jupyterhub
-version: 0.0.2
+version: 0.0.3
+type: application
 icon: "https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20250313/e2540703-3750-4d46-ba32-32445e506332-jupyter.png"
 maintainers:
   - name: ZopDev
