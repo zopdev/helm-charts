@@ -1,0 +1,14 @@
+apiVersion: "policy/v1"
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "scylla.names.fullname" . }}
+  namespace: {{ include "scylla.names.namespace" . | quote }}
+  labels: {{- include "common.labels.standard" .| nindent 4 }}
+    app.kubernetes.io/part-of: scylladb
+    app.kubernetes.io/component: scylladb
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels: {{- include "common.labels.matchLabels" . | nindent 6 }}
+      app.kubernetes.io/part-of: scylladb
+      app.kubernetes.io/component: scylladb

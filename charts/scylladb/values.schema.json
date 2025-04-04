@@ -1,0 +1,60 @@
+{
+    "$schema": "https://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "resources": {
+        "type": "object",
+        "properties": {
+          "requests": {
+            "type": "object",
+            "properties": {
+              "memory": {
+                "type": "string",
+                "default": "2048Mi", "mutable": true
+              },
+              "cpu": {
+                "type": "string",
+                "default": "1000m", "mutable": true
+              }
+            }
+          },
+          "limits": {
+            "type": "object",
+            "properties": {
+              "memory": {
+                "type": "string",
+                "default": "3072Mi", "mutable": true
+              },
+              "cpu": {
+                "type": "string",
+                "default": "1500m", "mutable": true
+              }
+            }
+          }
+        }
+      },
+      "diskSize": {
+        "type": "string",
+        "default": "10Gi", "mutable": true
+      },
+      "version": {
+      "default": "6.2.3-debian-12-r5",
+      "mutable": true
+    },
+      "services": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "database": {
+              "type": "string"
+            }
+          },
+          "required": ["name", "database"]
+        }
+      }
+    }
+}

@@ -1,113 +1,149 @@
-apiVersion: apps/v1
+apiVersion: "apps/v1"
 kind: StatefulSet
 metadata:
-  name: {{ $.Release.Name }}-scylladb
-  labels:
-    app: {{ $.Release.Name }}-scylladb
+  name: {{ include "scylla.names.fullname" . }}
+  namespace: {{ include "scylla.names.namespace" . | quote }}
+  labels: {{ include "common.labels.standard" . | nindent 4 }}
+    app.kubernetes.io/part-of: scylladb
+    app.kubernetes.io/component: scylladb
 spec:
-  replicas: 1
-  serviceName: {{ $.Release.Name }}-scylladb
   selector:
-    matchLabels:
-      app: {{ $.Release.Name }}-scylladb
+    matchLabels: {{- include "common.labels.matchLabels" . | nindent 6 }}
+  serviceName: {{ printf "%s-headless" (include "scylla.names.fullname" .) | trunc 63 | trimSuffix "-" }}
+  podManagementPolicy: OrderedReady
+  replicas: 1
+  updateStrategy: 
+    type: RollingUpdate
   template:
     metadata:
-      labels:
-        app: {{ $.Release.Name }}-scylladb
+      labels: {{ include "common.labels.standard" . | nindent 8 }}
+        app.kubernetes.io/part-of: scylladb
+        app.kubernetes.io/component: scylladb
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9180"
     spec:
-      initContainers:
-        - name: sysctl-tune
-          image: busybox:1.35.0-uclibc
-          command:
-            - "sh"
-            - "-c"
-            - "sysctl -w fs.aio-max-nr=524288"
-          securityContext:
-            privileged: true
+      automountServiceAccountToken: false
+      serviceAccountName: {{ template "scylladb.serviceAccountName" . }}
       containers:
         - name: scylladb
-          image: {{ .Values.image }}
-          imagePullPolicy: {{ .Values.pullPolicy }}
-          command: ["/bin/bash", "-c", "--"]
-          args:
+          image: docker.io/bitnami/scylladb:{{ .Values.version }}
+          imagePullPolicy: "IfNotPresent"
+          command:
+            - bash
+            - -ec
             - |
-                sed -i "s/#cluster_name: .*/cluster_name: '${CLUSTER_NAME}'/" /etc/scylla/scylla.yaml
-                sed -i 's/# data_file_directories:/data_file_directories:/' /etc/scylla/scylla.yaml
-                sed -i 's/#    - \/var\/lib\/scylla\/data/    - \/var\/lib\/scylla\/data/' /etc/scylla/scylla.yaml
-                sed -i 's/# commitlog_directory: \/var\/lib\/scylla\/commitlog/commitlog_directory: \/var\/lib\/scylla\/commitlog/' /etc/scylla/scylla.yaml
-
-                # Modify the seeds in scylla.yaml by replacing "127.0.0.1" with the SCYLLA_SEEDS value
-                sed -i "s/seeds: \"127.0.0.1\"/seeds: '${SCYLLA_SEEDS}'/" /etc/scylla/scylla.yaml
-
-                # Modify Authenticator and Authorizer
-                sed -i "s/# authenticator: AllowAllAuthenticator/authenticator: '${SCYLLA_AUTHENTICATOR}'/" /etc/scylla/scylla.yaml
-                sed -i "s/# authorizer: AllowAllAuthorizer/authorizer: '${SCYLLA_AUTHORIZER}'/" /etc/scylla/scylla.yaml
-
-                # Modify listen_address to the Helm release name
-                sed -i "s/listen_address: localhost/listen_address: '{{ .Release.Name }}-scylladb-0'/" /etc/scylla/scylla.yaml
-
-                # Modify rpc_address to listen on all interfaces
-                sed -i "s/rpc_address: localhost/rpc_address: '0.0.0.0'/" /etc/scylla/scylla.yaml
-
-                # Set broadcast_rpc_address to Helm release name for correct node discovery
-                sed -i "s/# broadcast_rpc_address: 1.2.3.4/broadcast_rpc_address: '{{ .Release.Name }}-scylladb-0'/" /etc/scylla/scylla.yaml
-
-                # Enable Prometheus metrics on port 9180
-                sed -i 's/# prometheus_port: 9180/prometheus_port: 9180/' /etc/scylla/scylla.yaml
-                # Start ScyllaDB in the background
-                exec /docker-entrypoint.py
-          ports:
-            - containerPort: 9042
-          resources:
-            requests:
-              memory: {{ .Values.resources.requests.memory }}
-              cpu: {{ .Values.resources.requests.cpu }}
-            limits:
-              memory: {{ .Values.resources.limits.memory }}
-              cpu: {{ .Values.resources.limits.cpu }}
+              # Node 0 is the password seeder
+              if [[ $POD_NAME =~ (.*)-0$ ]]; then
+                  echo "Setting node as password seeder"
+                  export SCYLLADB_PASSWORD_SEEDER=yes
+              else
+                  # Only node 0 will execute the startup initdb scripts
+                  export SCYLLADB_IGNORE_INITDB_SCRIPTS=1
+              fi
+              /opt/bitnami/scripts/scylladb/entrypoint.sh /opt/bitnami/scripts/scylladb/run.sh
           env:
-            - name: SCYLLA_SEEDS
-              value: "{{ $.Release.Name }}-scylladb-0.{{ $.Release.Name }}-scylladb.{{ $.Release.Namespace }}.svc.cluster.local"
-            - name: SCYLLA_AUTHENTICATOR
-              value: "PasswordAuthenticator"
-            - name: SCYLLA_AUTHORIZER
-              value: "CassandraAuthorizer"
-            - name: CLUSTER_NAME
-              value: "Cluster"
-            - name: SCYLLA_PASSWORD
+            - name: SCYLLADB_CLUSTER_NAME
+              value: "scylladb"
+            - name: SCYLLADB_SEEDS
+              value: {{ (include "scylladb.seeds" .) | quote }}
+            - name: SCYLLADB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ $.Release.Name }}-scylladb-database-secret
-                  key: pod_password
+                  name: {{ include "scylla.names.fullname" . }}-secret
+                  key: scylladb-password
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: SCYLLADB_USER
+              value: "cassandra"
+            - name: SCYLLADB_NUM_TOKENS
+              value: "256"
+            - name: SCYLLADB_DATACENTER
+              value: "dc1"
+            - name: SCYLLADB_ENDPOINT_SNITCH
+              value: "SimpleSnitch"
+            - name: SCYLLADB_RACK
+              value: "rack1"
+            - name: MAX_HEAP_SIZE
+              value: "768M"
+            - name: HEAP_NEWSIZE
+              value: "256M"
+            - name: SCYLLADB_TRANSPORT_PORT_NUMBER
+              value: "7000"
+            - name: SCYLLADB_JMX_PORT_NUMBER
+              value: "7199"
+            - name: SCYLLADB_CQL_PORT_NUMBER
+              value: "9042"
+            - name: SCYLLADB_API_PORT_NUMBER
+              value: "10000"
+            - name: SCYLLADB_CQL_SHARD_PORT_NUMBER
+              value: "19042"
+            - name: SCYLLADB_PROMETHEUS_PORT_NUMBER
+              value: "0"
           livenessProbe:
-            exec:
-              command:
-              - sh
-              - -c
-              - "nodetool status"
-            initialDelaySeconds: 120
-            periodSeconds: 20
-            timeoutSeconds: 15
-            failureThreshold: 3
+            tcpSocket:
+              port: cql
+            initialDelaySeconds: 100
+            periodSeconds: 30
+            timeoutSeconds: 30
+            successThreshold: 1
+            failureThreshold: 5
           readinessProbe:
-            exec:
-              command:
-              - sh
-              - -c
-              - "nodetool status"
+            tcpSocket:
+              port: cql
             initialDelaySeconds: 60
-            periodSeconds: 20
-            timeoutSeconds: 15
-            failureThreshold: 3
+            periodSeconds: 10
+            timeoutSeconds: 30
+            successThreshold: 1
+            failureThreshold: 5
+          ports:
+            - name: intra
+              containerPort: 7000
+            - name: jmx
+              containerPort: 7199
+            - name: cql
+              containerPort: 9042
+            - name: cql-shard
+              containerPort: 19042
+            - name: api
+              containerPort: 10000
+            - name: metrics
+              containerPort: 9180
+          {{- if .Values.resources }}
+          resources: {{ toYaml .Values.resources | nindent 12 }}
+          {{- end }}
           volumeMounts:
-            - name: {{ $.Release.Name }}-scylla-data
-              mountPath: /var/lib/scylla
+            - name: data
+              mountPath: /bitnami/scylladb
+            - name: empty-dir
+              mountPath: /tmp
+              subPath: tmp-dir
+            - name: empty-dir
+              mountPath: /opt/bitnami/scylladb/etc
+              subPath: app-conf-dir
+            - name: empty-dir
+              mountPath: /opt/bitnami/scylladb/tmp
+              subPath: app-tmp-dir
+            - name: empty-dir
+              mountPath: /opt/bitnami/scylladb/logs
+              subPath: app-logs-dir
+            - name: empty-dir
+              mountPath: /.cassandra
+              subPath: app-cqlsh-tmp-dir
+      volumes:
+        - name: empty-dir
+          emptyDir: {}
   volumeClaimTemplates:
-    - metadata:
-        name: {{ $.Release.Name }}-scylla-data
+    - apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: data
+        labels: {{- include "common.labels.matchLabels" . | nindent 10 }}
       spec:
-        accessModes: ["ReadWriteOnce"]
+        accessModes:
+          - ReadWriteOnce
         resources:
           requests:
             storage: {{ .Values.diskSize }}
-        storageClassName: standard

@@ -1,0 +1,40 @@
+{{- $fullName := include "scylla.names.fullname" . }}
+{{- $replicaCount := 1 }}
+{{- $root := . }}
+{{- range $i, $e := until $replicaCount }}
+{{- $targetPod := printf "%s-%d" (printf "%s" $fullName) $i }}
+{{- $_ := set $ "targetPod" $targetPod }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ printf "%s-%d-internal" $fullName $i }}
+  namespace: {{ include "scylla.names.namespace" $root | quote }}
+  labels: 
+    app.kubernetes.io/part-of: scylladb
+    app.kubernetes.io/component: scylladb
+    pod: {{ $targetPod }}
+spec:
+  type: ClusterIP
+  publishNotReadyAddresses: true
+  ports:
+    - name: intra
+      port: 7000
+      targetPort: intra
+    - name: tls
+      port: 7001
+      targetPort: tls
+    - name: jmx
+      port: 7199
+      targetPort: jmx
+    - name: cql
+      port: 9042
+      targetPort: cql
+    - name: cql-shard
+      port: 19042
+      targetPort: cql
+  selector: 
+    app.kubernetes.io/part-of: scylladb
+    app.kubernetes.io/component: scylladb
+    statefulset.kubernetes.io/pod-name: {{ $targetPod }}
+---
+  {{- end }}

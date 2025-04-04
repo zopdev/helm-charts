@@ -7,22 +7,22 @@ metadata:
 spec:
   containers:
     - name: scylladb-init
-      image: {{ $.Values.image }}
+      image: docker.io/bitnami/scylladb:{{ $.Values.version }}
       command:
         - /bin/bash
         - -c
         - |
-          until cqlsh -u superuser -p $SCYLLADB_PASSWORD {{ $.Release.Name }}-scylladb; do
+          until cqlsh -u cassandra -p $SCYLLADB_PASSWORD {{ $.Release.Name }}-scylladb; do
             echo "Waiting for ScyllaDB to be ready..."
             sleep 5
           done
-          cqlsh -u superuser -p $SCYLLADB_PASSWORD {{ $.Release.Name }}-scylladb -e "SOURCE '/etc/config/init-schema.cql';"
+          cqlsh -u cassandra -p $SCYLLADB_PASSWORD {{ $.Release.Name }}-scylladb -e "SOURCE '/etc/config/init-schema.cql';"
       env:
         - name: SCYLLADB_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: {{ $.Release.Name }}-scylladb-database-secret
-              key: pod_password
+              name: {{ $.Release.Name }}-scylladb-secret
+              key: scylladb-password
       volumeMounts:
         - name: script-volume
           mountPath: /etc/config
