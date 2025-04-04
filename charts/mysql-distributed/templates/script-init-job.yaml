@@ -1,0 +1,73 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-mysql-master-init
+  namespace: {{ .Release.Namespace }}
+spec:
+  template:
+    spec:
+      containers:
+        - name: mysql-master-init
+          image: mysql:8.0
+          command: ["sh", "-c"]
+          args:
+            - |
+              if mysql -h {{ .Release.Name }}-mysql-master -u root -p$(MYSQL_ROOT_PASSWORD) < /scripts/master-init.sql; then
+                echo "Master initialization script ran successfully.";
+              else
+                echo "Master initialization script failed." >&2;
+                exit 1;
+              fi
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-mysql-root-secret
+                  key: root-password
+          volumeMounts:
+            - name: mysql-init-scripts
+              mountPath: /scripts
+      volumes:
+        - name: mysql-init-scripts
+          configMap:
+            name: {{ .Release.Name }}-mysql-init-scripts
+      restartPolicy: OnFailure
+
+
+--- 
+{{- if .Values.replication.enable }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-mysql-slave-init
+  namespace: {{ .Release.Namespace }}
+spec:
+  template:
+    spec:
+      containers:
+        - name: mysql-slave-init
+          image: mysql:8.0
+          command: ["sh", "-c"]
+          args:
+            - |
+              if mysql -h {{ .Release.Name }}-mysql-slave -u root -p$(MYSQL_ROOT_PASSWORD) < /scripts/slave-init.sql; then
+                echo "Slave initialization script ran successfully.";
+              else
+                echo "Slave initialization script failed." >&2;
+                exit 1;
+              fi
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-mysql-root-secret
+                  key: root-password
+          volumeMounts:
+            - name: mysql-init-scripts
+              mountPath: /scripts
+      volumes:
+        - name: mysql-init-scripts
+          configMap:
+            name: {{ .Release.Name }}-mysql-init-scripts
+      restartPolicy: OnFailure
+{{- end }}

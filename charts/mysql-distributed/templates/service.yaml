@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-mysql-master
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/part-of: mysql
+    app: {{ .Release.Name }}-mysql-master
+spec:
+  type: ClusterIP
+  ports:
+    - name: mysql
+      port: 3306
+      targetPort: 3306
+      protocol: TCP
+  selector:
+    app.kubernetes.io/part-of: mysql
+    app: {{ .Release.Name }}-mysql-master
+
+---
+{{- if .Values.replication.enable }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-mysql-slave
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/part-of: mysql
+    app: {{ .Release.Name }}-mysql-slave
+spec:
+  type: ClusterIP
+  ports:
+    - name: mysql
+      port: 3306
+      targetPort: 3306
+      protocol: TCP
+  selector:
+    app.kubernetes.io/part-of: mysql
+    app: {{ .Release.Name }}-mysql-slave
+{{- end }}
+
+
