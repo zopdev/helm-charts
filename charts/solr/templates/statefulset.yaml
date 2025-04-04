@@ -17,11 +17,11 @@ spec:
         app: solr
     spec:
       securityContext:
-        runAsUser: {{ .Values.securityContext.runAsUser }}
-        fsGroup: {{ .Values.securityContext.fsGroup }}
+        runAsUser: 1001
+        fsGroup: 1001
       containers:
         - name: solr
-          image: "{{ .Values.image }}"
+          image: "solr:{{ .Values.version }}"
           ports:
             - containerPort: 8983
           env:
@@ -53,17 +53,13 @@ spec:
           volumeMounts:
             - name: solr-data
               mountPath: /var/solr
-            {{- if .Values.solrRootPassword }}
             - name: security-config
               mountPath: /var/solr/data/security.json
               subPath: security.json
-            {{- end }}
       volumes:
-        {{- if .Values.solrRootPassword }}
         - name: security-config
           configMap:
             name: {{ .Release.Name }}-solr-security-config
-        {{- end }}
   volumeClaimTemplates:
     - metadata:
         name: solr-data
