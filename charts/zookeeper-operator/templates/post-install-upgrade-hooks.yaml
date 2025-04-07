@@ -1,0 +1,107 @@
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ template "zookeeper-operator.fullname" . }}-post-install-upgrade
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": post-install, post-upgrade
+    "helm.sh/hook-weight": "1"
+    "helm.sh/hook-delete-policy": hook-succeeded, before-hook-creation, hook-failed
+rules:
+- apiGroups:
+  - zookeeper.pravega.io
+  resources:
+  - "*"
+  verbs:
+  - get
+- apiGroups:
+  - extensions
+  resources:
+  - "deployments"
+  verbs:
+  - get
+---
+
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ template "zookeeper-operator.fullname" . }}-post-install-upgrade
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": post-install, post-upgrade
+    "helm.sh/hook-weight": "1"
+    "helm.sh/hook-delete-policy": hook-succeeded, before-hook-creation, hook-failed
+subjects:
+- kind: ServiceAccount
+  name: {{ template "zookeeper-operator.fullname" . }}-post-install-upgrade
+  namespace: {{.Release.Namespace}}
+roleRef:
+  kind: Role
+  name: {{ template "zookeeper-operator.fullname" . }}-post-install-upgrade
+  apiGroup: rbac.authorization.k8s.io
+
+---
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ template "zookeeper-operator.fullname" . }}-post-install-upgrade
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": post-install, post-upgrade
+    "helm.sh/hook-weight": "1"
+    "helm.sh/hook-delete-policy": hook-succeeded, before-hook-creation, hook-failed
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "zookeeper-operator.fullname" . }}-post-install-upgrade
+  namespace: {{ .Release.Namespace }}
+  annotations:
+      "helm.sh/hook": post-install, post-upgrade
+      "helm.sh/hook-weight": "1"
+      "helm.sh/hook-delete-policy": hook-succeeded, before-hook-creation, hook-failed
+data:
+  validations.sh: |
+    #!/bin/sh
+    set -e
+    sleep 30
+
+    if [ -z "$(kubectl api-resources | grep ZookeeperCluster)" ]; then
+        exit 1
+    fi
+---
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ template "zookeeper-operator.fullname" . }}-post-install-upgrade
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": post-install, post-upgrade
+    "helm.sh/hook-weight": "2"
+    "helm.sh/hook-delete-policy": hook-succeeded, before-hook-creation, hook-failed
+spec:
+  backoffLimit: 10
+  template:
+    metadata:
+      name: {{ template "zookeeper-operator.fullname" . }}-post-install-upgrade
+    spec:
+      serviceAccountName: {{ template "zookeeper-operator.fullname" . }}-post-install-upgrade
+      restartPolicy: Never
+      containers:
+      - name: post-install-upgrade-job
+        image: "lachlanevenson/k8s-kubectl:v1.23.2"
+        command:
+          - /scripts/validations.sh
+        volumeMounts:
+          - name: sh
+            mountPath: /scripts
+            readOnly: true
+      volumes:
+        - name: sh
+          configMap:
+            name: {{ template "zookeeper-operator.fullname" . }}-post-install-upgrade
+            defaultMode: 0555
