@@ -1,0 +1,6 @@
+dependencies:
+- name: zookeeper-operator
+  repository: https://helm.zop.dev
+  version: v0.0.1
+digest: sha256:f179767db85e46a206747d922d65c33e33d5a246a8997ef9dc246837eac61477
+generated: "2025-04-08T12:12:53.582849+05:30"

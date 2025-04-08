@@ -1,0 +1,24 @@
+version : "v0.9.0"
+
+zookeeper-operator:
+  install: true
+  crd:
+    create: true
+
+resources: 
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "200m"
+    memory: "256Mi"
+
+mTLS:
+  clientCertSecret: ""
+  caCertSecret: ""
+  caCertSecretKey: ca-cert.pem
+  insecureSkipVerify: true
+  watchForUpdates: true
+
+metrics:
+  enable: true
