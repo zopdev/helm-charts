@@ -8,6 +8,10 @@ spec:
     - port: 3306
       targetPort: 3306
       protocol: TCP
+      name: mysql
+    - port: 2121
+      targetPort: 2121
+      name: metrics
   selector:
     app: {{ .Release.Name }}-mysql
   type: ClusterIP
