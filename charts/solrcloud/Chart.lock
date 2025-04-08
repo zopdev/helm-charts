@@ -1,0 +1,6 @@
+dependencies:
+- name: solr-operator
+  repository: https://helm.zop.dev
+  version: v0.0.1
+digest: sha256:7567d50a6f686a97bf9e43284ccb8b72ad9a3e50b1c7027172a76064df54f40d
+generated: "2025-04-08T17:40:51.169918+05:30"
