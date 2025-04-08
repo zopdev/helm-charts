@@ -59,9 +59,9 @@ spec:
           containers:
             - name: {{ .Values.name }}
               image: {{ .Values.image }}
-              {{- if ne .Values.command ""}}
-              command: {{ .Values.command | toYaml | nindent 14 }}
-              {{- end }}
+              {{- if .Values.command }}
+              command: {{  tpl (toJson .Values.command) . }}
+              {{- end}}
               imagePullPolicy: IfNotPresent
               ports:
                 {{- if and .Values.metricsPort (ne (int .Values.metricsPort) 0) }}
@@ -179,7 +179,7 @@ spec:
                   {{- end }}
                 {{- end }}
                 {{- if .Values.envList }}
-                {{- toYaml .Values.envList | nindent 12 }}
+                {{- toYaml .Values.envList | nindent 16 }}
                 {{- end }}
               volumeMounts:
               {{- if .Values.volumeMounts }}
