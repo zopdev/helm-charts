@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "zookeeper-operator.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+{{ include "zookeeper-operator.commonLabels" . | indent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: {{ template "zookeeper-operator.fullname" . }}
+  template:
+    metadata:
+      labels:
+        name: {{ template "zookeeper-operator.fullname" . }}
+        component: zookeeper-operator
+    spec:
+      serviceAccountName: zookeeper-operator
+      containers:
+      - name: {{ template "zookeeper-operator.fullname" . }}
+        image: "pravega/zookeeper-operator:0.2.15"
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 6000
+          name: metrics
+        command:
+        - zookeeper-operator
+        env:
+        - name: WATCH_NAMESPACE
+          value: ""
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: OPERATOR_NAME
+          value: {{ template "zookeeper-operator.fullname" . }}
+        {{- if .Values.resources }}
+        resources:
+{{ toYaml .Values.resources | indent 10 }}
+        {{- end }}
+

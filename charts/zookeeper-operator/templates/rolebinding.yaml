@@ -1,0 +1,14 @@
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ template "zookeeper-operator.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+{{ include "zookeeper-operator.commonLabels" . | indent 4 }}
+subjects:
+- kind: ServiceAccount
+  name: zookeeper-operator
+roleRef:
+  kind: Role
+  name: {{ template "zookeeper-operator.fullname" . }}
+  apiGroup: rbac.authorization.k8s.io

@@ -1,0 +1,9 @@
+apiVersion: v2
+appVersion: "1.0"
+description: A Helm chart for Deploying Zookeeper Operator on Kubernetes
+name: zookeeper-operator
+version: 0.0.1
+icon: "https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20250407/69625503-f6f1-4521-9c14-1d262ee8683b-zookeeper.png"
+maintainers:
+  - name: ZopDev
+    url: zop.dev

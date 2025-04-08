@@ -1,0 +1,112 @@
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ template "zookeeper-operator.fullname" . }}-pre-delete
+  annotations:
+    "helm.sh/hook": pre-delete
+    "helm.sh/hook-weight": "1"
+    "helm.sh/hook-delete-policy": hook-succeeded, before-hook-creation, hook-failed
+rules:
+- apiGroups:
+  - zookeeper.pravega.io
+  resources:
+  - "*"
+  verbs:
+  - get
+  - list
+---
+
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ template "zookeeper-operator.fullname" . }}-pre-delete
+  annotations:
+    "helm.sh/hook": pre-delete
+    "helm.sh/hook-weight": "1"
+    "helm.sh/hook-delete-policy": hook-succeeded, before-hook-creation, hook-failed
+subjects:
+  - kind: ServiceAccount
+    name: {{ template "zookeeper-operator.fullname" . }}-pre-delete
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: {{ template "zookeeper-operator.fullname" . }}-pre-delete
+  apiGroup: rbac.authorization.k8s.io
+
+---
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ template "zookeeper-operator.fullname" . }}-pre-delete
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": pre-delete
+    "helm.sh/hook-weight": "1"
+    "helm.sh/hook-delete-policy": hook-succeeded, before-hook-creation, hook-failed
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "zookeeper-operator.fullname" . }}-pre-delete
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": pre-delete
+    "helm.sh/hook-weight": "1"
+    "helm.sh/hook-delete-policy": hook-succeeded, before-hook-creation, hook-failed
+data:
+  pre-delete.sh: |
+    #!/bin/sh
+    exit_code=0
+    echo "Checking for ZookeeperCluster Resource"
+
+    ret=$(kubectl get zookeepercluster --all-namespaces --no-headers 2>&1)
+    if (echo $ret | grep -e "No resources found" -e "the server doesn't have a resource type \"zookeepercluster\"" > /dev/null);
+    then
+      echo "None"
+    else
+      echo "$ret"
+      exit_code=1
+    fi
+
+    if [ $exit_code -ne 0 ];
+    then
+      echo "Pre-delete Check Failed"
+      exit $exit_code
+    fi
+    echo "Pre-delete Check OK"
+---
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ template "zookeeper-operator.fullname" . }}-pre-delete
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": pre-delete
+    "helm.sh/hook-weight": "2"
+    "helm.sh/hook-delete-policy": hook-succeeded, before-hook-creation, hook-failed
+spec:
+  backoffLimit: 6
+  template:
+    metadata:
+      name: {{ template "zookeeper-operator.fullname" . }}-pre-delete
+    spec:
+      serviceAccountName: {{ template "zookeeper-operator.fullname" . }}-pre-delete
+      restartPolicy: Never
+      containers:
+        - name: pre-delete-job
+          image: "lachlanevenson/k8s-kubectl:v1.23.2"
+          command:
+            - /scripts/pre-delete.sh
+          volumeMounts:
+            - name: sh
+              mountPath: /scripts
+              readOnly: true
+      volumes:
+        - name: sh
+          configMap:
+            name: {{ template "zookeeper-operator.fullname" . }}-pre-delete
+            defaultMode: 0555
