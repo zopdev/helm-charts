@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "solr-operator.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    control-plane: solr-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: solr-operator
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+      labels:
+        control-plane: solr-operator
+    spec:
+      serviceAccountName: {{ include "solr-operator.serviceAccountName" . }}
+      containers:
+      - name: {{ .Chart.Name }}
+        image: "apache/solr-operator:{{ .Values.version }}" 
+        imagePullPolicy: IfNotPresent
+        args:
+        {{- if (index .Values "zookeeper-operator" "install")}}
+        - -zk-operator=true
+        {{- else }}
+        - -zk-operator=false
+        {{- end }}
+        {{- if .Values.mTLS.clientCertSecret }}
+        - --tls-client-cert-path={{- include "solr-operator.mTLS.clientCertDirectory" . -}}/tls.crt
+        - --tls-client-cert-key-path={{- include "solr-operator.mTLS.clientCertDirectory" . -}}/tls.key
+        {{- end }}
+        {{- if .Values.mTLS.caCertSecret }}
+        - --tls-ca-cert-path={{- include "solr-operator.mTLS.caCertDirectory" . -}}/{{- include "solr-operator.mTLS.caCertName" . -}}
+        {{- end }}
+        {{- if .Values.mTLS.insecureSkipVerify }}
+        - --tls-skip-verify-server={{ .Values.mTLS.insecureSkipVerify }}
+        {{- end }}
+        - --tls-watch-cert={{ .Values.mTLS.watchForUpdates }}
+        - "--health-probe-bind-address=:8081"
+        {{- if .Values.metrics.enable }}
+        - "--metrics-bind-address=:8080"
+        {{- end }}
+        - "--leader-elect=true"
+        env:
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+        {{- if (include "solr-operator.mTLS.volumeMounts" .) }}
+        volumeMounts:
+          {{- include "solr-operator.mTLS.volumeMounts" .  | nindent 10 }}
+        {{- end }}
+
+        {{- if .Values.metrics.enable }}
+        ports:
+          - containerPort: 8080
+            name: metrics
+        {{- end }}
+      {{- if (include "solr-operator.mTLS.volumes" .) }}
+      volumes:
+        {{- include "solr-operator.mTLS.volumes" . | nindent 8 }}
+      {{- end }}
+      terminationGracePeriodSeconds: 10
