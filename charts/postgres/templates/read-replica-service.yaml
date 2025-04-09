@@ -1,0 +1,19 @@
+{{- if .Values.readReplica.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-postgres-read
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    app.kubernetes.io/part-of: postgres
+    app: {{ $.Release.Name }}-postgres-read
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5432
+      targetPort: 5432
+      name: postgres
+  selector:
+    app.kubernetes.io/part-of: postgres
+    app: {{ $.Release.Name }}-postgres-read
+{{- end }} 

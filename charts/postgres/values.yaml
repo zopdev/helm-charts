@@ -1,5 +1,18 @@
 version: "15.9"
 
+# Enable read replicas
+readReplica:
+  enabled: false
+  replicas: 2
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "256M"
+    limits:
+      cpu: "1500m"
+      memory: "1Gi"
+  diskSize: "10Gi"
+
 resources:
   requests:
     cpu: "500m"
