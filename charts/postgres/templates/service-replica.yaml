@@ -1,0 +1,16 @@
+{{- if .Values.replica.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name:  {{ $.Release.Name }}-postgres-replica
+  namespace: {{ .Release.Namespace | quote }}
+spec:
+  selector:
+    app: {{ $.Release.Name }}-postgres-replica
+  type: ClusterIP
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
+{{- end }}
+{{- end }}

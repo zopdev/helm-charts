@@ -1,14 +1,31 @@
 version: "15.9"
 
-resources:
-  requests:
-    cpu: "500m"
-    memory: "256M"
-  limits:
-    cpu: "1500m"
-    memory: "1Gi"
+# Primary database configuration
+primary:
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "256M"
+    limits:
+      cpu: "1500m"
+      memory: "1Gi"
+  diskSize: "10Gi"
 
-diskSize: "10Gi"
+# Read replica configuration
+replica:
+  enabled: true
+  replicas: 1
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "256M"
+    limits:
+      cpu: "1000m"
+      memory: "512Mi"
+  diskSize: "10Gi"
 
 updateStrategy:
   type: RollingUpdate
+
+# Existing services configuration remains the same
+services: []

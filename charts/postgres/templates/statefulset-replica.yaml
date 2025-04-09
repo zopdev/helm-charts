@@ -1,39 +1,40 @@
+{{- if .Values.replica.enabled }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ .Release.Name }}-postgres
+  name: {{ .Release.Name }}-postgres-replica
   namespace: {{ .Release.Namespace | quote }}
   labels:
     app.kubernetes.io/part-of: postgres
-    app: {{ $.Release.Name }}-postgres
+    app: {{ $.Release.Name }}-postgres-replica
 spec:
-  replicas: 1
+  replicas: {{ .Values.replica.replicas }}
   selector:
     matchLabels:
       app.kubernetes.io/part-of: postgres
-      app: {{ $.Release.Name }}-postgres
-  serviceName: {{ $.Release.Name }}-postgres
+      app: {{ $.Release.Name }}-postgres-replica
+  serviceName: {{ $.Release.Name }}-postgres-replica
   updateStrategy:
     type: {{ .Values.updateStrategy.type }}
   template:
     metadata:
       labels:
         app.kubernetes.io/part-of: postgres
-        app: {{ $.Release.Name }}-postgres
+        app: {{ $.Release.Name }}-postgres-replica
     spec:
       containers:
-        - name: postgres
+        - name: postgres-replica
           image: "postgres:{{ .Values.version }}"
           imagePullPolicy: "IfNotPresent"
           ports:
             - containerPort: 5432
           resources:
             requests:
-              memory: {{ .Values.primary.resources.requests.memory }}
-              cpu: {{ .Values.primary.resources.requests.cpu}}
+              memory: {{ .Values.replica.resources.requests.memory }}
+              cpu: {{ .Values.replica.resources.requests.cpu}}
             limits:
-              memory: {{ .Values.primary.resources.limits.memory }}
-              cpu: {{ .Values.primary.resources.limits.cpu }}
+              memory: {{ .Values.replica.resources.limits.memory }}
+              cpu: {{ .Values.replica.resources.limits.cpu }}
           env:
             - name: POSTGRES_PASSWORD
               valueFrom:
@@ -48,9 +49,8 @@ spec:
               value: "md5"
             - name: POSTGRES_INITDB_ARGS
               value: "--data-checksums"
-          {{- if .Values.replica.enabled }}
             - name: POSTGRES_REPLICATION_MODE
-              value: "primary"
+              value: "replica"
             - name: POSTGRES_REPLICATION_USER
               value: "repl_user"
             - name: POSTGRES_REPLICATION_PASSWORD
@@ -58,7 +58,10 @@ spec:
                 secretKeyRef:
                   name: {{ $.Release.Name }}-postgres-replication-secret
                   key: replication-password
-          {{- end }}
+            - name: POSTGRES_PRIMARY_HOST
+              value: "{{ $.Release.Name }}-postgres"
+            - name: POSTGRES_PRIMARY_PORT
+              value: "5432"
           livenessProbe:
             exec:
               command:
@@ -78,14 +81,15 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 5
           volumeMounts:
-            - name: {{ $.Release.Name }}-persistent-storage
+            - name: {{ $.Release.Name }}-replica-persistent-storage
               mountPath: /var/lib/postgresql/data
               subPath: data
   volumeClaimTemplates:
     - metadata:
-        name: {{ $.Release.Name }}-persistent-storage
+        name: {{ $.Release.Name }}-replica-persistent-storage
       spec:
         accessModes: [ "ReadWriteOnce" ]
         resources:
           requests:
-            storage: {{ .Values.primary.diskSize }}
+            storage: {{ .Values.replica.diskSize }}
+{{- end }}

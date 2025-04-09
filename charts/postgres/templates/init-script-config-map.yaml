@@ -45,18 +45,27 @@ data:
 
     REVOKE ALL ON SCHEMA public FROM PUBLIC;
     DO
-    $do$
+        $do$
     BEGIN
-      IF NOT EXISTS (
+        IF NOT EXISTS (
         SELECT FROM pg_catalog.pg_roles WHERE rolname = '{{ $username }}'
       ) THEN
-        CREATE USER "{{ $username }}" WITH ENCRYPTED PASSWORD '{{ $password }}';
-
+    CREATE USER "{{ $username }}" WITH ENCRYPTED PASSWORD '{{ $password }}';
     ELSE
-        ALTER USER "{{ $username }}" PASSWORD '{{ $password }}';
+    ALTER USER "{{ $username }}" PASSWORD '{{ $password }}';
     END IF;
     END
     $do$;
+
+    {{- if $.Values.replica.enabled }}
+    -- Setup replication user if replicas are enabled
+    DO $$
+    BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'repl_user') THEN
+    CREATE ROLE repl_user WITH REPLICATION LOGIN PASSWORD '{{ (lookup "v1" "Secret" $.Release.Namespace (printf "%s-postgres-replication-secret" $.Release.Name)).data.replicationpassword | b64dec }}';
+    END IF;
+    END $$;
+    {{- end }}
 ---
 apiVersion: v1
 kind: ConfigMap
