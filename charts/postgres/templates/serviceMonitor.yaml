@@ -1,0 +1,15 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ .Release.Name }}-postgres-monitor
+  namespace: test-hpa
+  labels:
+    release: prometheus  # Important for Prometheus Operator discovery
+spec:
+  selector:
+    matchLabels:
+      app: {{ $.Release.Name }}-postgres  # Matches original service label
+  endpoints:
+    - port: metrics-port  # Matches original port name
+      interval: 30s
+      path: /metrics
