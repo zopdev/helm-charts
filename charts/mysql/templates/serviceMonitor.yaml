@@ -1,18 +1,15 @@
-{{- if .Values.metricsPort }}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: {{ .Release.Name }}
+  name: {{ .Release.Name }}-mysql
   labels:
-    app:{{ .Release.Name }}
+    app: {{ .Release.Name }}-mysql
     release: prometheus
 spec:
   selector:
     matchLabels:
-      app: {{ .Release.Name }}
+      app: {{ .Release.Name }}-mysql
   endpoints:
     - port: metrics-port
-      interval: {{.Values.metricsScrapeInterval }}
+      interval: 30s
       path: /metrics
-{{- end }}
----

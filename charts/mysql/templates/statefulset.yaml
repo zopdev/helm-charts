@@ -76,8 +76,9 @@ spec:
                   name: {{ .Release.Name }}-mysql-root-secret
                   key: root-password
           args:
-            - "--mysqld.username=mysqld_exporter"
+            - "--mysqld.username=root"
             - "--web.listen-address=:2121"
+            - "--log.level=debug"
   volumeClaimTemplates:
     - metadata:
         name: {{.Release.Name }}-mysql-persistent-storage

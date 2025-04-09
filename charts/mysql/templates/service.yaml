@@ -3,6 +3,8 @@ kind: Service
 metadata:
   name: {{ .Release.Name }}-mysql
   namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Release.Name }}-mysql
 spec:
   ports:
     - port: 3306
@@ -11,7 +13,7 @@ spec:
       name: mysql
     - port: 2121
       targetPort: 2121
-      name: metrics
+      name: metrics-port
   selector:
     app: {{ .Release.Name }}-mysql
-  type: ClusterIP
+  type: NodePort
