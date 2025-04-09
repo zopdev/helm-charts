@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}-postgres-read-replica
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    app: {{ .Release.Name }}-postgres-read-replica
+spec:
+  replicas: {{ .Values.readReplica.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-postgres-read-replica
+  serviceName: {{ .Release.Name }}-postgres-read-replica
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-postgres-read-replica
+    spec:
+      containers:
+        - name: postgres
+          image: "{{ .Values.image }}"
+          imagePullPolicy: "IfNotPresent"
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Release.Name }}-postgres-root-secret
+                  key: postgres-password
+            - name: POSTGRES_REPLICATION_ROLE
+              value: "replica"
+            - name: POSTGRES_PRIMARY_HOST
+              value: "{{ $.Release.Name }}-postgres"
+          resources:
+            requests:
+              memory: {{ .Values.readReplica.resources.requests.memory }}
+              cpu: {{ .Values.readReplica.resources.requests.cpu }}
+            limits:
+              memory: {{ .Values.readReplica.resources.limits.memory }}
+              cpu: {{ .Values.readReplica.resources.limits.cpu }}
+          volumeMounts:
+            - name: {{ $.Release.Name }}-persistent-storage
+              mountPath: /var/lib/postgresql/data
+              subPath: data
+  volumeClaimTemplates:
+    - metadata:
+        name: {{ $.Release.Name }}-persistent-storage
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: {{ .Values.diskSize }}
