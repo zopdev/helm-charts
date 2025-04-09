@@ -37,6 +37,8 @@ We use a simplified Git workflow:
 - **Values File:**
   - Include a comprehensive `values.yaml` file with sensible defaults.
   - If any field is intended to be user-configurable, mark it in the accompanying `values.schema.json` with `"mutable": true`.
+  - If any field which cannot be updated directly with helm upgrade add `"editDisabled": true` in `values.schema.json`.
+
 - **Comments & Documentation:**  
   - Add comments in YAML files to explain complex configurations.
   - Document any overrideable values in the chart’s README.
