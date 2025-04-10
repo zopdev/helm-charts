@@ -83,12 +83,6 @@ spec:
             BEGIN
               IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '{{ $username }}') THEN
                 CREATE USER \"{{ $username }}\" WITH ENCRYPTED PASSWORD '{{ $password }}';
-                GRANT CONNECT, CREATE ON DATABASE "{{ $service.database }}" TO "{{ $username }}";
-                GRANT CREATE, USAGE ON SCHEMA public TO "{{ $username }}";
-                ALTER DEFAULT PRIVILEGES FOR USER postgres IN SCHEMA public
-                GRANT INSERT, REFERENCES, SELECT, UPDATE, DELETE, TRUNCATE ON TABLES TO "{{ $username }}";
-                ALTER DEFAULT PRIVILEGES FOR USER postgres IN SCHEMA public
-                GRANT SELECT, UPDATE ON SEQUENCES TO "{{ $username }}";
               ELSE
                 ALTER USER \"{{ $username }}\" PASSWORD '{{ $password }}';
               END IF;
