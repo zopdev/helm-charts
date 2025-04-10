@@ -1,7 +1,8 @@
+{{- if .Values.replication.enabled }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ template "postgresql.master.fullname" . }}
+  name: "{{ $.Release.Name }}-postgres-read-replica"
   labels:
     app: {{ template "postgresql.name" . }}
     chart: {{ template "postgresql.chart" . }}
@@ -9,14 +10,12 @@ metadata:
     heritage: {{ .Release.Service | quote }}
 spec:
   serviceName: {{ $.Release.Name }}-postgres-headless
-  replicas: 1
-  updateStrategy:
-    type: RollingUpdate
+  replicas: {{ .Values.replication.count }}
   selector:
     matchLabels:
       app: {{ template "postgresql.name" . }}
       release: {{ .Release.Name | quote }}
-      role: master
+      role: slave
   template:
     metadata:
       name: {{ $.Release.Name }}-postgres
@@ -25,7 +24,7 @@ spec:
         chart: {{ template "postgresql.chart" . }}
         release: {{ .Release.Name | quote }}
         heritage: {{ .Release.Service | quote }}
-        role: master
+        role: slave
     spec:
       {{- if .Values.schedulerName }}
       schedulerName: "{{ .Values.schedulerName }}"
@@ -43,29 +42,12 @@ spec:
           env:
             - name: BITNAMI_DEBUG
               value: "false"
-            - name: POSTGRESQL_PORT_NUMBER
-              value: "5432"
             - name: POSTGRESQL_VOLUME_DIR
               value: "/bitnami/postgresql"
-            {{- if .Values.postgresqlInitdbArgs }}
-            - name: POSTGRES_INITDB_ARGS
-              value: {{ .Values.postgresqlInitdbArgs | quote }}
-            {{- end }}
-            {{- if .Values.postgresqlInitdbWalDir }}
-            - name: POSTGRES_INITDB_WALDIR
-              value: {{ .Values.postgresqlInitdbWalDir | quote }}
-            {{- end }}
-            {{- if .Values.initdbUser }}
-            - name: POSTGRESQL_INITSCRIPTS_USERNAME
-              value: {{ .Values.initdbUser }}
-            {{- end }}
-            {{- if .Values.initdbPassword }}
-            - name: POSTGRESQL_INITSCRIPTS_PASSWORD
-              value: .Values.initdbPassword
-            {{- end }}
-            {{- if .Values.replication.enabled }}
+            - name: POSTGRESQL_PORT_NUMBER
+              value: "5432"
             - name: POSTGRES_REPLICATION_MODE
-              value: "master"
+              value: "slave"
             - name: POSTGRES_REPLICATION_USER
               value: "replicator"
             - name: POSTGRES_REPLICATION_PASSWORD
@@ -75,16 +57,20 @@ spec:
                   key: postgresql-replication-password
             - name: POSTGRES_CLUSTER_APP_NAME
               value: "replica_app"
-            {{- end }}
-            - name: POSTGRES_USER
-              value: "postgres"
+            - name: POSTGRES_MASTER_HOST
+              value: {{ $.Release.Name }}-postgres
+            - name: POSTGRES_MASTER_PORT_NUMBER
+              value: "5432"
+            {{- if .Values.usePasswordFile }}
+            - name: POSTGRES_PASSWORD_FILE
+              value: "/opt/bitnami/postgresql/secrets/postgresql-password"
+            {{- else }}
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ $.Release.Name }}-postgres-secret
                   key: postgresql-password
-            - name: POSTGRESQL_ENABLE_LDAP
-              value: "no"
+            {{- end }}
           ports:
             - name: tcp-postgresql
               containerPort: 5432
@@ -114,10 +100,6 @@ spec:
             successThreshold: 1
             failureThreshold: 6
           volumeMounts:
-            {{- if .Values.initdbScriptsSecret }}
-            - name: custom-init-scripts-secret
-              mountPath: /docker-entrypoint-initdb.d/secret
-            {{- end }}
             {{- if .Values.usePasswordFile }}
             - name: postgresql-password
               mountPath: /opt/bitnami/postgresql/secrets/
@@ -136,6 +118,8 @@ spec:
           emptyDir:
             medium: Memory
             sizeLimit: 1Gi
+  updateStrategy:
+    type: RollingUpdate
   volumeClaimTemplates:
     - metadata:
         name: data
@@ -145,3 +129,4 @@ spec:
         resources:
           requests:
             storage: {{ .Values.diskSize | quote }}
+{{- end }}

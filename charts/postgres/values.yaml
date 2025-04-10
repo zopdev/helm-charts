@@ -1,14 +1,15 @@
-version: "15.9"
+version: "17.4.0-debian-12-r14"
+
+replication:
+  enabled: true
+  count: 1
+
+diskSize : "10Gi"
 
 resources:
   requests:
-    cpu: "500m"
-    memory: "256M"
+    cpu: "250m"
+    memory: "500Mi"
   limits:
-    cpu: "1500m"
-    memory: "1Gi"
-
-diskSize: "10Gi"
-
-updateStrategy:
-  type: RollingUpdate
+    cpu: "500m"
+    memory: "1000Mi"

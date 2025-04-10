@@ -25,38 +25,6 @@
     {{- end }}
   {{- end }}
 {{- end }}
-
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ $.Release.Name }}-{{ $service.name }}-init-script
-  namespace: {{ $.Release.Namespace }}
-data:
-  db-init.sql: |
-    CREATE EXTENSION IF NOT EXISTS dblink;
-    DO $$ BEGIN
-      IF NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = '{{ $service.database }}') THEN
-        PERFORM dblink_exec('dbname=postgres', 'CREATE DATABASE "{{ $service.database }}"');
-    END IF;
-    END $$;
-
-    \connect {{ $service.database }}
-
-    REVOKE ALL ON SCHEMA public FROM PUBLIC;
-    DO
-    $do$
-    BEGIN
-      IF NOT EXISTS (
-        SELECT FROM pg_catalog.pg_roles WHERE rolname = '{{ $username }}'
-      ) THEN
-        CREATE USER "{{ $username }}" WITH ENCRYPTED PASSWORD '{{ $password }}';
-
-    ELSE
-        ALTER USER "{{ $username }}" PASSWORD '{{ $password }}';
-    END IF;
-    END
-    $do$;
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -80,5 +48,53 @@ data:
   DB_USER: {{ $username | b64enc }}
   DB_PASSWORD: {{ $password | b64enc }}
   DATABASE_URL: {{ printf "postgres://%s:%s@%s-postgres:5432/%s" $username $password $.Release.Name $service.database | b64enc }}
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: postgres-init-{{ $.Release.Name }}-{{ $service.name }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  containers:
+    - name: postgres-init-role
+      image: docker.io/bitnami/postgresql:{{ $.Values.version }}
+      command: ["/bin/bash"]
+      args:
+        - "-c"
+        - |
+          sleep 60
+          POSTGRES_PASSWORD="$PGPASSWORD"
+          psql -h {{ $.Release.Name }}-postgres -U postgres -c "
+            CREATE EXTENSION IF NOT EXISTS dblink;
+            DO \$\$
+            BEGIN
+              IF NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = '{{ $service.database }}') THEN
+                PERFORM dblink_exec(
+                  'host={{ $.Release.Name }}-postgres user=postgres password=$POSTGRES_PASSWORD',
+                  'CREATE DATABASE \"{{ $service.database }}\";'
+                );
+              END IF;
+            END
+            \$\$;
+          "
+          psql -h {{ $.Release.Name }}-postgres -U postgres -d {{ $service.database }} -c "
+            REVOKE ALL ON SCHEMA public FROM PUBLIC;
+            DO \$do\$
+            BEGIN
+              IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '{{ $username }}') THEN
+                CREATE USER \"{{ $username }}\" WITH ENCRYPTED PASSWORD '{{ $password }}';
+              ELSE
+                ALTER USER \"{{ $username }}\" PASSWORD '{{ $password }}';
+              END IF;
+            END
+            \$do\$;
+          "
+      env:
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ $.Release.Name }}-postgres-secret
+              key: postgresql-password
+  restartPolicy: OnFailure
 ---
 {{- end }}
