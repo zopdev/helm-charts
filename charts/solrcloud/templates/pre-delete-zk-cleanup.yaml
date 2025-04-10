@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Release.Name }}-manager-sa
+  namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Release.Name }}-manager-clusterrole
+rules:
+  - apiGroups: ["zookeeper.pravega.io"]
+    resources: ["zookeeperclusters"]
+    verbs: ["get", "list", "delete", "watch"]
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources: ["customresourcedefinitions"]
+    verbs: ["get", "list", "watch", "delete"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ .Release.Name }}-manager-clusterrolebinding
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Release.Name }}-manager-sa
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: {{ .Release.Name }}-manager-clusterrole
+  apiGroup: rbac.authorization.k8s.io
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ .Release.Name }}-zk-predelete"
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: {{ .Chart.Name }}
+  annotations:
+    "helm.sh/hook": pre-delete
+    "helm.sh/hook-delete-policy": hook-succeeded
+spec:
+  template:
+    spec:
+      serviceAccountName: {{ .Release.Name }}-manager-sa 
+      restartPolicy: Never
+      containers:
+        - name: cleanup-zookeeper
+          image: bitnami/kubectl:latest
+          command:
+            - /bin/bash
+            - -c
+            - |
+              echo "Deleting ZookeeperClusters in {{ .Release.Namespace }}..."
+              kubectl delete -f https://archive.apache.org/dist/solr/solr-operator/{{ index .Values "solr-operator" "version" }}/crds/zookeeperclusters.yaml -n {{ .Release.Namespace }} || true
+              kubectl delete secret {{ .Release.Name }}-solrcloud-auth-secret -n {{ .Release.Namespace }} || true
+
+              echo "Waiting for ZookeeperCluster to terminate..."
+              for i in {1..30}; do
+                count=$(kubectl get zookeepercluster -n {{ .Release.Namespace }} --no-headers 2>/dev/null | grep -c "solrclouds-solrcloud-zookeeper" || true)
+                if [ "$count" -eq 0 ]; then
+                  echo "ZookeeperCluster deleted"
+                  break
+                fi
+                echo "Still waiting..."
+                sleep 5
+              done
