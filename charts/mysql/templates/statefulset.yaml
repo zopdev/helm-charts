@@ -63,6 +63,22 @@ spec:
           volumeMounts:
             - name: {{.Release.Name }}-mysql-persistent-storage
               mountPath: /var/lib/mysql
+
+        - name: mysql-exporter
+          image: prom/mysqld-exporter:v0.15.1
+          ports:
+            - containerPort: 2121
+              name: metrics
+          env:
+            - name: MYSQLD_EXPORTER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-mysql-root-secret
+                  key: root-password
+          args:
+            - "--mysqld.username=root"
+            - "--web.listen-address=:2121"
+            - "--log.level=debug"
   volumeClaimTemplates:
     - metadata:
         name: {{.Release.Name }}-mysql-persistent-storage
