@@ -82,15 +82,22 @@ FEATURE_FLAGS = {
 # Additional Configurations
 {{- if .Values.supersetNode.config }}
 {{- range $key, $value := .Values.supersetNode.config }}
-{{ $key }} = {{ if eq (typeOf $value) "string" }}"{{ $value }}"{{ else }}{{ $value }}{{ end }}
+{{- if eq (typeOf $value) "string" }}
+{{- if hasPrefix "{" $value }}
+{{ $key }} = {{ $value }}
+{{- else }}
+{{ $key }} = '{{ $value }}'
+{{- end }}
+{{- else }}
+{{ $key }} = {{ $value }}
+{{- end }}
 {{- end }}
 {{- end }}
 
 {{ if .Values.configOverrides }}
 # Overrides
 {{- range $key, $value := .Values.configOverrides }}
-# {{ $key }}
-{{ tpl $value $ }}
+{{ $key }} = '{{ tpl $value $ }}'
 {{- end }}
 {{- else }}
 # Default Overrides
