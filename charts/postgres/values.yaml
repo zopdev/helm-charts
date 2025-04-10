@@ -1,4 +1,6 @@
-version: "15.9"
+postgresRootPassword: ""
+
+image: "postgres:15.9"
 
 resources:
   requests:
@@ -12,3 +14,5 @@ diskSize: "10Gi"
 
 updateStrategy:
   type: RollingUpdate
+
+services: []
