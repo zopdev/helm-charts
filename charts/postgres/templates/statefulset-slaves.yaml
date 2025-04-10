@@ -62,7 +62,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: {{ $.Release.Name }}-postgres-root-secret
-                  key: postgresql-password
+                  key: postgres-password
           ports:
             - name: tcp-postgresql
               containerPort: 5432
@@ -94,7 +94,7 @@ spec:
           volumeMounts:
             - name: dshm
               mountPath: /dev/shm
-            - name: data
+            - name: {{ $.Release.Name }}-persistent-storage
               mountPath: /bitnami/postgresql
       volumes:
         - name: dshm
@@ -105,7 +105,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
     - metadata:
-        name: data
+        name: {{ $.Release.Name }}-persistent-storage
       spec:
         accessModes:
           - ReadWriteOnce

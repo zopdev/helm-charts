@@ -52,7 +52,7 @@ data:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: postgres-init-{{ $.Release.Name }}-{{ $service.name }}
+  name: postgres-{{ $.Release.Name }}-{{ $service.name }}-init
   namespace: {{ $.Release.Namespace }}
 spec:
   containers:
@@ -62,7 +62,7 @@ spec:
       args:
         - "-c"
         - |
-          sleep 60
+          sleep 20
           POSTGRES_PASSWORD="$PGPASSWORD"
           psql -h {{ $.Release.Name }}-postgres -U postgres -c "
             CREATE EXTENSION IF NOT EXISTS dblink;
@@ -94,7 +94,7 @@ spec:
           valueFrom:
             secretKeyRef:
               name: {{ $.Release.Name }}-postgres-root-secret
-              key: postgresql-password
+              key: postgres-password
   restartPolicy: OnFailure
 ---
 {{- end }}

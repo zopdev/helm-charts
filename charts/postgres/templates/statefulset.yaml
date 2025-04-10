@@ -63,7 +63,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: {{ $.Release.Name }}-postgres-root-secret
-                  key: postgresql-password
+                  key: postgres-password
             - name: POSTGRESQL_ENABLE_LDAP
               value: "no"
           ports:
@@ -97,7 +97,7 @@ spec:
           volumeMounts:
             - name: dshm
               mountPath: /dev/shm
-            - name: data
+            - name: {{ $.Release.Name }}-persistent-storage
               mountPath: /bitnami/postgresql
       volumes:
         - name: dshm
@@ -106,7 +106,7 @@ spec:
             sizeLimit: 1Gi
   volumeClaimTemplates:
     - metadata:
-        name: data
+        name: {{ $.Release.Name }}-persistent-storage
       spec:
         accessModes:
           - ReadWriteOnce
