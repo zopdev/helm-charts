@@ -93,7 +93,7 @@ spec:
         - name: PGPASSWORD
           valueFrom:
             secretKeyRef:
-              name: {{ $.Release.Name }}-postgres-secret
+              name: {{ $.Release.Name }}-postgres-root-secret
               key: postgresql-password
   restartPolicy: OnFailure
 ---

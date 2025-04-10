@@ -27,9 +27,6 @@ spec:
         heritage: {{ .Release.Service | quote }}
         role: master
     spec:
-      {{- if .Values.schedulerName }}
-      schedulerName: "{{ .Values.schedulerName }}"
-      {{- end }}
       securityContext:
         fsGroup: 1001
       containers:
@@ -47,22 +44,6 @@ spec:
               value: "5432"
             - name: POSTGRESQL_VOLUME_DIR
               value: "/bitnami/postgresql"
-            {{- if .Values.postgresqlInitdbArgs }}
-            - name: POSTGRES_INITDB_ARGS
-              value: {{ .Values.postgresqlInitdbArgs | quote }}
-            {{- end }}
-            {{- if .Values.postgresqlInitdbWalDir }}
-            - name: POSTGRES_INITDB_WALDIR
-              value: {{ .Values.postgresqlInitdbWalDir | quote }}
-            {{- end }}
-            {{- if .Values.initdbUser }}
-            - name: POSTGRESQL_INITSCRIPTS_USERNAME
-              value: {{ .Values.initdbUser }}
-            {{- end }}
-            {{- if .Values.initdbPassword }}
-            - name: POSTGRESQL_INITSCRIPTS_PASSWORD
-              value: .Values.initdbPassword
-            {{- end }}
             {{- if .Values.replication.enabled }}
             - name: POSTGRES_REPLICATION_MODE
               value: "master"
@@ -71,7 +52,7 @@ spec:
             - name: POSTGRES_REPLICATION_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ $.Release.Name }}-postgres-secret
+                  name: {{ $.Release.Name }}-postgres-root-secret
                   key: postgresql-replication-password
             - name: POSTGRES_CLUSTER_APP_NAME
               value: "replica_app"
@@ -81,7 +62,7 @@ spec:
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ $.Release.Name }}-postgres-secret
+                  name: {{ $.Release.Name }}-postgres-root-secret
                   key: postgresql-password
             - name: POSTGRESQL_ENABLE_LDAP
               value: "no"
@@ -114,24 +95,11 @@ spec:
             successThreshold: 1
             failureThreshold: 6
           volumeMounts:
-            {{- if .Values.initdbScriptsSecret }}
-            - name: custom-init-scripts-secret
-              mountPath: /docker-entrypoint-initdb.d/secret
-            {{- end }}
-            {{- if .Values.usePasswordFile }}
-            - name: postgresql-password
-              mountPath: /opt/bitnami/postgresql/secrets/
-            {{- end }}
             - name: dshm
               mountPath: /dev/shm
             - name: data
               mountPath: /bitnami/postgresql
       volumes:
-        {{- if .Values.usePasswordFile }}
-        - name: postgresql-password
-          secret:
-            secretName: {{ $.Release.Name }}-postgres-secret
-        {{- end }}
         - name: dshm
           emptyDir:
             medium: Memory

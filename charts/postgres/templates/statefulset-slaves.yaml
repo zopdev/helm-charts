@@ -26,9 +26,6 @@ spec:
         heritage: {{ .Release.Service | quote }}
         role: slave
     spec:
-      {{- if .Values.schedulerName }}
-      schedulerName: "{{ .Values.schedulerName }}"
-      {{- end }}
       securityContext:
         fsGroup: 1001
       containers:
@@ -53,7 +50,7 @@ spec:
             - name: POSTGRES_REPLICATION_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ $.Release.Name }}-postgres-secret
+                  name: {{ $.Release.Name }}-postgres-root-secret
                   key: postgresql-replication-password
             - name: POSTGRES_CLUSTER_APP_NAME
               value: "replica_app"
@@ -61,16 +58,11 @@ spec:
               value: {{ $.Release.Name }}-postgres
             - name: POSTGRES_MASTER_PORT_NUMBER
               value: "5432"
-            {{- if .Values.usePasswordFile }}
-            - name: POSTGRES_PASSWORD_FILE
-              value: "/opt/bitnami/postgresql/secrets/postgresql-password"
-            {{- else }}
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ $.Release.Name }}-postgres-secret
+                  name: {{ $.Release.Name }}-postgres-root-secret
                   key: postgresql-password
-            {{- end }}
           ports:
             - name: tcp-postgresql
               containerPort: 5432
@@ -100,20 +92,11 @@ spec:
             successThreshold: 1
             failureThreshold: 6
           volumeMounts:
-            {{- if .Values.usePasswordFile }}
-            - name: postgresql-password
-              mountPath: /opt/bitnami/postgresql/secrets/
-            {{- end }}
             - name: dshm
               mountPath: /dev/shm
             - name: data
               mountPath: /bitnami/postgresql
       volumes:
-        {{- if .Values.usePasswordFile }}
-        - name: postgresql-password
-          secret:
-            secretName: {{ $.Release.Name }}-postgres-secret
-        {{- end }}
         - name: dshm
           emptyDir:
             medium: Memory
