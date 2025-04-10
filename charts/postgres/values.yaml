@@ -1,4 +1,4 @@
-postgresRootPassword:
+postgresRootPassword: ""
 
 image: "postgres:15.9"
 
@@ -15,4 +15,4 @@ diskSize: "10Gi"
 updateStrategy:
   type: RollingUpdate
 
-services:
+services: []

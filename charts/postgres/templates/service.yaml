@@ -3,10 +3,12 @@ kind: Service
 metadata:
   name: {{ $.Release.Name }}-postgres
   namespace: {{ .Release.Namespace | quote }}
+  labels:
+    app: {{ $.Release.Name }}-postgres
 spec:
   selector:
     app: {{ $.Release.Name }}-postgres
-  type: ClusterIP
+  type: NodePort
   ports:
     - name: postgres
       protocol: TCP
