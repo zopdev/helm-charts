@@ -2,7 +2,7 @@ apiVersion: v2
 appVersion: "1.0"
 description: Helm chart for deploying postgres datastore
 name: postgres
-version: 0.0.5
+version: 0.0.6
 icon: "https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20241119/e4d58134-93e4-478e-851b-3a70b58dcd81-Postgresqlelephantsvg.jpg"
 maintainers:
   - name: ZopDev

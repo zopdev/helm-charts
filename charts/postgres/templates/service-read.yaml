@@ -1,7 +1,8 @@
+{{- if .Values.replication.enabled }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ $.Release.Name }}-postgres
+  name: {{ $.Release.Name }}-postgres-read-replica
   labels:
     app: {{ template "postgresql.name" . }}
     chart: {{ template "postgresql.chart" . }}
@@ -11,9 +12,10 @@ spec:
   type: ClusterIP
   ports:
     - name: tcp-postgresql
-      port: 5432
+      port:  5432
       targetPort: tcp-postgresql
   selector:
     app: {{ template "postgresql.name" . }}
     release: {{ .Release.Name | quote }}
-    role: master
+    role: slave
+{{- end }}

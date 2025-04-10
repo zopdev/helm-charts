@@ -4,7 +4,29 @@
   "properties": {
     "version": {
       "type": "string",
-      "default": "15.9"
+      "default": "17.4.0-debian-12-r14",
+      "mutable": true
+    },
+    "replication": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false,
+          "mutable": true
+        },
+        "count": {
+          "type": "integer",
+          "default": 1,
+          "mutable": true
+        }
+      },
+      "required": ["enabled", "count"]
+    },
+    "diskSize": {
+      "type": "string",
+      "default": "10Gi",
+      "mutable": true
     },
     "resources": {
       "type": "object",
@@ -14,66 +36,51 @@
           "properties": {
             "cpu": {
               "type": "string",
-              "pattern": "^[0-9]+m$",
-              "default": "500m",
+              "default": "250m",
               "mutable": true
             },
             "memory": {
               "type": "string",
-              "pattern": "^[0-9]+M$",
-              "default": "256M",
+              "default": "500Mi",
               "mutable": true
             }
-          }
+          },
+          "required": ["cpu", "memory"]
         },
         "limits": {
           "type": "object",
           "properties": {
             "cpu": {
               "type": "string",
-              "pattern": "^[0-9]+m$",
-              "default": "1500m",
+              "default": "500m",
               "mutable": true
             },
             "memory": {
               "type": "string",
-              "pattern": "^[0-9]+Gi$",
-              "default": "1Gi",
+              "default": "1000Mi",
               "mutable": true
             }
-          }
+          },
+          "required": ["cpu", "memory"]
         }
-      }
-    },
-    "diskSize": {
-      "type": "string",
-      "pattern": "^[0-9]+Gi$",
-      "default": "10Gi",
-      "mutable": true
-    },
-    "updateStrategy": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "type": "string",
-          "default": "RollingUpdate"
-        }
-      }
+      },
+      "required": ["requests", "limits"]
     },
     "services": {
-        "type": "array",
-        "items": {
-          "type": "object",
-          "properties": {
-            "name": {
-              "type": "string"
-            },
-            "database": {
-              "type": "string"
-            }
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
           },
-          "required": ["name", "database"]
-        }
+          "database": {
+            "type": "string"
+          }
+        },
+        "required": ["name", "database"]
       }
-  }
+    }
+  },
+  "required": ["version", "replication", "diskSize", "resources"]
 }
