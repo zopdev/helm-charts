@@ -1,7 +1,7 @@
 version: "17.4.0-debian-12-r14"
 
 replication:
-  enabled: true
+  enabled: false
   count: 1
 
 diskSize : "10Gi"
