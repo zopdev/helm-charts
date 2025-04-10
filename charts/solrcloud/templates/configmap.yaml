@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $.Release.Name }}-solrcloud-auth-configmap
+  namespace: {{ $.Release.Namespace }}
+data:
+  SOLR_HOST: {{ $.Release.Name }}-solrcloud-headless
+  SOLR_PORT: "8983"
+  SOLR_USER: "admin"

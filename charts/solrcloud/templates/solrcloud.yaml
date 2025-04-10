@@ -1,0 +1,40 @@
+apiVersion: solr.apache.org/v1beta1
+kind: SolrCloud
+metadata:
+  name: {{ include "solr.fullname-no-suffix" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "solr.labels" . | nindent 4 }}
+spec:
+  solrImage:
+    repository: solr
+    tag: {{ .Values.version | quote}}
+  solrSecurity:
+    authenticationType: Basic
+  solrAddressability:
+    podPort: 8983
+  updateStrategy:
+    method: "Managed"
+  availability:
+    podDisruptionBudget:
+      enabled: true
+      method: ClusterWide
+  scaling:
+    vacatePodsOnScaleDown: true
+    populatePodsOnScaleUp: true
+  dataStorage:
+    persistent:
+      reclaimPolicy: "Retain"
+      pvcTemplate:
+        metadata:
+          name: {{ include "solr.fullname-no-suffix" . }}-pvc
+        spec:
+          resources:
+            requests:
+              storage: {{ .Values.diskSize | quote }}
+  {{- include "solr.custom-kube-options" . | nindent 2 -}}
+  zookeeperRef:
+    provided:
+      chroot: "/"
+      replicas: 3
+      maxUnavailableReplicas: 1

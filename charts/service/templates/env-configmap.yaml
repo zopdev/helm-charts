@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.name }}-env-configmap
+  labels:
+    app: {{ .Values.name }}
+data:
+  {{- range $k, $v := .Values.env }}
+  {{ $k }}: {{ $v | quote }}
+  {{- end }}
+  {{- if .Values.envList }}
+  {{- range .Values.envList }}
+  {{ .name }}: {{ .value | quote }}
+  {{- end }}
+  {{- end }}

@@ -32,6 +32,12 @@ supersetNode:
     db_pass: superset
     db_name: superset
 
+  # Feature flags configuration
+  featureFlags: {}
+
+  # Additional Superset configurations
+  config: {}
+
 supersetCeleryBeat:
   enabled: false
 

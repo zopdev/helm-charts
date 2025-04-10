@@ -70,11 +70,34 @@ RESULTS_BACKEND = RedisCache(
       {{- end }}
 )
 
+# Feature Flags
+FEATURE_FLAGS = {
+    {{- if .Values.supersetNode.featureFlags }}
+    {{- range $key, $value := .Values.supersetNode.featureFlags }}
+    "{{ $key }}": {{ $value }},
+    {{- end }}
+    {{- end }}
+}
+
+# Additional Configurations
+{{- if .Values.supersetNode.config }}
+{{- range $key, $value := .Values.supersetNode.config }}
+{{- if eq (typeOf $value) "string" }}
+{{- if hasPrefix "{" $value }}
+{{ $key }} = {{ $value }}
+{{- else }}
+{{ $key }} = '{{ $value }}'
+{{- end }}
+{{- else }}
+{{ $key }} = {{ $value }}
+{{- end }}
+{{- end }}
+{{- end }}
+
 {{ if .Values.configOverrides }}
 # Overrides
 {{- range $key, $value := .Values.configOverrides }}
-# {{ $key }}
-{{ tpl $value $ }}
+{{ $key }} = '{{ tpl $value $ }}'
 {{- end }}
 {{- else }}
 # Default Overrides
