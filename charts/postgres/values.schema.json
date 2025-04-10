@@ -77,12 +77,10 @@
         "type": "object",
         "properties": {
           "name": {
-            "type": "string",
-            "mutable": true
+            "type": "string"
           },
           "database": {
-            "type": "string",
-            "mutable": true
+            "type": "string"
           }
         },
         "required": ["name", "database"]
