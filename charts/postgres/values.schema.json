@@ -4,7 +4,7 @@
   "properties": {
     "version": {
       "type": "string",
-      "default": "17.4.0-debian-12-r14",
+      "default": "17.4.0",
       "mutable": true
     },
     "replication": {
