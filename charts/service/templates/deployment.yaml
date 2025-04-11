@@ -161,6 +161,14 @@ spec:
                 name: {{ $k.datastore }}-solr-configmap
             {{- end }}
             {{- end }}
+            {{- if and .Values.datastores .Values.datastores.solrcloud }}
+            {{- range $i, $k := .Values.datastores.solrcloud }}
+            - configMapRef:
+                name: {{ $k.datastore }}-solrcloud-auth-configmap
+            - secretRef:
+                name: {{ $k.datastore }}-solrcloud-auth-secret
+            {{- end }}
+            {{- end }}
             {{- if and .Values.datastores .Values.datastores.surrealdb }}
             {{- range $i, $k := .Values.datastores.surrealdb }}
             - configMapRef:
