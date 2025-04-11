@@ -1,227 +1,49 @@
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
-  name: {{ .Release.Name }}-postgres.rules
+  name: {{ .Release.Name }}
   namespace: {{ .Release.Namespace }}
+  generation: 1
   labels:
-    release: prometheus
     app: kube-prometheus-stack
+    heritage: Helm
+    release: prometheus
 spec:
   groups:
-    - name: {{ .Release.Name }}-postgres.rules
+    - name: {{ .Release.Namespace }}.{{ .Release.Name }}-postgres.rules
       rules:
-        - alert: PostgresqlDown
-          expr: pg_up == 0
-          for: 0m
-          labels:
-            severity: critical
-          annotations:
-            summary: 'PostgreSQL down (instance $labels.instance)'
-            description: 'PostgreSQL instance is down on $labels.instance\n  VALUE = $value\n  LABELS = $labels'
-
         - alert: PostgresqlRestarted
           expr: time() - pg_postmaster_start_time_seconds < 60
           for: 0m
           labels:
             severity: critical
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
           annotations:
-            summary: 'PostgreSQL restarted (instance $labels.instance)'
-            description: 'PostgreSQL restarted < 1 minute ago on $labels.instance\n  VALUE = $value\n  LABELS = $labels'
-
-        - alert: PostgresqlExporterError
-          expr: pg_exporter_last_scrape_error > 0
-          for: 0m
-          labels:
-            severity: critical
-          annotations:
-            summary: 'PostgreSQL exporter error (instance $labels.instance)'
-            description: 'PostgreSQL exporter is showing errors. A query may be buggy in query.yaml\n  VALUE = $value\n  LABELS = $labels'
+            summary: 'PostgreSQL instance {{ .Release.Name }} restarted'
+            description: 'PostgreSQL instance {{ .Release.Name }} restarted < 1 minute ago'
 
         - alert: PostgresqlTooManyConnections
           expr: sum by (instance, job, server) (pg_stat_activity_count) > min by (instance, job, server) (pg_settings_max_connections * 0.8)
           for: 2m
           labels:
             severity: warning
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
           annotations:
-            summary: 'PostgreSQL too many connections (> 80%) (instance $labels.instance)'
-            description: 'More than 80% of PostgreSQL connections are in use on $labels.instance\n  VALUE = $value\n  LABELS = $labels'
-
-        - alert: PostgresqlNotEnoughConnections
-          expr: sum by (datname) (pg_stat_activity_count{datname!~"template.*|postgres"}) < 5
-          for: 2m
-          labels:
-            severity: critical
-          annotations:
-            summary: 'PostgreSQL not enough connections (instance $labels.instance)'
-            description: 'PostgreSQL instance has fewer than 5 connections on $labels.instance\n  VALUE = $value\n  LABELS = $labels'
+            summary: 'PostgreSQL instance {{ .Release.Name }} has too many connections (> 80%)'
+            description: 'More than 80% of PostgreSQL connections of instance {{ .Release.Name }} are in use'
 
         - alert: PostgresqlDeadLocks
           expr: increase(pg_stat_database_deadlocks{datname!~"template.*|postgres"}[1m]) > 5
           for: 0m
           labels:
             severity: warning
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
           annotations:
-            summary: 'PostgreSQL dead locks (instance $labels.instance)'
-            description: 'PostgreSQL has dead-locks on $labels.instance\n  VALUE = $value\n  LABELS = $labels'
-
-        - alert: PostgresqlHighRollbackRate
-          expr: sum by (namespace, datname) (rate(pg_stat_database_xact_rollback{datname!~"template.*|postgres",datid!="0"}[3m])) / (sum by (namespace, datname) (rate(pg_stat_database_xact_commit{datname!~"template.*|postgres",datid!="0"}[3m]))) > 0.02
-          for: 0m
-          labels:
-            severity: warning
-          annotations:
-            summary: 'PostgreSQL high rollback rate (instance $labels.instance)'
-            description: 'Ratio of aborted to committed transactions > 2% on $labels.instance\n  VALUE = $value\n  LABELS = $labels'
-
-        - alert: PostgresqlCommitRateLow
-          expr: increase(pg_stat_database_xact_commit{datname!~"template.*|postgres",datid!="0"}[5m]) < 5
-          for: 2m
-          labels:
-            severity: critical
-          annotations:
-            summary: 'PostgreSQL commit rate low (instance $labels.instance)'
-            description: 'PostgreSQL seems to be processing very few transactions on $labels.instance\n  VALUE = $value\n  LABELS = $labels'
-
-        - alert: PostgresqlLowXidConsumption
-          expr: rate(pg_txid_current[1m]) < 5
-          for: 2m
-          labels:
-            severity: warning
-          annotations:
-            summary: 'PostgreSQL low XID consumption (instance $labels.instance)'
-            description: 'PostgreSQL seems to be consuming transaction IDs very slowly on $labels.instance\n  VALUE = $value\n  LABELS = $labels'
-
-        - alert: PostgresqlHighRateStatementTimeout
-          expr: rate(postgresql_errors_total{type="statement_timeout"}[1m]) > 3
-          for: 0m
-          labels:
-            severity: critical
-          annotations:
-            summary: 'PostgreSQL high rate statement timeout (instance $labels.instance)'
-            description: 'High rate of statement timeouts on $labels.instance\n  VALUE = $value\n  LABELS = $labels'
-
-        - alert: PostgresqlHighRateDeadlock
-          expr: increase(postgresql_errors_total{type="deadlock_detected"}[1m]) > 1
-          for: 0m
-          labels:
-            severity: critical
-          annotations:
-            summary: 'PostgreSQL high rate deadlock (instance $labels.instance)'
-            description: 'PostgreSQL detected deadlocks on $labels.instance\n  VALUE = $value\n  LABELS = $labels'
-
-        - alert: PostgresqlUnusedReplicationSlot
-          expr: pg_replication_slots_active == 0
-          for: 1m
-          labels:
-            severity: warning
-          annotations:
-            summary: 'PostgreSQL unused replication slot (instance $labels.instance)'
-            description: 'Unused replication slots on $labels.instance\n  VALUE = $value\n  LABELS = $labels'
-
-        - alert: PostgresqlTooManyDeadTuples
-          expr: (pg_stat_user_tables_n_dead_tup > 10000) / (pg_stat_user_tables_n_live_tup + pg_stat_user_tables_n_dead_tup) >= 0.1
-          for: 2m
-          labels:
-            severity: warning
-          annotations:
-            summary: 'PostgreSQL too many dead tuples (instance $labels.instance)'
-            description: 'Too many dead tuples in PostgreSQL on $labels.instance\n  VALUE = $value\n  LABELS = $labels'
-
-        - alert: PostgresqlTableNotAutoVacuumed
-          expr: ((pg_stat_user_tables_n_tup_del + pg_stat_user_tables_n_tup_upd + pg_stat_user_tables_n_tup_hot_upd) > pg_settings_autovacuum_vacuum_threshold) and (time() - pg_stat_user_tables_last_autovacuum) > 864000
-          for: 0m
-          labels:
-            severity: warning
-          annotations:
-            summary: 'PostgreSQL table not auto vacuumed (instance $labels.instance)'
-            description: 'Table $labels.relname has not been auto vacuumed for 10 days on $labels.instance\n  VALUE = $value\n  LABELS = $labels'
-
-        - alert: PostgresqlTableNotAutoAnalyzed
-          expr: ((pg_stat_user_tables_n_tup_del + pg_stat_user_tables_n_tup_upd + pg_stat_user_tables_n_tup_hot_upd) > pg_settings_autovacuum_analyze_threshold) and (time() - pg_stat_user_tables_last_autoanalyze) > 864000
-          for: 0m
-          labels:
-            severity: warning
-          annotations:
-            summary: 'PostgreSQL table not auto analyzed (instance $labels.instance)'
-            description: 'Table $labels.relname has not been auto analyzed for 10 days on $labels.instance\n  VALUE = $value\n  LABELS = $labels'
-
-        - alert: PostgresqlSslCompressionActive
-          expr: sum(pg_stat_ssl_compression) > 0
-          for: 0m
-          labels:
-            severity: critical
-          annotations:
-            summary: 'PostgreSQL SSL compression active (instance $labels.instance)'
-            description: 'SSL compression enabled on $labels.instance. This may add jitter in replication delay.\n  VALUE = $value\n  LABELS = $labels'
-
-        - alert: PostgresqlTooManyLocksAcquired
-          expr: (sum(pg_locks_count)) / (pg_settings_max_locks_per_transaction * pg_settings_max_connections) > 0.2
-          for: 2m
-          labels:
-            severity: critical
-          annotations:
-            summary: 'PostgreSQL too many locks acquired (instance $labels.instance)'
-            description: 'Too many locks acquired on $labels.instance. Consider increasing `max_locks_per_transaction`\n  VALUE = $value\n  LABELS = $labels'
-
-        - alert: PostgresqlBloatIndexHigh
-          expr: pg_bloat_btree_bloat_pct > 80 and on (idxname) (pg_bloat_btree_real_size > 100000000)
-          for: 1h
-          labels:
-            severity: warning
-          annotations:
-            summary: 'PostgreSQL bloat index high (> 80%) (instance $labels.instance)'
-            description: 'Index $labels.idxname is bloated on $labels.instance. Run `REINDEX INDEX CONCURRENTLY $labels.idxname`\n  VALUE = $value\n  LABELS = $labels'
-
-        - alert: PostgresqlBloatTableHigh
-          expr: pg_bloat_table_bloat_pct > 80 and on (relname) (pg_bloat_table_real_size > 200000000)
-          for: 1h
-          labels:
-            severity: warning
-          annotations:
-            summary: 'PostgreSQL bloat table high (> 80%) (instance $labels.instance)'
-            description: 'Table $labels.relname is bloated on $labels.instance. Consider vacuuming.\n  VALUE = $value\n  LABELS = $labels'
-
-        - alert: PostgresqlConfigurationChanged
-          expr: '{__name__=~"pg_settings_.*"} != ON(__name__, instance) {__name__=~"pg_settings_transaction_read_only"} OFFSET 5m'
-          for: 0m
-          labels:
-            severity: info
-          annotations:
-            summary: 'PostgreSQL configuration changed (instance $labels.instance)'
-            description: 'Database configuration changed recently on $labels.instance\n  VALUE = $value\n  LABELS = $labels'
-
-        - alert: PostgresqlBloatIndexHigh(>80%)
-          expr: pg_bloat_btree_bloat_pct > 80 and on (idxname) (pg_bloat_btree_real_size > 100000000)
-          for: 1h
-          labels:
-            severity: warning
-          annotations:
-            summary: 'Postgresql bloat index high (> 80%) (instance $labels.instance)'
-            description: 'The index $labels.idxname is bloated. You should execute `REINDEX INDEX CONCURRENTLY $labels.idxname`\n  VALUE = $value\n  LABELS = $labels'
-
-        - alert: PostgresqlBloatTableHigh(>80%)
-          expr: pg_bloat_table_bloat_pct > 80 and on (relname) (pg_bloat_table_real_size > 200000000)
-          for: 1h
-          labels:
-            severity: warning
-          annotations:
-            summary: 'Postgresql bloat table high (> 80%) (instance $labels.instance)'
-            description: 'The table $labels.relname is bloated. You should execute `VACUUM $labels.relname`\n  VALUE = $value\n  LABELS = $labels'
-
-        - alert: PostgresqlInvalidIndex
-          expr: pg_general_index_info_pg_relation_size{indexrelname=~".*ccnew.*"}
-          for: 6h
-          labels:
-            severity: warning
-          annotations:
-            summary: 'Postgresql invalid index (instance $labels.instance)'
-            description: 'The table $labels.relname has an invalid index: $labels.indexrelname. You should execute `DROP INDEX $labels.indexrelname;`\n  VALUE = $value\n  LABELS = $labels'
-
-        - alert: PostgresqlReplicationLag
-          expr: pg_replication_lag_seconds > 5
-          for: 30s
-          labels:
-            severity: warning
-          annotations:
-            summary: 'Postgresql replication lag (instance $labels.instance)'
-            description: 'The PostgreSQL replication lag is high (> 5s)\n  VALUE = $value\n  LABELS = $labels'
+            summary: 'PostgreSQL instance {{ .Release.Name }} has dead-locks'
+            description: 'PostgreSQL instance {{ .Release.Name }} has dead-locks'
