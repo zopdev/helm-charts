@@ -7,12 +7,16 @@ metadata:
     chart: {{ template "postgresql.chart" . }}
     release: {{ .Release.Name | quote }}
     heritage: {{ .Release.Service | quote }}
+    role: master
 spec:
-  type: ClusterIP
+  type: NodePort
   ports:
     - name: tcp-postgresql
       port: 5432
       targetPort: tcp-postgresql
+    - name: metrics-port
+      port: 2121
+      targetPort: 2121
   selector:
     app: {{ template "postgresql.name" . }}
     release: {{ .Release.Name | quote }}

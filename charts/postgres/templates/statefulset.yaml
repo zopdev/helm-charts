@@ -30,6 +30,30 @@ spec:
       securityContext:
         fsGroup: 1001
       containers:
+        - name: postgres-exporter
+          image: "quay.io/prometheuscommunity/postgres-exporter:v0.12.0"
+          args:
+            - "--web.listen-address=:2121"
+          env:
+            - name: DATA_SOURCE_USER
+              value: "postgres"
+            - name: DATA_SOURCE_URI
+              value: "localhost:5432/postgres?sslmode=disable"
+            - name: DATA_SOURCE_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Release.Name }}-postgres-root-secret
+                  key: postgres-password
+          ports:
+            - containerPort: 2121
+              name: metrics
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "256m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
         - name: {{ $.Release.Name }}-postgres
           image: docker.io/bitnami/postgresql:{{ .Values.version }}
           {{- if .Values.resources }}

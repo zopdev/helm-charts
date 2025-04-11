@@ -1,0 +1,49 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+  generation: 1
+  labels:
+    app: kube-prometheus-stack
+    heritage: Helm
+    release: prometheus
+spec:
+  groups:
+    - name: {{ .Release.Namespace }}.{{ .Release.Name }}-postgres.rules
+      rules:
+        - alert: PostgresqlRestarted
+          expr: time() - pg_postmaster_start_time_seconds < 60
+          for: 0m
+          labels:
+            severity: critical
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'PostgreSQL instance {{ .Release.Name }} restarted'
+            description: 'PostgreSQL instance {{ .Release.Name }} restarted < 1 minute ago'
+
+        - alert: PostgresqlTooManyConnections
+          expr: sum by (instance, job, server) (pg_stat_activity_count) > min by (instance, job, server) (pg_settings_max_connections * 0.8)
+          for: 2m
+          labels:
+            severity: warning
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'PostgreSQL instance {{ .Release.Name }} has too many connections (> 80%)'
+            description: 'More than 80% of PostgreSQL connections of instance {{ .Release.Name }} are in use'
+
+        - alert: PostgresqlDeadLocks
+          expr: increase(pg_stat_database_deadlocks{datname!~"template.*|postgres"}[1m]) > 5
+          for: 0m
+          labels:
+            severity: warning
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'PostgreSQL instance {{ .Release.Name }} has dead-locks'
+            description: 'PostgreSQL instance {{ .Release.Name }} has dead-locks'
