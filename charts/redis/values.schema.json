@@ -15,11 +15,11 @@
         }
       },
     "diskSize": {
-      "type": "string"
-    },
-    "version": {
       "type": "string",
       "editDisabled": true
+    },
+    "version": {
+      "type": "string"
     },
     "resources": {
       "type": "object",
