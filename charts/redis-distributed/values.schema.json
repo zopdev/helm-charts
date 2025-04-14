@@ -65,7 +65,8 @@
             "size": {
               "type": "string",
               "mutable": true,
-              "default": "10Gi"
+              "default": "10Gi",
+              "editDisabled": true
             }
           },
           "required": ["size"]
@@ -130,7 +131,8 @@
             "size": {
               "type": "string",
               "mutable": true,
-              "default": "10Gi"
+              "default": "10Gi",
+              "editDisabled": true
             }
           },
           "required": ["size"]
