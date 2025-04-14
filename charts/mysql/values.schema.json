@@ -6,7 +6,8 @@
       "type": "string",
       "pattern": "^[0-9]+Gi$",
       "default": "10Gi",
-      "mutable": true
+      "mutable": true,
+      "editDisabled": true
     },
     "version": {
       "default": "8.0",
