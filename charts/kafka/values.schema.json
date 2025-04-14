@@ -63,7 +63,8 @@
       "type": "string",
       "pattern": "^[0-9]+Gi$",
       "default": "10Gi",
-      "mutable": true
+      "mutable": true,
+      "editDisabled": true
     },
     "services": {
         "type": "array",
