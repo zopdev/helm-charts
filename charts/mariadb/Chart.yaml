@@ -2,7 +2,7 @@ apiVersion: v2
 appVersion: "1.0"
 description: Helm chart for deploying mariadb datastore
 name: mariadb
-version: 0.0.2
+version: 0.0.3
 icon: "https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20241210/f80d4fa9-22ff-4ea8-9558-abb1ab3dc4f3-mariadb.png"
 maintainers:
   - name: ZopDev
