@@ -5,7 +5,7 @@ entries:
       type: datasource
     apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.863912+05:30"
+    created: "2025-04-14T15:59:33.624784+05:30"
     description: Helm chart for deploying cassandra
     digest: 8204a7e66878a8c14cd517fb4db71afe9980a1f194f850aba1d0b972f708604a
     icon: https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20241223/d7c22b49-c87b-4d41-a109-334a83b44f8d-cassandra.png
@@ -20,7 +20,7 @@ entries:
       type: datasource
     apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.863597+05:30"
+    created: "2025-04-14T15:59:33.62442+05:30"
     description: Helm chart for deploying cassandra
     digest: d8c73f81cbbf8d9c32118c2939ff855a36a1b6c8c593baf77bfb6b99f161c8a3
     icon: https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20241223/d7c22b49-c87b-4d41-a109-334a83b44f8d-cassandra.png
@@ -33,7 +33,7 @@ entries:
     version: v0.0.3
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.862509+05:30"
+    created: "2025-04-14T15:59:33.623427+05:30"
     description: Helm chart for deploying cassandra
     digest: f45dea69d490bc1e07764fc2e632cabda6465b4a99d12ed6c78eb4646b742e11
     icon: https://zop.dev/logo.png
@@ -46,7 +46,7 @@ entries:
     version: v0.0.2
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.862275+05:30"
+    created: "2025-04-14T15:59:33.623177+05:30"
     description: Helm chart for deploying cassandra
     digest: 87dcf6e85af6afe5ff9c90bb29272edbc9cb21ce8019361015b1733442644ca9
     icon: https://zop.dev/logo.png
@@ -62,7 +62,22 @@ entries:
       type: datasource
     apiVersion: v2
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.865901+05:30"
+    created: "2025-04-14T15:59:33.626367+05:30"
+    description: Helm chart for deploying chromadb datastore
+    digest: 94ca640fc537837c955a55a41e53da01b38203fe28e9e5df92f7f121ac51f68e
+    icon: https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20241205/f21ef909-e0ea-4969-8963-0848602a5e4b-ImageEditor.jpg
+    maintainers:
+    - name: ZopDev
+      url: zop.dev
+    name: chromadb
+    urls:
+    - https://helm.zop.dev/chromadb-v0.0.4.tgz
+    version: v0.0.4
+  - annotations:
+      type: datasource
+    apiVersion: v2
+    appVersion: "1.0"
+    created: "2025-04-14T15:59:33.625346+05:30"
     description: Helm chart for deploying chromadb datastore
     digest: ba37d2c0312b72096223fae3329696dd8b5c0f050712369a7d17d61136c7a91b
     icon: https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20241205/f21ef909-e0ea-4969-8963-0848602a5e4b-ImageEditor.jpg
@@ -77,7 +92,7 @@ entries:
       type: datasource
     apiVersion: v2
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.865631+05:30"
+    created: "2025-04-14T15:59:33.625053+05:30"
     description: Helm chart for deploying chromadb datastore
     digest: 4b595dd52a315a9c5731a2407c33840e5f9d838c0faa534a65348a927e63ea7d
     icon: https://zop.dev/logo.png
@@ -90,7 +105,7 @@ entries:
     version: v0.0.2
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.862036+05:30"
+    created: "2025-04-14T15:59:33.622926+05:30"
     description: Helm chart for deploying chromadb datastore
     digest: e80e4a44755d08f58044aaffc16074668015f121b5a7359cd20b75526a46ee3a
     icon: https://zop.dev/logo.png
@@ -106,7 +121,22 @@ entries:
       type: datasource
     apiVersion: v2
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.866819+05:30"
+    created: "2025-04-14T15:59:33.628478+05:30"
+    description: Helm chart for deploying cockroachdb datastore
+    digest: aafca1db83b781cfc87de37fae49dc57122fb7c0b57dacee765a7fb8de72cfc1
+    icon: https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20250402/331014cf-f38d-484f-9246-1c9a045cb9a0-cockroachicon.png
+    maintainers:
+    - name: ZopDev
+      url: zop.dev
+    name: cockroachdb
+    urls:
+    - https://helm.zop.dev/cockroachdb-v0.0.4.tgz
+    version: v0.0.4
+  - annotations:
+      type: datasource
+    apiVersion: v2
+    appVersion: "1.0"
+    created: "2025-04-14T15:59:33.628175+05:30"
     description: Helm chart for deploying cockroachdb datastore
     digest: 2bea5770d823248ddf13b2930796e7c58ee72323683f7e5d39851d500d680b29
     icon: https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20250402/331014cf-f38d-484f-9246-1c9a045cb9a0-cockroachicon.png
@@ -121,7 +151,7 @@ entries:
       type: datasource
     apiVersion: v2
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.866571+05:30"
+    created: "2025-04-14T15:59:33.627979+05:30"
     description: Helm chart for deploying cockroachdb datastore
     digest: 413d30a76f216aaba3e6e8768d3195006d5248e15f26884291031ad311c111d2
     icon: https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20250402/331014cf-f38d-484f-9246-1c9a045cb9a0-cockroachicon.png
@@ -134,7 +164,7 @@ entries:
     version: v0.0.2
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.86633+05:30"
+    created: "2025-04-14T15:59:33.627775+05:30"
     description: Helm chart for deploying cockroachdb datastore
     digest: 34f77cf414230048d6da77866c1ac39093625e761b5c68c71b7e214a4191da09
     icon: https://zop.dev/logo.png
@@ -148,7 +178,7 @@ entries:
   cron-job:
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.870568+05:30"
+    created: "2025-04-14T15:59:33.631779+05:30"
     description: Helm chart creates a cron-job, service, alerts along with serviceMonitor
       etc
     digest: df89a1f9b87ee180ff45fed5106197ebc98dde611fe12fc26665096d8ad22071
@@ -162,7 +192,7 @@ entries:
     version: v0.0.17
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.870376+05:30"
+    created: "2025-04-14T15:59:33.631575+05:30"
     description: Helm chart creates a cron-job, service, alerts along with serviceMonitor
       etc
     digest: b09b48b17c5518b18ff360770bcdb54f1babd195d1f9eabaccbc2dd0041a0ab3
@@ -176,7 +206,7 @@ entries:
     version: v0.0.16
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.870178+05:30"
+    created: "2025-04-14T15:59:33.631356+05:30"
     description: Helm chart creates a cron-job, service, alerts along with serviceMonitor
       etc
     digest: 56cb5aa749ecb2d7b6a44b1cc7598bdab04319be280731233e7f1c3edaf0c81a
@@ -190,7 +220,7 @@ entries:
     version: v0.0.15
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.869985+05:30"
+    created: "2025-04-14T15:59:33.63115+05:30"
     description: Helm chart creates a cron-job, service, alerts along with serviceMonitor
       etc
     digest: 9fe2649ba7a57a70efbadd6fc7f630f689a285411b6a9a82fa71797f3729d7d1
@@ -204,7 +234,7 @@ entries:
     version: v0.0.14
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.869788+05:30"
+    created: "2025-04-14T15:59:33.630946+05:30"
     description: Helm chart creates a cron-job, service, alerts along with serviceMonitor
       etc
     digest: cea536911b8a40c81d0dea88039b651e822f7f520cac1bc7984f1436f6d2db1e
@@ -218,7 +248,7 @@ entries:
     version: v0.0.13
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.869588+05:30"
+    created: "2025-04-14T15:59:33.63074+05:30"
     description: Helm chart creates a cron-job, service, alerts along with serviceMonitor
       etc
     digest: 462e6ec152db5248ef7f16884414dc5230e07800b7b068f3f57cb759439f2051
@@ -232,7 +262,7 @@ entries:
     version: v0.0.12
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.869388+05:30"
+    created: "2025-04-14T15:59:33.630529+05:30"
     description: Helm chart creates a cron-job, service, alerts along with serviceMonitor
       etc
     digest: 5ec17930747dbefa44d30240d1ecc94f649084f8a252ad3351b5a5f7463bb592
@@ -246,7 +276,7 @@ entries:
     version: v0.0.11
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.868078+05:30"
+    created: "2025-04-14T15:59:33.629129+05:30"
     description: Helm chart creates a cron-job, service, alerts along with serviceMonitor
       etc
     digest: ebc0c13fa2b4c085475168759a66c464801a099c00e60790ee3c141a619208e6
@@ -260,7 +290,7 @@ entries:
     version: v0.0.10
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.873959+05:30"
+    created: "2025-04-14T15:59:33.635103+05:30"
     description: Helm chart creates a cron-job, service, alerts along with serviceMonitor
       etc
     digest: c59e1c2ca03efcd354674efd6c6142bb897a522511b21ab2204d758c0ad7838d
@@ -274,7 +304,7 @@ entries:
     version: v0.0.9
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.873608+05:30"
+    created: "2025-04-14T15:59:33.634787+05:30"
     description: Helm chart creates a cron-job, service, alerts along with serviceMonitor
       etc
     digest: b0b0f1b080fb355d0c0a4c9a793aa08c42ae3d346d3d35924b160402146f3ba4
@@ -288,7 +318,7 @@ entries:
     version: v0.0.8
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.872765+05:30"
+    created: "2025-04-14T15:59:33.634596+05:30"
     description: Helm chart creates a cron-job, service, alerts along with serviceMonitor
       etc
     digest: 68deab7c093b6399751337046e2e3d44b2f92583ff5897268b2e7096c3ecc7d4
@@ -302,7 +332,7 @@ entries:
     version: v0.0.7
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.872505+05:30"
+    created: "2025-04-14T15:59:33.634389+05:30"
     description: Helm chart creates a cron-job, service, alerts along with serviceMonitor
       etc
     digest: 12ef691b470c85021dea5a2abb22ed85a1eeb0eebb639b4e961ebc9e48b77379
@@ -316,7 +346,7 @@ entries:
     version: v0.0.6
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.871424+05:30"
+    created: "2025-04-14T15:59:33.634096+05:30"
     description: Helm chart creates a cron-job, service, alerts along with serviceMonitor
       etc
     digest: feacad697b021e3101356c723937a67384ce40b20d8262f8cb0dccb778ce3409
@@ -330,7 +360,7 @@ entries:
     version: v0.0.5
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.871174+05:30"
+    created: "2025-04-14T15:59:33.63239+05:30"
     description: Helm chart creates a cron-job, service, alerts along with serviceMonitor
       etc
     digest: a0b223548907a6e97153e62a80c71fa20a2d1b44d6ddd6f86c99ee1d0bded277
@@ -344,7 +374,7 @@ entries:
     version: v0.0.4
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.870912+05:30"
+    created: "2025-04-14T15:59:33.63214+05:30"
     description: Helm chart creates a cron-job, service, alerts along with serviceMonitor
       etc
     digest: 915559e842b254eb709dae62904e6021123d76fba00367c0f676ea471fd9bb34
@@ -358,7 +388,7 @@ entries:
     version: v0.0.3
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.87074+05:30"
+    created: "2025-04-14T15:59:33.631956+05:30"
     description: Helm chart creates a cron-job, service, alerts along with serviceMonitor
       etc
     digest: 8647eaeb33477970ec574dfea3549f71d480bb89cac42b99fba36a4f56d2c64f
@@ -372,7 +402,7 @@ entries:
     version: v0.0.2
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.867803+05:30"
+    created: "2025-04-14T15:59:33.628847+05:30"
     description: Helm chart creates a cron-job, service, alerts along with serviceMonitor
       etc
     digest: d8ab447cd5bff82957fc1bafdd4a1bdab91cea3b9eba179f17359d4b6265718b
@@ -389,7 +419,22 @@ entries:
       type: datasource
     apiVersion: v2
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.875027+05:30"
+    created: "2025-04-14T15:59:33.636509+05:30"
+    description: Helm chart for deploying dgraph datastore
+    digest: 39df09aa5c2fd7d4ff91f023a4257a3fc5690538b99a5a666f9a22d99d3f3c9c
+    icon: https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20250402/b62a941f-db26-4b89-a1c0-6758a616c028-dgraph.png
+    maintainers:
+    - name: ZopDev
+      url: zop.dev
+    name: dgraph
+    urls:
+    - https://helm.zop.dev/dgraph-v0.0.3.tgz
+    version: v0.0.3
+  - annotations:
+      type: datasource
+    apiVersion: v2
+    appVersion: "1.0"
+    created: "2025-04-14T15:59:33.63618+05:30"
     description: Helm chart for deploying dgraph datastore
     digest: da8b3703d231048d9831066e82fd1a6c6dff59da7a786e8396137b2c22d6ef62
     icon: https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20250402/b62a941f-db26-4b89-a1c0-6758a616c028-dgraph.png
@@ -402,7 +447,7 @@ entries:
     version: v0.0.2
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.874666+05:30"
+    created: "2025-04-14T15:59:33.635815+05:30"
     description: Helm chart for deploying dgraph datastore
     digest: 81cd012d3d9b7a4b5275d4e0bc16f15cf4c4636eee17d7177c124c37c3f70a34
     icon: https://zop.dev/logo.png
@@ -418,7 +463,7 @@ entries:
       type: application
     apiVersion: v2
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.877947+05:30"
+    created: "2025-04-14T15:59:33.639627+05:30"
     description: Helm chart for Deploying JupyterHub
     digest: f84e94e60206ce31fd483c8f95509e3a0633bd37ac69ead5260d25b49c7c2e3d
     icon: https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20250313/e2540703-3750-4d46-ba32-32445e506332-jupyter.png
@@ -434,7 +479,7 @@ entries:
       type: application
     apiVersion: v2
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.877003+05:30"
+    created: "2025-04-14T15:59:33.638493+05:30"
     description: Helm chart for Deploying JupyterHub
     digest: 557ab4461adc4e40e2e1ddd0de44f12d06d76ff0b0a42f29feb39b63c7e49360
     icon: https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20250313/e2540703-3750-4d46-ba32-32445e506332-jupyter.png
@@ -447,7 +492,7 @@ entries:
     version: v0.0.2
   - apiVersion: v2
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.875997+05:30"
+    created: "2025-04-14T15:59:33.637493+05:30"
     description: Helm chart for Deploying JupyterHub
     digest: 93a2b8063b3bc5ec24e4b9e0978913fa0f79b951e73913f562746cbc9353b0bd
     icon: https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20250313/e2540703-3750-4d46-ba32-32445e506332-jupyter.png
@@ -464,7 +509,28 @@ entries:
       type: datasource
     apiVersion: v2
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.878922+05:30"
+    created: "2025-04-14T15:59:33.641143+05:30"
+    dependencies:
+    - alias: zookeeper
+      condition: zookeeper.enabled
+      name: zookeeper
+      repository: https://helm.zop.dev
+      version: 0.0.1
+    description: Helm chart deploys kafka
+    digest: b086214f489535305a6b173d078b1ab68c8685afca1b74cbac24f86e2d5f508b
+    icon: https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20250206/800a8c94-a94d-4dbe-9b71-f8e21963da2f-kafka.png
+    maintainers:
+    - name: ZopDev
+      url: zop.dev
+    name: kafka
+    urls:
+    - https://helm.zop.dev/kafka-v0.0.3.tgz
+    version: v0.0.3
+  - annotations:
+      type: datasource
+    apiVersion: v2
+    appVersion: "1.0"
+    created: "2025-04-14T15:59:33.640677+05:30"
     dependencies:
     - alias: zookeeper
       condition: zookeeper.enabled
@@ -483,7 +549,7 @@ entries:
     version: v0.0.2
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.878468+05:30"
+    created: "2025-04-14T15:59:33.640195+05:30"
     description: Helm chart deploys kafka
     digest: 1a6d2313a07f4a2786e0fb94acb3cdf30215cf652628f397a91bb68aaa1717e1
     icon: https://zop.dev/logo.png
@@ -499,7 +565,22 @@ entries:
       type: datasource
     apiVersion: v2
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.879951+05:30"
+    created: "2025-04-14T15:59:33.642323+05:30"
+    description: Helm chart for deploying mariadb datastore
+    digest: 301f9f4ce7bc4ed7c87078ba28ecbb9b41527eb244cce884c57b684bbcabc156
+    icon: https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20241210/f80d4fa9-22ff-4ea8-9558-abb1ab3dc4f3-mariadb.png
+    maintainers:
+    - name: ZopDev
+      url: zop.dev
+    name: mariadb
+    urls:
+    - https://helm.zop.dev/mariadb-v0.0.3.tgz
+    version: v0.0.3
+  - annotations:
+      type: datasource
+    apiVersion: v2
+    appVersion: "1.0"
+    created: "2025-04-14T15:59:33.641935+05:30"
     description: Helm chart for deploying mariadb datastore
     digest: 5f5b91c6e5b772c5b4b862b7dab3bb3c89b346c0af1c53414afcc5beae74f6a6
     icon: https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20241210/f80d4fa9-22ff-4ea8-9558-abb1ab3dc4f3-mariadb.png
@@ -512,7 +593,7 @@ entries:
     version: v0.0.2
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.879315+05:30"
+    created: "2025-04-14T15:59:33.641541+05:30"
     description: Helm chart for deploying mariadb datastore
     digest: 27f9e8208c4c87915296c1e4a00c2bd0cb6ff48806b2f4e62a11cc85ec66567b
     icon: https://zop.dev/logo.png
@@ -528,7 +609,7 @@ entries:
       type: datasource
     apiVersion: v2
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.882348+05:30"
+    created: "2025-04-14T15:59:33.644971+05:30"
     description: Helm chart for deploying mysql datastore
     digest: 72cfd04c203bb9e90d50aa06ad2bdd090b546e92c1132f51d485122c7f483105
     icon: https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20241119/c647e8cc-f958-4e6b-ba08-22dc79ca703a-pngtransparentmysqldatabasemariadbdolphinmarinemammalanimalstextthumbnail.png
@@ -543,7 +624,7 @@ entries:
       type: datasource
     apiVersion: v2
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.88208+05:30"
+    created: "2025-04-14T15:59:33.644525+05:30"
     description: Helm chart for deploying mysql datastore
     digest: cd4a6304ec32384c5a278ba4cc356d5d36abecf639f5c1b49ce8fc0eff4016d6
     icon: https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20241119/c647e8cc-f958-4e6b-ba08-22dc79ca703a-pngtransparentmysqldatabasemariadbdolphinmarinemammalanimalstextthumbnail.png
@@ -558,7 +639,7 @@ entries:
       type: datasource
     apiVersion: v2
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.881807+05:30"
+    created: "2025-04-14T15:59:33.644176+05:30"
     description: Helm chart for deploying mysql datastore
     digest: 3eb4fdd1593a952a7ff7a10310b48484047eabeacadcf3f039e32d7f1a130c13
     icon: https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20241119/c647e8cc-f958-4e6b-ba08-22dc79ca703a-pngtransparentmysqldatabasemariadbdolphinmarinemammalanimalstextthumbnail.png
@@ -573,7 +654,7 @@ entries:
       type: datasource
     apiVersion: v2
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.881044+05:30"
+    created: "2025-04-14T15:59:33.643431+05:30"
     description: Helm chart for deploying mysql datastore
     digest: d3635b40f2b416a5616ff1ba50d9572318e285ead03213ee7a5a45caaa8ab5e8
     icon: https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20241119/c647e8cc-f958-4e6b-ba08-22dc79ca703a-pngtransparentmysqldatabasemariadbdolphinmarinemammalanimalstextthumbnail.png
@@ -588,7 +669,7 @@ entries:
       type: datasource
     apiVersion: v2
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.88081+05:30"
+    created: "2025-04-14T15:59:33.643168+05:30"
     description: Helm chart for deploying mysql datastore
     digest: 22a84b7172e1424845524d9c2a06a3ec7c29f445349ff4650531001bd50fb5a8
     icon: https://zop.dev/logo.png
@@ -601,7 +682,7 @@ entries:
     version: v0.0.4
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.880442+05:30"
+    created: "2025-04-14T15:59:33.642806+05:30"
     description: Helm chart for deploying mysql datastore
     digest: cd72e08b2235de99a477dfad97c1d13fff7ae5e37397f0d6dbd682bf949b2046
     icon: https://zop.dev/logo.png
@@ -614,7 +695,7 @@ entries:
     version: v0.0.3
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.880282+05:30"
+    created: "2025-04-14T15:59:33.64264+05:30"
     description: Helm chart for deploying mysql datastore
     digest: 7e4bf128d43f03e3930457b8eb731935c98c82b2528a5c28559a921850cb5922
     icon: https://zop.dev/logo.png
@@ -627,7 +708,7 @@ entries:
     version: v0.0.2
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.880111+05:30"
+    created: "2025-04-14T15:59:33.642474+05:30"
     description: Helm chart for deploying mysql datastore
     digest: d1b0b8aff145de7076aa97054be6da52e769ac7be00d8453500a75ac82cc0d07
     icon: https://zop.dev/logo.png
@@ -643,7 +724,22 @@ entries:
       type: datasource
     apiVersion: v2
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.883339+05:30"
+    created: "2025-04-14T15:59:33.646085+05:30"
+    description: Helm chart for deploying opentsdb
+    digest: ceb20fb363bef19fbc077ba7647b389a9741f0b748b555f23e2e6bd6b5f97020
+    icon: https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20241122/42ea9c53-055c-4441-8438-95d639dfc2f4-2086220.png
+    maintainers:
+    - name: ZopDev
+      url: zop.dev
+    name: opentsdb
+    urls:
+    - https://helm.zop.dev/opentsdb-v0.0.3.tgz
+    version: v0.0.3
+  - annotations:
+      type: datasource
+    apiVersion: v2
+    appVersion: "1.0"
+    created: "2025-04-14T15:59:33.645852+05:30"
     description: Helm chart for deploying opentsdb
     digest: e20e1734631e6079fe6e8e44b6c63d46c49c9888f99e0b9706d22bed09b4c8be
     icon: https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20241122/42ea9c53-055c-4441-8438-95d639dfc2f4-2086220.png
@@ -656,7 +752,7 @@ entries:
     version: v0.0.2
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.883121+05:30"
+    created: "2025-04-14T15:59:33.645643+05:30"
     description: Helm chart for deploying opentsdb
     digest: fd3473ad09c60da40c8ddbb319a4c015774d0ae35c0e7da5556949bcbde39f7e
     icon: https://zop.dev/logo.png
@@ -672,7 +768,7 @@ entries:
       type: application
     apiVersion: v2
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.887902+05:30"
+    created: "2025-04-14T15:59:33.653148+05:30"
     dependencies:
     - name: postgres
       repository: https://helm.zop.dev
@@ -698,7 +794,7 @@ entries:
       type: application
     apiVersion: v2
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.887068+05:30"
+    created: "2025-04-14T15:59:33.650641+05:30"
     dependencies:
     - name: postgres
       repository: https://helm.zop.dev
@@ -721,7 +817,7 @@ entries:
     version: v0.0.4
   - apiVersion: v2
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.885633+05:30"
+    created: "2025-04-14T15:59:33.649802+05:30"
     dependencies:
     - name: postgres
       repository: https://helm.zop.dev
@@ -745,7 +841,7 @@ entries:
     version: v0.0.3
   - apiVersion: v2
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.884836+05:30"
+    created: "2025-04-14T15:59:33.648434+05:30"
     dependencies:
     - name: postgres
       repository: https://helm.zop.dev
@@ -769,7 +865,7 @@ entries:
     version: v0.0.2
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.884032+05:30"
+    created: "2025-04-14T15:59:33.646796+05:30"
     description: Helm chart for deploying outline app
     digest: 4a24106f04a0e89503000afc5a7fd2546eff2e092caf500b12a48bbd2d17e659
     icon: https://zop.dev/logo.png
@@ -785,7 +881,7 @@ entries:
       type: datasource
     apiVersion: v2
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.890332+05:30"
+    created: "2025-04-14T15:59:33.655691+05:30"
     description: Helm chart for deploying postgres datastore
     digest: 760b6075b10c9044cade7a1692a1a2b22363335710ac50a60e90890864665e41
     icon: https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20241119/e4d58134-93e4-478e-851b-3a70b58dcd81-Postgresqlelephantsvg.jpg
@@ -800,7 +896,7 @@ entries:
       type: datasource
     apiVersion: v2
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.890046+05:30"
+    created: "2025-04-14T15:59:33.655391+05:30"
     description: Helm chart for deploying postgres datastore
     digest: d155a052c1ede6249edb2b0b30720ddaf0e7dda52bc352d4f231359e40456068
     icon: https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20241119/e4d58134-93e4-478e-851b-3a70b58dcd81-Postgresqlelephantsvg.jpg
@@ -815,7 +911,7 @@ entries:
       type: datasource
     apiVersion: v2
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.88983+05:30"
+    created: "2025-04-14T15:59:33.655164+05:30"
     description: Helm chart for deploying postgres datastore
     digest: c1767b70e53d69d8680170e759780cdc4492f483f5896307412355331c16c7ea
     icon: https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20241119/e4d58134-93e4-478e-851b-3a70b58dcd81-Postgresqlelephantsvg.jpg
@@ -830,7 +926,7 @@ entries:
       type: datasource
     apiVersion: v2
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.889604+05:30"
+    created: "2025-04-14T15:59:33.654932+05:30"
     description: Helm chart for deploying postgres datastore
     digest: 06347f98453069747de484984e4dafe36bbf79f386ef76f3de735d6ece206085
     icon: https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20241119/e4d58134-93e4-478e-851b-3a70b58dcd81-Postgresqlelephantsvg.jpg
@@ -845,7 +941,7 @@ entries:
       type: datasource
     apiVersion: v2
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.889424+05:30"
+    created: "2025-04-14T15:59:33.654731+05:30"
     description: Helm chart for deploying postgres datastore
     digest: 75b652602f68dc46effc64332320aa5383b89561db869db77396bd1ab0ff55b6
     icon: https://zop.dev/logo.png
@@ -858,7 +954,7 @@ entries:
     version: v0.0.4
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.889223+05:30"
+    created: "2025-04-14T15:59:33.654516+05:30"
     description: Helm chart for deploying postgres datastore
     digest: 8d9d5a47255fc7d149c3975386c0adf8b3e9ad66ae9d6c1da0ca7ea7d9cf3f69
     icon: https://zop.dev/logo.png
@@ -871,7 +967,7 @@ entries:
     version: v0.0.3
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.888399+05:30"
+    created: "2025-04-14T15:59:33.653688+05:30"
     description: Helm chart for deploying postgres datastore
     digest: ffc38c1a1dbc3f4e2db9ff742475e2380094c912d9f84a3a2e6511fac6f04133
     icon: https://zop.dev/logo.png
@@ -884,7 +980,7 @@ entries:
     version: v0.0.2
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.888156+05:30"
+    created: "2025-04-14T15:59:33.653413+05:30"
     description: Helm chart for deploying postgres datastore
     digest: 6e8a630281561184374d252a30f3541faa49fed00d072d4e0b37b4363b1bdc7b
     icon: https://zop.dev/logo.png
@@ -900,7 +996,22 @@ entries:
       type: datasource
     apiVersion: v2
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.892175+05:30"
+    created: "2025-04-14T15:59:33.658029+05:30"
+    description: Helm chart deploys redis instance
+    digest: 29fea3bd4a21a6e3af62c433d46406361ec09348b65f7a761c55a8fe0f36d90c
+    icon: https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20241119/a322e6a1-2433-4ff5-b778-6372fc27bedd-cdnlogocomredis2min111.jpg
+    maintainers:
+    - name: ZopDev
+      url: zop.dev
+    name: redis
+    urls:
+    - https://helm.zop.dev/redis-v0.0.3.tgz
+    version: v0.0.3
+  - annotations:
+      type: datasource
+    apiVersion: v2
+    appVersion: "1.0"
+    created: "2025-04-14T15:59:33.657769+05:30"
     description: Helm chart deploys redis instance
     digest: a25641daa9934bd778b27d537c2c3f5ed8bbc80df243e615b5abd78af43f1920
     icon: https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20241119/a322e6a1-2433-4ff5-b778-6372fc27bedd-cdnlogocomredis2min111.jpg
@@ -913,7 +1024,7 @@ entries:
     version: v0.0.2
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.89202+05:30"
+    created: "2025-04-14T15:59:33.657596+05:30"
     description: Helm chart deploys redis instance
     digest: a1181c8d8c0808bfcbcd59a7ba08d675f83285221fff6fa10bc3fbc6014305e2
     icon: https://zop.dev/logo.png
@@ -929,7 +1040,22 @@ entries:
       type: datasource
     apiVersion: v2
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.891028+05:30"
+    created: "2025-04-14T15:59:33.657265+05:30"
+    description: Helm chart deploys redis distributed instance
+    digest: 92a711c1d8ed901f6b1699a5cb6a4d2f1948b3e9760eebbe993ee2442466f13f
+    icon: https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20241227/beaa0bf2-efc3-4096-9616-69568624a7d6-redisdistributed.png
+    maintainers:
+    - name: ZopDev
+      url: zop.dev
+    name: redis-distributed
+    urls:
+    - https://helm.zop.dev/redis-distributed-v0.0.4.tgz
+    version: v0.0.4
+  - annotations:
+      type: datasource
+    apiVersion: v2
+    appVersion: "1.0"
+    created: "2025-04-14T15:59:33.656419+05:30"
     description: Helm chart deploys redis distributed instance
     digest: 98142501b04836ed04574cff92dd959259fa3740c8729f39c30cc890a29d1411
     icon: https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20241227/beaa0bf2-efc3-4096-9616-69568624a7d6-redisdistributed.png
@@ -944,7 +1070,7 @@ entries:
       type: datasource
     apiVersion: v2
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.890798+05:30"
+    created: "2025-04-14T15:59:33.656173+05:30"
     description: Helm chart deploys redis distributed instance
     digest: ba49d5ca6db4058b8d4f81061a3bab26995b47e7385c6a3d94e651e230ff517d
     icon: https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20241227/beaa0bf2-efc3-4096-9616-69568624a7d6-redisdistributed.png
@@ -957,7 +1083,7 @@ entries:
     version: v0.0.2
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.890573+05:30"
+    created: "2025-04-14T15:59:33.655942+05:30"
     description: Helm chart deploys redis distributed instance
     digest: 9f8b2844bf6b838a2f6fb47c98e393c10929dbcf20158b645283d67edb3fdb61
     icon: https://zop.dev/logo.png
@@ -971,7 +1097,7 @@ entries:
   scylladb:
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.89242+05:30"
+    created: "2025-04-14T15:59:33.658235+05:30"
     description: Helm chart for deploying ScyllaDB
     digest: 715797a89c9a8d06bfd839f68a18b4a720db459539581043daf153d72994e420
     icon: https://zop.dev/logo.png
@@ -985,7 +1111,7 @@ entries:
   service:
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.900218+05:30"
+    created: "2025-04-14T15:59:33.664712+05:30"
     description: Helm chart creates a deployment, service, hpa for a service along
       with serviceMonitor etc
     digest: c763047324f4bf10eb76fe0ff1fc5dcb5ab9c1c5b0ca67003e73f50822a507b7
@@ -999,7 +1125,7 @@ entries:
     version: v0.0.22
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.899729+05:30"
+    created: "2025-04-14T15:59:33.66426+05:30"
     description: Helm chart creates a deployment, service, hpa for a service along
       with serviceMonitor etc
     digest: ba222bd78f7fcf4bb6ff0cb192e19b68d968c1d2573ef71d18adb57bf8774678
@@ -1013,7 +1139,7 @@ entries:
     version: v0.0.21
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.899166+05:30"
+    created: "2025-04-14T15:59:33.66378+05:30"
     description: Helm chart creates a deployment, service, hpa for a service along
       with serviceMonitor etc
     digest: 2f64dfd5959cc287274fd582fc7308fb60971ac58881cb3458f79f7426c42c63
@@ -1027,7 +1153,7 @@ entries:
     version: v0.0.20
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.898338+05:30"
+    created: "2025-04-14T15:59:33.663136+05:30"
     description: Helm chart creates a deployment, service, hpa for a service along
       with serviceMonitor etc
     digest: 51b7fcff52739a83c4107516026ec0c270b0f8633e9399dccbdf2a8f6006a1d2
@@ -1041,7 +1167,7 @@ entries:
     version: v0.0.19
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.897966+05:30"
+    created: "2025-04-14T15:59:33.662781+05:30"
     description: Helm chart creates a deployment, service, hpa for a service along
       with serviceMonitor etc
     digest: 8ebbf53c27110582d1d3aa775eae4eb1028672776015dcbfe798ff0c5056b8b1
@@ -1055,7 +1181,7 @@ entries:
     version: v0.0.18
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.897638+05:30"
+    created: "2025-04-14T15:59:33.662442+05:30"
     description: Helm chart creates a deployment, service, hpa for a service along
       with serviceMonitor etc
     digest: 6901e261fe4617b08207cf498845614275ebac2bfaed54ad5eb8f640a7150ead
@@ -1069,7 +1195,7 @@ entries:
     version: v0.0.17
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.89731+05:30"
+    created: "2025-04-14T15:59:33.662093+05:30"
     description: Helm chart creates a deployment, service, hpa for a service along
       with serviceMonitor etc
     digest: 0b49c92f2075609563e6d596d205045f3299d2dcbcbe09a3194a7e12b4df617c
@@ -1083,7 +1209,7 @@ entries:
     version: v0.0.16
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.896997+05:30"
+    created: "2025-04-14T15:59:33.661755+05:30"
     description: Helm chart creates a deployment, service, hpa for a service along
       with serviceMonitor etc
     digest: 9b25ba867e6c7297bcae9a7795cc29348006f1d310e7f563b948ffaceb760149
@@ -1097,7 +1223,7 @@ entries:
     version: v0.0.15
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.896688+05:30"
+    created: "2025-04-14T15:59:33.661419+05:30"
     description: Helm chart creates a deployment, service, hpa for a service along
       with serviceMonitor etc
     digest: f74d351c335d5b9db31685da2bf5cab33079593bdc0b010f710cb54df9b6bab1
@@ -1111,7 +1237,7 @@ entries:
     version: v0.0.14
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.896213+05:30"
+    created: "2025-04-14T15:59:33.660964+05:30"
     description: Helm chart creates a deployment, service, hpa for a service along
       with serviceMonitor etc
     digest: eca3b5e28c90dcbed32071e7b28dfab4e88014a679bbd16a03729f34c9dccc5f
@@ -1125,7 +1251,7 @@ entries:
     version: v0.0.13
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.895725+05:30"
+    created: "2025-04-14T15:59:33.66045+05:30"
     description: Helm chart creates a deployment, service, hpa for a service along
       with serviceMonitor etc
     digest: 4cc6acd625ea36bdb9bd874c4d648efb379129438f48c91098a59e8d84ba3620
@@ -1139,7 +1265,7 @@ entries:
     version: v0.0.12
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.89518+05:30"
+    created: "2025-04-14T15:59:33.65972+05:30"
     description: Helm chart creates a deployment, service, hpa for a service along
       with serviceMonitor etc
     digest: 08769b7fe4e8be7e26a53329c764abd9013dca805e6249ccf3d8a8155a9a8959
@@ -1153,7 +1279,7 @@ entries:
     version: v0.0.11
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.894687+05:30"
+    created: "2025-04-14T15:59:33.659048+05:30"
     description: Helm chart creates a deployment, service, hpa for a service along
       with serviceMonitor etc
     digest: 1d3435fe1e7dc358e2941621aadf1ba21d16fa4f72d8320810c61f5a11ae7189
@@ -1167,7 +1293,7 @@ entries:
     version: v0.0.10
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.903098+05:30"
+    created: "2025-04-14T15:59:33.668188+05:30"
     description: Helm chart creates a deployment, service, hpa for a service along
       with serviceMonitor etc
     digest: 6c65c363d54c2463167d77451525c546b08ed030143fb911a51c34b1d5967f45
@@ -1181,7 +1307,7 @@ entries:
     version: v0.0.9
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.902634+05:30"
+    created: "2025-04-14T15:59:33.667726+05:30"
     description: Helm chart creates a deployment, service, hpa for a service along
       with serviceMonitor etc
     digest: e9feb789d09a51445657aa1a2c71e87411bcbae36a366c4ae8f6b200049addba
@@ -1195,7 +1321,7 @@ entries:
     version: v0.0.8
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.902134+05:30"
+    created: "2025-04-14T15:59:33.667207+05:30"
     description: Helm chart creates a deployment, service, hpa for a service along
       with serviceMonitor etc
     digest: c5793cb3415ae0b68cfdc44fb9927ce68f0f4b77e50c7ab3cef610ed5d1cb98e
@@ -1209,7 +1335,7 @@ entries:
     version: v0.0.7
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.901605+05:30"
+    created: "2025-04-14T15:59:33.666638+05:30"
     description: Helm chart creates a deployment, service, hpa for a service along
       with serviceMonitor etc
     digest: b45dd74d7722d961d949102c81b2321ff1d575c3e94fbd9bf5aca9e328626d49
@@ -1223,7 +1349,7 @@ entries:
     version: v0.0.6
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.901212+05:30"
+    created: "2025-04-14T15:59:33.666251+05:30"
     description: Helm chart creates a deployment, service, hpa for a service along
       with serviceMonitor etc
     digest: 0d10278e951800d9b46a1415e090c62ff642ecbdc0f181fba617bf273799114a
@@ -1237,7 +1363,7 @@ entries:
     version: v0.0.5
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.90084+05:30"
+    created: "2025-04-14T15:59:33.665811+05:30"
     description: Helm chart creates a deployment, service, hpa for a service along
       with serviceMonitor etc
     digest: f405204dd81300e58188ca5d41efbd6ea3f1b8f08bd50d65ea95000d38edc517
@@ -1251,7 +1377,7 @@ entries:
     version: v0.0.4
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.900524+05:30"
+    created: "2025-04-14T15:59:33.665108+05:30"
     description: Helm chart creates a deployment, service, hpa for a service along
       with serviceMonitor etc
     digest: f31132842aca2478c10457f6e323ffa566cca222afc58996d42a08f6f87a121e
@@ -1265,7 +1391,7 @@ entries:
     version: v0.0.3
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.898637+05:30"
+    created: "2025-04-14T15:59:33.663435+05:30"
     description: Helm chart creates a deployment, service, hpa for a service along
       with serviceMonitor etc
     digest: cc7992d670d615549c67717904238998780abe5aa5df400e4e3eb31d16237ea4
@@ -1279,7 +1405,7 @@ entries:
     version: v0.0.2
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.894304+05:30"
+    created: "2025-04-14T15:59:33.658633+05:30"
     description: Helm chart creates a deployment, service, hpa for a service along
       with serviceMonitor etc
     digest: e45d41b5041d8a3649bb8db768226990b2aae21b31b13ffd18d7253fe1e1d441
@@ -1296,7 +1422,22 @@ entries:
       type: datasource
     apiVersion: v2
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.909074+05:30"
+    created: "2025-04-14T15:59:33.674855+05:30"
+    description: Helm chart for deploying Apache Solr datastore
+    digest: ecf9a0838f59fb0b2197c1526bc3e7febe37e5aa3d2158651b4cec9bb51891dc
+    icon: https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20250403/a45b7860-5846-4fa9-b68d-6765251210bd-solr.png
+    maintainers:
+    - name: ZopDev
+      url: zop.dev
+    name: solr
+    urls:
+    - https://helm.zop.dev/solr-v0.0.4.tgz
+    version: v0.0.4
+  - annotations:
+      type: datasource
+    apiVersion: v2
+    appVersion: "1.0"
+    created: "2025-04-14T15:59:33.674566+05:30"
     description: Helm chart for deploying Apache Solr datastore
     digest: c6b7165c189a94bb3b35135f6a6a97b59ac3e971f8354544583bbc715e8b5f76
     icon: https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20250403/a45b7860-5846-4fa9-b68d-6765251210bd-solr.png
@@ -1309,7 +1450,7 @@ entries:
     version: v0.0.3
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.908791+05:30"
+    created: "2025-04-14T15:59:33.67427+05:30"
     description: Helm chart for deploying Apache Solr datastore
     digest: 7b179009c3258ab1abb9520aa60281ddffda8220eb3906811a0aa0ffd023f154
     icon: https://zop.dev/logo.png
@@ -1322,7 +1463,7 @@ entries:
     version: v0.0.2
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.908586+05:30"
+    created: "2025-04-14T15:59:33.67397+05:30"
     description: Helm chart for deploying Apache Solr datastore
     digest: b55472585f9c7272cdd3fcef0ee411c20a2f429f4b9d7d8a0ba7912a840333b8
     icon: https://zop.dev/logo.png
@@ -1336,7 +1477,7 @@ entries:
   solr-operator:
   - apiVersion: v2
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.908358+05:30"
+    created: "2025-04-14T15:59:33.673547+05:30"
     dependencies:
     - condition: zookeeper-operator.install
       name: zookeeper-operator
@@ -1357,7 +1498,7 @@ entries:
       type: datasource
     apiVersion: v2
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.918637+05:30"
+    created: "2025-04-14T15:59:33.684774+05:30"
     dependencies:
     - name: solr-operator
       repository: https://helm.zop.dev
@@ -1376,7 +1517,7 @@ entries:
       type: datasource
     apiVersion: v2
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.913511+05:30"
+    created: "2025-04-14T15:59:33.679869+05:30"
     dependencies:
     - name: solr-operator
       repository: https://helm.zop.dev
@@ -1396,7 +1537,7 @@ entries:
       type: application
     apiVersion: v2
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.922861+05:30"
+    created: "2025-04-14T15:59:33.688748+05:30"
     dependencies:
     - condition: postgres.enabled
       name: postgres
@@ -1421,7 +1562,7 @@ entries:
       type: application
     apiVersion: v2
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.922149+05:30"
+    created: "2025-04-14T15:59:33.688142+05:30"
     dependencies:
     - condition: postgres.enabled
       name: postgres
@@ -1443,7 +1584,7 @@ entries:
     version: v0.0.4
   - apiVersion: v2
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.921474+05:30"
+    created: "2025-04-14T15:59:33.687451+05:30"
     dependencies:
     - condition: postgres.enabled
       name: postgres
@@ -1466,7 +1607,7 @@ entries:
     version: v0.0.3
   - apiVersion: v2
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.920825+05:30"
+    created: "2025-04-14T15:59:33.686835+05:30"
     dependencies:
     - condition: postgres.enabled
       name: postgres
@@ -1489,7 +1630,7 @@ entries:
     version: v0.0.2
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.919723+05:30"
+    created: "2025-04-14T15:59:33.685798+05:30"
     description: Helm chart for Deploying Apache Superset
     digest: f2612f4782cc4e971f095ddbb76b3e9631e52b7ba6473e48226d2f769317be56
     icon: https://zop.dev/logo.png
@@ -1505,7 +1646,7 @@ entries:
       type: datasource
     apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.923354+05:30"
+    created: "2025-04-14T15:59:33.689258+05:30"
     description: Helm chart for deploying surrealdb
     digest: e73e929591f817ffa0a7477fb8b24c7572b667534e14280c107b170bb4b29568
     icon: https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20241122/c44b7326-00d7-4c62-bce7-ca576509d27f-10982346.png
@@ -1518,7 +1659,7 @@ entries:
     version: v0.0.2
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.92312+05:30"
+    created: "2025-04-14T15:59:33.689015+05:30"
     description: Helm chart for deploying surrealdb
     digest: 3dc8d5151d6a8b5a96dc3b7aabb8e575e4c5298f0eef30943b44f74f0892bd38
     icon: https://zop.dev/logo.png
@@ -1534,7 +1675,7 @@ entries:
       type: application
     apiVersion: v2
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.927236+05:30"
+    created: "2025-04-14T15:59:33.692988+05:30"
     dependencies:
     - name: mysql
       repository: https://helm.zop.dev
@@ -1557,7 +1698,7 @@ entries:
       type: application
     apiVersion: v2
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.926149+05:30"
+    created: "2025-04-14T15:59:33.692023+05:30"
     dependencies:
     - name: mysql
       repository: https://helm.zop.dev
@@ -1577,7 +1718,7 @@ entries:
     version: v0.0.4
   - apiVersion: v2
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.925445+05:30"
+    created: "2025-04-14T15:59:33.691282+05:30"
     dependencies:
     - name: mysql
       repository: https://helm.zop.dev
@@ -1598,7 +1739,7 @@ entries:
     version: v0.0.3
   - apiVersion: v2
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.924734+05:30"
+    created: "2025-04-14T15:59:33.690578+05:30"
     dependencies:
     - name: mysql
       repository: https://helm.zop.dev
@@ -1619,7 +1760,7 @@ entries:
     version: v0.0.2
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.923899+05:30"
+    created: "2025-04-14T15:59:33.689793+05:30"
     description: Helm chart for deploying WordPress app
     digest: 1b5793a827827be151ebe571fcadec8507a6562da1213c774ca0acba91e91ab2
     icon: https://zop.dev/logo.png
@@ -1633,7 +1774,7 @@ entries:
   zookeeper:
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.928929+05:30"
+    created: "2025-04-14T15:59:33.69483+05:30"
     description: A Helm chart for Deploying Zookeeper on Kubernetes
     digest: 06e4542609434c3c6385b75619e254ada3771e332c025b25c2f074992d5043ca
     icon: https://zop.dev/logo.png
@@ -1647,7 +1788,7 @@ entries:
   zookeeper-operator:
   - apiVersion: v2
     appVersion: "1.0"
-    created: "2025-04-14T12:59:06.928585+05:30"
+    created: "2025-04-14T15:59:33.694476+05:30"
     description: A Helm chart for Deploying Zookeeper Operator on Kubernetes
     digest: 54a824110bc9e4bbf8228f49c601f8d2cfab1ff815037a09ac7e29067f5dd8d1
     icon: https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20250407/69625503-f6f1-4521-9c14-1d262ee8683b-zookeeper.png
@@ -1658,4 +1799,4 @@ entries:
     urls:
     - https://helm.zop.dev/zookeeper-operator-v0.0.1.tgz
     version: v0.0.1
-generated: "2025-04-14T12:59:06.861323+05:30"
+generated: "2025-04-14T15:59:33.622224+05:30"
