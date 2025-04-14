@@ -1,13 +1,57 @@
 queries:
   "<=0.0.8":
-    mysql_uptime_seconds: avg by (pod) (mysql_global_status_uptime{namespace='<application-name>', pod=~'<service-name>.*'})
+    mysql_uptime_seconds: >-
+      avg by (pod) (
+        mysql_global_status_uptime{
+          namespace='<application-name>',
+          pod=~'<service-name>.*'
+        }
+      )
 
-    mysql_connections: avg by (pod) (mysql_global_status_threads_connected{namespace='<application-name>', pod=~'<service-name>.*'})
+    mysql_connections: >-
+      avg by (pod) (
+        mysql_global_status_threads_connected{
+          namespace='<application-name>',
+          pod=~'<service-name>.*'
+        }
+      )
 
-    mysql_queries_per_second: rate(mysql_global_status_queries{namespace='<application-name>', pod=~'<service-name>.*'}[1m])
+    mysql_queries_per_second: >-
+      rate(
+        mysql_global_status_queries{
+          namespace='<application-name>',
+          pod=~'<service-name>.*'
+        }[1m]
+      )
 
-    mysql_threads_running: avg by (pod) (mysql_global_status_threads_running{namespace='<application-name>', pod=~'<service-name>.*'})
+    mysql_threads_running: >-
+      avg by (pod) (
+        mysql_global_status_threads_running{
+          namespace='<application-name>',
+          pod=~'<service-name>.*'
+        }
+      )
 
-    mysql_innodb_buffer_pool_usage: (avg by (pod) (mysql_global_status_innodb_buffer_pool_bytes_data{namespace='<application-name>', pod=~'<service-name>.*'})/avg by (pod) (mysql_global_status_innodb_buffer_pool_bytes_total{namespace='<application-name>', pod=~'<service-name>.*'})) * 100
+    mysql_innodb_buffer_pool_usage: >-
+      (
+        avg by (pod) (
+          mysql_global_status_innodb_buffer_pool_bytes_data{
+            namespace='<application-name>',
+            pod=~'<service-name>.*'
+          }
+        ) /
+        avg by (pod) (
+          mysql_global_status_innodb_buffer_pool_bytes_total{
+            namespace='<application-name>',
+            pod=~'<service-name>.*'
+          }
+        )
+      ) * 100
 
-    mysql_slow_queries: rate(mysql_global_status_slow_queries{namespace='<application-name>', pod=~'<service-name>.*'}[1m])
+    mysql_slow_queries: >-
+      rate(
+        mysql_global_status_slow_queries{
+          namespace='<application-name>',
+          pod=~'<service-name>.*'
+        }[1m]
+      )
