@@ -15,7 +15,11 @@
         }
       },
     "diskSize": {
-      "type": "string"
+      "type": "string",
+      "pattern": "^[0-9]+Gi$",
+      "default": "10Gi",
+      "mutable": true,
+      "editDisabled": true
     },
     "version": {
       "type": "string"
@@ -26,16 +30,16 @@
         "requests": {
           "type": "object",
           "properties": {
-            "cpu": { "type": "string" ,"mutable": "true"},
-            "memory": { "type": "string" ,"mutable": "true"}
+            "cpu": { "type": "string" , "pattern": "^[0-9]+m$", "default": "500m",  "mutable": "true"},
+            "memory": { "type": "string" , "pattern": "^[0-9]+M$", "default": "256M",  "mutable": "true"}
           },
           "required": ["cpu", "memory"]
         },
         "limits": {
           "type": "object",
           "properties": {
-            "cpu": { "type": "string" , "mutable": "true"},
-            "memory": { "type": "string", "mutable": "true"}
+            "cpu": { "type": "string" , "pattern": "^[0-9]+m$", "default": "1500m", "mutable": "true"},
+            "memory": { "type": "string", "pattern": "^[0-9]+Gi$", "default": "1024M", "mutable": "true"}
           },
           "required": ["cpu", "memory"]
         }
