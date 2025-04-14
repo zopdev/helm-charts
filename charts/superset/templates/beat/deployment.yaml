@@ -30,6 +30,14 @@ spec:
         - name: wait-for-postgres-redis
           image: apache/superset:dockerize
           imagePullPolicy: IfNotPresent
+          env:
+            - name: "DB_PASS"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-postgres-root-secret
+                  key: postgres-password
+            - name: "DB_USER"
+              value: postgres
           envFrom:
             - secretRef:
                 name: '{{ template "superset.fullname" . }}-env'
@@ -52,6 +60,13 @@ spec:
             - name: {{ $key | quote}}
               value: {{ $value | quote }}
             {{- end }}
+            - name: "DB_PASS"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-postgres-root-secret
+                  key: postgres-password
+            - name: "DB_USER"
+              value: postgres
           envFrom:
             - secretRef:
                 name: {{ template "superset.fullname" . }}-env

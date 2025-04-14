@@ -27,6 +27,14 @@ spec:
         - name: wait-for-postgres-redis
           image: apache/superset:dockerize
           imagePullPolicy: IfNotPresent
+          env:
+            - name: "DB_PASS"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-postgres-root-secret
+                  key: postgres-password
+            - name: "DB_USER"
+              value: postgres
           envFrom:
             - secretRef:
                 name: '{{ template "superset.fullname" . }}-env'
@@ -43,6 +51,14 @@ spec:
             - "-c"
             - pip install psycopg2-binary==2.9.6 
             - "celery --app=superset.tasks.celery_app:app flower"
+          env:
+            - name: "DB_PASS"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-postgres-root-secret
+                  key: postgres-password
+            - name: "DB_USER"
+              value: postgres
           envFrom:
             - secretRef:
                 name: {{ template "superset.fullname" . }}-env
