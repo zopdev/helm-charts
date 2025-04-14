@@ -81,7 +81,8 @@
               "description": "Size of the persistent volume for master",
               "pattern": "^[0-9]+[KMGTPEZYkmgtpezy]i?$",
               "default": "10Gi",
-              "mutable": true
+              "mutable": true,
+              "editDisabled": true
             }
           }
         }
@@ -153,7 +154,8 @@
               "description": "Size of the persistent volume for slave",
               "pattern": "^[0-9]+[KMGTPEZYkmgtpezy]i?$",
               "default": "10Gi",
-              "mutable": true
+              "mutable": true,
+              "editDisabled": true
             }
           }
         }

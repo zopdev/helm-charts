@@ -45,7 +45,8 @@
     "diskSize": {
       "type": "string",
       "default": "20Gi",
-      "mutable": true
+      "mutable": true,
+      "editDisabled": true
     },
     "solr-operator": {
       "type": "object",
