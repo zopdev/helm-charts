@@ -1,4 +1,4 @@
-queries_by_version:
+queries:
   "<=0.0.8":
     mysql_uptime_seconds: >
       avg by (pod) (
