@@ -18,7 +18,8 @@
       "type": "string"
     },
     "version": {
-      "type": "string"
+      "type": "string",
+      "editDisabled": true
     },
     "resources": {
       "type": "object",
