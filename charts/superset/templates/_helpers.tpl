@@ -85,6 +85,10 @@ FEATURE_FLAGS = {
 {{- if eq (typeOf $value) "string" }}
 {{- if hasPrefix "{" $value }}
 {{ $key }} = {{ $value }}
+{{- else if eq $value "True" }}
+{{ $key }} = True
+{{- else if eq $value "False" }}
+{{ $key }} = False
 {{- else }}
 {{ $key }} = '{{ $value }}'
 {{- end }}
