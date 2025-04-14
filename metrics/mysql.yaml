@@ -1,14 +1,14 @@
 queries:
   "<=0.0.8":
-    mysql_uptime_seconds: >-
+    mysql_up: >-
       avg by (pod) (
-        mysql_global_status_uptime{
+        mysql_up{
           namespace='<application-name>',
           pod=~'<service-name>.*'
         }
       )
 
-    mysql_connections: >-
+    open_connections: >-
       avg by (pod) (
         mysql_global_status_threads_connected{
           namespace='<application-name>',
@@ -16,15 +16,7 @@ queries:
         }
       )
 
-    mysql_queries_per_second: >-
-      rate(
-        mysql_global_status_queries{
-          namespace='<application-name>',
-          pod=~'<service-name>.*'
-        }[1m]
-      )
-
-    mysql_threads_running: >-
+    inuse_connections: >-
       avg by (pod) (
         mysql_global_status_threads_running{
           namespace='<application-name>',
@@ -32,26 +24,26 @@ queries:
         }
       )
 
-    mysql_innodb_buffer_pool_usage: >-
-      (
-        avg by (pod) (
-          mysql_global_status_innodb_buffer_pool_bytes_data{
-            namespace='<application-name>',
-            pod=~'<service-name>.*'
-          }
-        ) /
-        avg by (pod) (
-          mysql_global_status_innodb_buffer_pool_bytes_total{
-            namespace='<application-name>',
-            pod=~'<service-name>.*'
-          }
-        )
-      ) * 100
+    queries_per_second: >-
+      rate(mysql_global_status_queries{namespace='<application-name>',pod=~'<service-name>.*'}[1m])
 
-    mysql_slow_queries: >-
-      rate(
-        mysql_global_status_slow_queries{
-          namespace='<application-name>',
-          pod=~'<service-name>.*'
-        }[1m]
-      )
+    bytes_received_per_second: >-
+      rate(mysql_global_status_bytes_received{namespace='<application-name>',pod=~'<service-name>.*'}[1m])
+
+    bytes_sent_per_second: >-
+      rate(mysql_global_status_bytes_sent{namespace='<application-name>',pod=~'<service-name>.*'}[1m])
+
+    innodb_buffer_pool_reads: >-
+      rate(mysql_global_status_innodb_buffer_pool_reads{namespace='<application-name>',pod=~'<service-name>.*'}[1m])
+
+    innodb_buffer_pool_read_requests: >-
+      rate(mysql_global_status_innodb_buffer_pool_read_requests{namespace='<application-name>',pod=~'<service-name>.*'}[1m])
+
+    slow_queries: >-
+      rate(mysql_global_status_slow_queries{namespace='<application-name>',pod=~'<service-name>.*'}[1m])
+
+    aborted_connects: >-
+      rate(mysql_global_status_aborted_connects{namespace='<application-name>',pod=~'<service-name>.*'}[1m])
+
+    threads_created: >-
+      rate(mysql_global_status_threads_created{namespace='<application-name>',pod=~'<service-name>.*'}[1m])
