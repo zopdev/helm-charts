@@ -1,0 +1,22 @@
+queries:
+  "<=0.0.22":
+    cpu_utilisation: >-
+      (avg(rate(container_cpu_usage_seconds_total{namespace='<application-name>',container='<service-name>'}[1m])) by (pod) / 
+      on (pod)(kube_pod_container_resource_limits{namespace='<application-name>',container='<service-name>',resource='cpu'}))*100
+
+    memory_utilisation: >-
+      (avg(rate(container_memory_usage_bytes{namespace='<application-name>',container='<service-name>'}[1m])) by (pod) / 
+      on (pod)(kube_pod_container_resource_limits{namespace='<application-name>',container='<service-name>',resource='memory'}))*10000
+
+    network_utilisation: >-
+      sum by (pod) (rate(container_network_transmit_bytes_total{namespace='<application-name>',pod=~'<service-name>.*'}[1m]))
+
+    cpu_throttling: >-
+      sum(increase(container_cpu_cfs_throttled_periods_total{container='<service-name>', namespace='<application-name>'}[1m])) by (container) / 
+      sum(increase(container_cpu_cfs_periods_total{container='<service-name>', namespace='<application-name>'}[1m])) by (container)
+
+    pod_restarts: >-
+      increase(kube_pod_container_status_restarts_total{namespace='<application-name>', container='<service-name>'}[1m])
+
+    nginx_ingress_volume_controller: >-
+      sum by (status) (increase(nginx_ingress_controller_requests{exported_service='<service-name>', exported_namespace='<application-name>'}[1m]))
