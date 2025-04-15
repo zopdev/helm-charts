@@ -1,0 +1,61 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+  generation: 1
+  labels:
+    app: kube-prometheus-stack
+    heritage: Helm
+    release: prometheus
+spec:
+  groups:
+    - name: {{ .Release.Namespace }}.{{ .Release.Name }}-redis.rules
+      rules:
+        - alert: RedisDown
+          expr: redis_up{namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-redis-.*"} == 0
+          for: 0m
+          labels:
+            severity: critical
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'All Redis instances of {{ .Release.Name }} are down'
+            description: 'Redis instance of {{ .Release.Name }} are down'
+
+        - alert: RedisTooManyConnections
+          expr: redis_connected_clients{namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-redis-.*"} / redis_config_maxclients{namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-redis-.*"} * 100 > 90
+          for: 2m
+          labels:
+            severity: warning
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'Redis instance {{ .Release.Name }} has too many connections'
+            description: 'More than 90% of Redis connections are in use for {{ .Release.Name }}'
+
+        - alert: RedisRejectedConnections
+          expr: increase(redis_rejected_connections_total{namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-redis-.*"}[1m]) > 0
+          for: 0m
+          labels:
+            severity: critical
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'Redis instance {{ .Release.Name }} is rejecting connections'
+            description: 'Some Redis connections were rejected in {{ .Release.Name }}'
+
+        - alert: RedisMissingBackup
+          expr: time() - redis_rdb_last_save_timestamp_seconds > 60 * 60 * 24
+          for: 0m
+          labels:
+            severity: critical
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'Redis instance {{ .Release.Name }} is missing a backup'
+            description: 'Redis has not performed a backup in the last 24 hours for {{ .Release.Name }}'
