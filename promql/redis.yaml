@@ -1,0 +1,47 @@
+queries:
+  "<=0.0.4":
+    redis_up: >-
+      avg by (pod) (
+        redis_up{
+          namespace='<application-name>',
+          pod=~'<service-name>.*'
+        }
+      )
+
+    connected_clients: >-
+      avg by (pod) (
+        redis_connected_clients{
+          namespace='<application-name>',
+          pod=~'<service-name>.*'
+        }
+      )
+
+    memory_used: >-
+      avg by (pod) (
+        redis_memory_used_bytes{
+          namespace='<application-name>',
+          pod=~'<service-name>.*'
+        }
+      )
+
+    memory_peak: >-
+      avg by (pod) (
+        redis_memory_used_peak_bytes{
+          namespace='<application-name>',
+          pod=~'<service-name>.*'
+        }
+      )
+
+    keys_total: >-
+      sum by (pod) ( 
+        redis_db_keys{
+          namespace='<application-name>',
+          pod=~'<service-name>.*'
+        }
+      )
+
+    ops_per_sec: >-
+      rate(redis_commands_processed_total{namespace='<application-name>', pod=~'<service-name>.*'}[1m])
+
+    rejected_connections: >-
+      rate(redis_rejected_connections_total{namespace='<application-name>',pod=~'<service-name>.*'}[1m])

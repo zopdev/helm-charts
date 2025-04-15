@@ -1,0 +1,15 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ .Release.Name }}-redis
+  labels:
+    app: {{ .Release.Name }}-redis
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: master
+  endpoints:
+    - port: metrics-port
+      interval: 30s
+      path: /metrics

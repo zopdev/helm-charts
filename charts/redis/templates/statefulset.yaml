@@ -55,6 +55,29 @@ spec:
           volumeMounts:
             - name: {{.Release.Name }}-redis-persistent-storage
               mountPath: /var/lib/redis
+
+        - name: redis-exporter
+          image: oliver006/redis_exporter:latest
+          ports:
+            - containerPort: 2121
+              name: metrics
+          env:
+            - name: REDIS_ADDR
+              value: "redis://localhost:6379"
+            - name: REDIS_EXPORTER_DEBUG
+              value: "true"
+            - name: REDIS_EXPORTER_WEB_LISTEN_ADDRESS
+              value: ":2121"
+            - name: REDIS_EXPORTER_EXCLUDE_LATENCY_HISTOGRAM_METRICS
+              value: "true"
+          resources:
+            requests:
+              memory: "50Mi"
+              cpu: "10m"
+            limits:
+              memory: "100Mi"
+              cpu: "50m"
+
       volumes:
         - name: redis-config
           configMap:
