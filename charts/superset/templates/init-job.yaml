@@ -21,6 +21,14 @@ spec:
         - name: wait-for-postgres
           image: apache/superset:dockerize
           imagePullPolicy: IfNotPresent
+          env:
+            - name: "DB_PASS"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-postgres-root-secret
+                  key: postgres-password
+            - name: "DB_USER"
+              value: postgres
           envFrom:
             - secretRef:
                 name: '{{ template "superset.fullname" . }}-env'
@@ -31,6 +39,14 @@ spec:
       containers:
       - name: {{ template "superset.name" . }}-init-db
         image: "apachesuperset.docker.scarf.sh/apache/superset:4.1.1"
+        env:
+          - name: "DB_PASS"
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Release.Name }}-postgres-root-secret
+                key: postgres-password
+          - name: "DB_USER"
+            value: postgres
         envFrom:
           - secretRef:
               name: {{ template "superset.fullname" . }}-env

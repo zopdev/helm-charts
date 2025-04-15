@@ -50,9 +50,17 @@ spec:
             - name: {{ $key | quote}}
               value: {{ $value | quote }}
             {{- end }}
+            - name: "DB_PASS"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-postgres-root-secret
+                  key: postgres-password
+            - name: "DB_USER"
+              value: postgres
           envFrom:
             - secretRef:
                 name: {{ template "superset.fullname" . }}-env
+            
           volumeMounts:
             - name: superset-config
               mountPath: "/app/pythonpath"
