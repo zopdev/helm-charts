@@ -41,7 +41,8 @@
         },
         "diskSize": {
           "type": "string",
-          "default": "10Gi", "mutable": true
+          "default": "10Gi", "mutable": true,
+          "editDisabled": true
         }
       },
       "required": ["resources", "diskSize"]
@@ -73,7 +74,8 @@
         },
         "diskSize": {
           "type": "string",
-          "default": "10Gi", "mutable": true
+          "default": "10Gi", "mutable": true,
+          "editDisabled": true
         }
       },
       "required": ["resources", "diskSize"]

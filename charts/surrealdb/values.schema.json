@@ -57,7 +57,8 @@
       "pattern": "^[0-9]+Gi$",
       "default": "10Gi",
       "mutable": true,
-      "description": "Disk size for SurrealDB data"
+      "description": "Disk size for SurrealDB data",
+      "editDisabled": true
     },
     "services": {
         "type": "array",

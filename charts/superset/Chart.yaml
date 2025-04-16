@@ -11,7 +11,7 @@ maintainers:
 dependencies:
   - condition: postgres.enabled 
     name: postgres
-    version: 0.0.2
+    version: 0.0.6
     repository: https://helm.zop.dev
   - condition: redis.enabled 
     name: redis
