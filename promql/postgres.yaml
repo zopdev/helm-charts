@@ -27,23 +27,54 @@ queries:
       )
 
     queries_per_second: >-
-      rate(pg_stat_database_xact_commit{namespace='<application-name>',pod=~'<service-name>.*'}[1m]) +
-      rate(pg_stat_database_xact_rollback{namespace='<application-name>',pod=~'<service-name>.*'}[1m])
+      sum by (pod) (
+        rate(pg_stat_database_xact_commit{
+          namespace='<application-name>',
+          pod=~'<service-name>.*'
+        }[1m]) +
+        rate(pg_stat_database_xact_rollback{
+          namespace='<application-name>',
+          pod=~'<service-name>.*'
+        }[1m])
+      )
 
     buffer_hit_ratio: >-
       sum by (pod) (
-        rate(pg_stat_database_blks_hit{namespace='<application-name>',pod=~'<service-name>.*'}[1m])
+        rate(pg_stat_database_blks_hit{
+          namespace='<application-name>',
+          pod=~'<service-name>.*'
+        }[1m])
       ) / 
       (
         sum by (pod) (
-          rate(pg_stat_database_blks_hit{namespace='<application-name>',pod=~'<service-name>.*'}[1m]) +
-          rate(pg_stat_database_blks_read{namespace='<application-name>',pod=~'<service-name>.*'}[1m])
+          rate(pg_stat_database_blks_hit{
+            namespace='<application-name>',
+            pod=~'<service-name>.*'
+          }[1m]) +
+          rate(pg_stat_database_blks_read{
+            namespace='<application-name>',
+            pod=~'<service-name>.*'
+          }[1m])
         ) > 0
       )
 
     slow_queries: >-
-      increase(pg_stat_database_xact_commit{namespace='<application-name>',pod=~'<service-name>.*',datname="postgres"}[5m]) > 1000
+      increase(pg_stat_database_xact_commit{
+        namespace='<application-name>',
+        pod=~'<service-name>.*',
+        datname="postgres"
+      }[5m]) > 1000
 
     connection_utilization: >-
-      sum by (pod) (pg_stat_activity_count{namespace='<application-name>',pod=~'<service-name>.*'}) /
-      sum by (pod) (pg_settings_max_connections{namespace='<application-name>',pod=~'<service-name>.*'})
+      sum by (pod) (
+        pg_stat_activity_count{
+          namespace='<application-name>',
+          pod=~'<service-name>.*'
+        }
+      ) /
+      sum by (pod) (
+        pg_settings_max_connections{
+          namespace='<application-name>',
+          pod=~'<service-name>.*'
+        }
+      )
