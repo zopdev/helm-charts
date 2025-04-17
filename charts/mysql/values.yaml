@@ -7,6 +7,6 @@ resources:
     memory: "256M"
   limits:
     cpu: "1500m"
-    memory: "1Gi"
+    memory: "1024M"
 
 version: "8.0"
