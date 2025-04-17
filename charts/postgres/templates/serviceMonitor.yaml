@@ -1,16 +1,18 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: {{ .Release.Name }}-postgres-monitor
+  name: {{ $.Release.Name }}-postgres
   labels:
-    app: {{ template "postgresql.name" . }}
     release: prometheus
+    app: {{ template "postgresql.name" . }}
 spec:
   selector:
     matchLabels:
       app: {{ template "postgresql.name" . }}
       release: {{ .Release.Name | quote }}
-      role: master
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
   endpoints:
     - port: metrics-port
       interval: 30s

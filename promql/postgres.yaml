@@ -78,10 +78,12 @@ queries:
           pod=~'<service-name>.*'
         }[5m])
 
-    cache_size:
+    database_size_bytes:
       query: >-
-        pg_stat_database_blkcache_size_bytes{
-          namespace='<application-name>',
-          pod=~'<service-name>.*'
-        }
-      unit: "MB"
+        sum by (pod, datname) (
+          pg_database_size_bytes{
+            namespace='<application-name>',
+            pod=~'<service-name>.*'
+          }
+        )
+      unit: "kb/s"

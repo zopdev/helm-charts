@@ -1,8 +1,8 @@
 version: "17.4.0"
 
 replication:
-  enabled: false
-  count: 1
+  enabled: true
+  count: 2
 
 diskSize : "10Gi"
 
