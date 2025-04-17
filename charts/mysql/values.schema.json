@@ -46,7 +46,7 @@
             "memory": {
               "type": "string",
               "pattern": "^[0-9]+M$",
-              "default": "1Gi",
+              "default": "1024M",
               "mutable": true
             }
           }
