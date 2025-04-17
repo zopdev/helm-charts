@@ -26,7 +26,7 @@ queries:
             pod=~'<service-name>.*'
           }
         )
-      unit: "bytes"
+      unit: "kb/s"
 
     memory_peak:
       query: >-
@@ -36,7 +36,7 @@ queries:
             pod=~'<service-name>.*'
           }
         )
-      unit: "bytes"
+      unit: "kb/s"
 
     keys_total:
       query: >-
