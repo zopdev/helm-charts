@@ -4,6 +4,7 @@ metadata:
   name: "{{ .Release.Name }}-redis-headless-service"
   namespace: {{ .Release.Namespace | quote }}
   labels:
+    app: "{{ .Release.Name }}-redis"
     app.kubernetes.io/component: master
 spec:
   type: ClusterIP

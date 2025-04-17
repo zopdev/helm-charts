@@ -1,0 +1,96 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ .Release.Name }}-redis
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: kube-prometheus-stack
+    heritage: Helm
+    release: prometheus
+spec:
+  groups:
+    - name: {{ .Release.Namespace }}.{{ .Release.Name }}-redis.rules
+      rules:
+        - alert: RedisMissingMaster
+          expr: (count(redis_instance_info{role="master"}) or vector(0)) < 1
+          for: 0m
+          labels:
+            severity: critical
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'Redis instance {{ .Release.Name }} missing master'
+            description: 'Redis instance {{ .Release.Name }} has no node marked as master'
+
+        - alert: RedisTooManyMasters
+          expr: count(redis_instance_info{role="master"}) > 1
+          for: 0m
+          labels:
+            severity: critical
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'Redis instance {{ .Release.Name }} has too many masters'
+            description: 'Redis instance {{ .Release.Name }} has more than one master node'
+
+        - alert: RedisDisconnectedSlaves
+          expr: count without (instance, job) (redis_connected_slaves) - sum without (instance, job) (redis_connected_slaves) - 1 > 0
+          for: 0m
+          labels:
+            severity: critical
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'Redis instance {{ .Release.Name }} has disconnected slaves'
+            description: 'Redis instance {{ .Release.Name }} is not replicating to all slaves'
+
+        - alert: RedisReplicationBroken
+          expr: delta(redis_connected_slaves[1m]) < 0
+          for: 0m
+          labels:
+            severity: critical
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'Redis instance {{ .Release.Name }} replication broken'
+            description: 'Redis instance {{ .Release.Name }} lost a slave'
+
+        - alert: RedisClusterFlapping
+          expr: changes(redis_connected_slaves[1m]) > 1
+          for: 2m
+          labels:
+            severity: critical
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'Redis instance {{ .Release.Name }} cluster flapping'
+            description: 'Redis instance {{ .Release.Name }} is experiencing frequent replica connection changes'
+
+        - alert: RedisRejectedConnections
+          expr: increase(redis_rejected_connections_total[1m]) > 0
+          for: 0m
+          labels:
+            severity: critical
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'Redis instance {{ .Release.Name }} rejected connections'
+            description: 'Redis instance {{ .Release.Name }} has rejected one or more connections'
+
+        - alert: RedisDown
+          expr: redis_up{namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-redis-.*"} == 0
+          for: 0m
+          labels:
+            severity: critical
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'Redis instance {{ .Release.Name }} is down'
+            description: 'Redis instance {{ .Release.Name }} is not reachable'

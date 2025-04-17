@@ -3,7 +3,6 @@ kind: ServiceMonitor
 metadata:
   name: {{ .Release.Name }}-redis
   labels:
-    app: {{ .Release.Name }}-redis
     release: prometheus
 spec:
   selector:
