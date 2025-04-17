@@ -1,5 +1,5 @@
 queries:
-  "<=0.0.8":
+  "<=0.0.9":
     postgres_up:
       query: >-
         avg by (pod) (
