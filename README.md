@@ -100,7 +100,7 @@ Below is a list of available charts along with their links:
 | **MySQL**             | [helm.zop.dev/mysql](https://helm.zop.dev/mysql)                         | ✅           |
 | **PostgreSQL**        | [helm.zop.dev/postgres](https://helm.zop.dev/postgres)                   | ✅           |
 | **MariaDB**           | [helm.zop.dev/mariadb](https://helm.zop.dev/mariadb)                     |             |
-| **Redis**             | [helm.zop.dev/redis](https://helm.zop.dev/redis)                         |             |
+| **Redis**             | [helm.zop.dev/redis](https://helm.zop.dev/redis)                         | ✅           |
 | **SurrealDB**         | [helm.zop.dev/surrealdb](https://helm.zop.dev/surrealdb)                 |             |
 | **Dgraph**            | [helm.zop.dev/dgraph](https://helm.zop.dev/dgraph)                       |             |
 | **Solr**              | [helm.zop.dev/solr](https://helm.zop.dev/solr)                           |             |
@@ -109,7 +109,7 @@ Below is a list of available charts along with their links:
 | **Cassandra**         | [helm.zop.dev/cassandra](https://helm.zop.dev/cassandra)                 |             |
 | **CockroachDB**       | [helm.zop.dev/cockroachdb](https://helm.zop.dev/cockroachdb)             |             |
 | **Kafka**             | [helm.zop.dev/kafka](https://helm.zop.dev/kafka)                         |             |
-| **Redis-Distributed** | [helm.zop.dev/redis-distributed](https://helm.zop.dev/redis-distributed) |             |
+| **Redis-Distributed** | [helm.zop.dev/redis-distributed](https://helm.zop.dev/redis-distributed) | ✅           |
 | **SolrCloud**         | [helm.zop.dev/solrcloud](https://helm.zop.dev/solrcloud)                 |             |
 
 

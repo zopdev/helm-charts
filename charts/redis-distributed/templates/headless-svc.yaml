@@ -4,6 +4,7 @@ metadata:
   name: "{{ .Release.Name }}-redis-headless-service"
   namespace: {{ .Release.Namespace | quote }}
   labels:
+    app: "{{ .Release.Name }}-redis"
     app.kubernetes.io/component: master
 spec:
   type: ClusterIP
@@ -12,5 +13,8 @@ spec:
     - name: redis
       port: 6379
       targetPort: 6379
+    - name: metrics-port
+      port: 2121
+      targetPort: 2121
   selector:
     app: "{{ .Release.Name }}-redis"

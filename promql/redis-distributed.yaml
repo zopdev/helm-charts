@@ -1,0 +1,81 @@
+queries:
+  "<=0.0.5":
+    redis_up:
+      query: >-
+        avg by (pod) (
+          redis_up{
+            namespace='<application-name>',
+            pod=~'<service-name>.*'
+          }
+        )
+
+    role:
+      query: >-
+        avg by (pod) (
+          redis_instance_info{
+            namespace='<application-name>',
+            pod=~'<service-name>.*'
+          }
+        )
+
+    connected_clients:
+      query: >-
+        avg by (pod) (
+          redis_connected_clients{
+            namespace='<application-name>',
+            pod=~'<service-name>.*'
+          }
+        )
+
+    used_memory:
+      query: >-
+        avg by (pod) (
+          redis_memory_used_bytes{
+            namespace='<application-name>',
+            pod=~'<service-name>.*'
+          }
+        )
+      unit: "bytes"
+
+    evicted_keys_per_second:
+      query: >-
+        rate(redis_evicted_keys_total{namespace='<application-name>',pod=~'<service-name>.*'}[1m])
+
+    expired_keys_per_second:
+      query: >-
+        rate(redis_expired_keys_total{namespace='<application-name>',pod=~'<service-name>.*'}[1m])
+
+    rejected_connections_per_second:
+      query: >-
+        rate(redis_rejected_connections_total{namespace='<application-name>',pod=~'<service-name>.*'}[1m])
+
+    connected_slaves:
+      query: >-
+        avg by (pod) (
+          redis_connected_slaves{
+            namespace='<application-name>',
+            pod=~'<service-name>.*'
+          }
+        )
+
+    keys_total:
+      query: >-
+        avg by (pod) (
+          redis_db_keys{
+            namespace='<application-name>',
+            pod=~'<service-name>.*'
+          }
+        )
+
+    keys_expiring:
+      query: >-
+        avg by (pod) (
+          redis_db_keys_expiring{
+            namespace='<application-name>',
+            pod=~'<service-name>.*'
+          }
+        )
+
+    commands_processed_per_second:
+      query: >-
+        rate(redis_commands_processed_total{namespace='<application-name>',pod=~'<service-name>.*'}[1m])
