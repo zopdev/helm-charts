@@ -4,14 +4,14 @@
   "properties": {
     "diskSize": {
       "type": "string",
-      "pattern": "^[0-9]+Gi$",
       "default": "10Gi",
       "mutable": true,
       "editDisabled": true
     },
     "version": {
       "default": "8.0",
-      "mutable": true
+      "mutable": true,
+      "editDisabled": true
     },
     "resources": {
       "type": "object",
@@ -21,13 +21,11 @@
           "properties": {
             "cpu": {
               "type": "string",
-              "pattern": "^[0-9]+m$",
               "default": "500m",
               "mutable": true
             },
             "memory": {
               "type": "string",
-              "pattern": "^[0-9]+M$",
               "default": "256M",
               "mutable": true
             }
@@ -38,14 +36,12 @@
           "properties": {
             "cpu": {
               "type": "string",
-              "pattern": "^[0-9]+m$",
               "default": "1500m",
               "mutable": true
             },
             "memory": {
               "type": "string",
-              "pattern": "^[0-9]+Gi$",
-              "default": "1Gi",
+              "default": "1024M",
               "mutable": true
             }
           }
