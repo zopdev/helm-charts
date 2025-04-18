@@ -31,9 +31,10 @@ spec:
         fsGroup: 1001
       containers:
         - name: postgres-exporter
-          image: "quay.io/prometheuscommunity/postgres-exporter:v0.12.0"
+          image: "quay.io/prometheuscommunity/postgres-exporter:v0.16.0"
           args:
             - "--web.listen-address=:2121"
+            - "--no-collector.stat_bgwriter"
           env:
             - name: DATA_SOURCE_USER
               value: "postgres"

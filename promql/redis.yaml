@@ -1,18 +1,9 @@
 queries:
-  "<=0.0.5":
+  "<=0.0.4":
     redis_up:
       query: >-
         avg by (pod) (
           redis_up{
-            namespace='<application-name>',
-            pod=~'<service-name>.*'
-          }
-        )
-
-    role:
-      query: >-
-        avg by (pod) (
-          redis_instance_info{
             namespace='<application-name>',
             pod=~'<service-name>.*'
           }
@@ -27,7 +18,7 @@ queries:
           }
         )
 
-    used_memory:
+    memory_used:
       query: >-
         avg by (pod) (
           redis_memory_used_bytes{
@@ -37,45 +28,39 @@ queries:
         )
       unit: "bytes"
 
-    evicted_keys_per_second:
-      query: >-
-        rate(redis_evicted_keys_total{namespace='<application-name>',pod=~'<service-name>.*'}[1m])
-
-    expired_keys_per_second:
-      query: >-
-        rate(redis_expired_keys_total{namespace='<application-name>',pod=~'<service-name>.*'}[1m])
-
-    rejected_connections_per_second:
-      query: >-
-        rate(redis_rejected_connections_total{namespace='<application-name>',pod=~'<service-name>.*'}[1m])
-
-    connected_slaves:
+    memory_peak:
       query: >-
         avg by (pod) (
-          redis_connected_slaves{
+          redis_memory_used_peak_bytes{
             namespace='<application-name>',
             pod=~'<service-name>.*'
           }
         )
+      unit: "bytes"
 
     keys_total:
       query: >-
-        avg by (pod) (
+        sum by (pod) (
           redis_db_keys{
             namespace='<application-name>',
             pod=~'<service-name>.*'
           }
         )
 
-    keys_expiring:
+    ops_per_second:
       query: >-
-        avg by (pod) (
-          redis_db_keys_expiring{
+        rate(
+          redis_commands_processed_total{
             namespace='<application-name>',
             pod=~'<service-name>.*'
-          }
+          }[1m]
         )
 
-    commands_processed_per_second:
+    rejected_connections:
       query: >-
-        rate(redis_commands_processed_total{namespace='<application-name>',pod=~'<service-name>.*'}[1m])
+        rate(
+          redis_rejected_connections_total{
+            namespace='<application-name>',
+            pod=~'<service-name>.*'
+          }[1m]
+        )
