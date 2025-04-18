@@ -86,4 +86,4 @@ queries:
             pod=~'<service-name>.*'
           }
         )
-      unit: "kb/s"
+      unit: "bytes"
