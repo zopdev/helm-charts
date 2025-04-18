@@ -1,0 +1,89 @@
+queries:
+  "<=0.0.9":
+    postgres_up:
+      query: >-
+        avg by (pod) (
+          pg_up{
+            namespace='<application-name>',
+            pod=~'<service-name>.*'
+          }
+        )
+
+    open_connections:
+      query: >-
+        sum by (pod) (
+          pg_stat_activity_count{
+            namespace='<application-name>',
+            pod=~'<service-name>.*',
+            state='active'
+          }
+        )
+
+    idle_connections:
+      query: >-
+        sum by (pod) (
+          pg_stat_activity_count{
+            namespace='<application-name>',
+            pod=~'<service-name>.*',
+            state='idle'
+          }
+        )
+
+    queries_per_second:
+      query: >-
+        sum by (pod) (
+          rate(pg_stat_database_xact_commit{
+            namespace='<application-name>',
+            pod=~'<service-name>.*'
+          }[1m]) +
+          rate(pg_stat_database_xact_rollback{
+            namespace='<application-name>',
+            pod=~'<service-name>.*'
+          }[1m])
+        )
+
+    disk_read_operations:
+      query: >-
+        rate(pg_stat_database_blks_read{
+          namespace='<application-name>',
+          pod=~'<service-name>.*'
+        }[1m])
+
+    transaction_commit_rate:
+      query: >-
+        rate(pg_stat_database_xact_commit{
+          namespace='<application-name>',
+          pod=~'<service-name>.*'
+        }[1m])
+
+    connection_utilization:
+      query: >-
+        sum by (pod) (
+          pg_stat_activity_count{
+            namespace='<application-name>',
+            pod=~'<service-name>.*'
+          }
+        ) /
+        sum by (pod) (
+          pg_settings_max_connections{
+            namespace='<application-name>',
+            pod=~'<service-name>.*'
+          }
+        )
+
+    deadlocks:
+      query: >-
+        rate(pg_stat_database_deadlocks{
+          namespace='<application-name>',
+          pod=~'<service-name>.*'
+        }[5m])
+
+    database_size_bytes:
+      query: >-
+        sum by (pod, datname) (
+          pg_database_size_bytes{
+            namespace='<application-name>',
+            pod=~'<service-name>.*'
+          }
+        )
+      unit: "bytes"
