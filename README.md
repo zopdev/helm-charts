@@ -93,22 +93,47 @@ helm install <release-name> zop/<chartname>
 
 Below is a list of available charts along with their links:
 
-| **Name**      | **Link**                                          | **Description**                                                                                                                                                           |
-|---------------|----------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **MySQL**     | [helm.zop.dev/mysql](https://helm.zop.dev/mysql)   | A widely-used open-source relational database system known for its reliability and ease of use.                                                                           |
-| **PostgreSQL**| [helm.zop.dev/postgres](https://helm.zop.dev/postgres) | A powerful, open-source object-relational database system ideal for handling complex queries and transactional workloads.                                                |
-| **MariaDB**   | [helm.zop.dev/mariadb](https://helm.zop.dev/mariadb) | A popular open-source relational database, highly compatible with MySQL, suitable for both master-slave replication and standalone setups.                               |
-| **Redis**     | [helm.zop.dev/redis](https://helm.zop.dev/redis)   | An in-memory data structure store used as a database, cache, and message broker, with support for persistence.                                                           |
-| **SurrealDB** | [helm.zop.dev/surrealdb](https://helm.zop.dev/surrealdb) | A cloud-native database designed for modern, highly scalable applications and real-time analytics.                                                                     |
-| **Dgraph**    | [helm.zop.dev/dgraph](https://helm.zop.dev/dgraph) | A distributed, fast, and scalable graph database for efficient graph-based querying and data visualization.                                                              |
-| **Solr**      | [helm.zop.dev/solr](https://helm.zop.dev/solr)     | An open-source search platform built for enterprise-scale full-text search and analytics.                                                                               |
-| **OpenTSDB**  | [helm.zop.dev/opentsdb](https://helm.zop.dev/opentsdb) | A distributed, scalable time-series database ideal for managing and querying large-scale time-series data.                                                                |
-| **ChromaDB**  | [helm.zop.dev/chromadb](https://helm.zop.dev/chromadb) | A specialized datastore designed for AI and machine learning workloads, including managing vector embeddings.                                                           |
-| **Cron-Job**  | [helm.zop.dev/cron-job](https://helm.zop.dev/cron-job) | A Helm chart for scheduling and managing cron jobs to handle background tasks efficiently.                                                                              |
-| **Service**   | [helm.zop.dev/service](https://helm.zop.dev/service)  | A generic service chart for deploying and managing custom services with built-in configurations for HPA, deployments, alerts, Grafana, ingress, pod budgets, PVCs, etc. |
+1. **DATASOURCES**
+
+| **Name**              | **Link**                                                                 | **Metrics** |
+|-----------------------|--------------------------------------------------------------------------|-------------|
+| **MySQL**             | [helm.zop.dev/mysql](https://helm.zop.dev/mysql)                         | ✅           |
+| **PostgreSQL**        | [helm.zop.dev/postgres](https://helm.zop.dev/postgres)                   | ✅           |
+| **MariaDB**           | [helm.zop.dev/mariadb](https://helm.zop.dev/mariadb)                     |             |
+| **Redis**             | [helm.zop.dev/redis](https://helm.zop.dev/redis)                         |             |
+| **SurrealDB**         | [helm.zop.dev/surrealdb](https://helm.zop.dev/surrealdb)                 |             |
+| **Dgraph**            | [helm.zop.dev/dgraph](https://helm.zop.dev/dgraph)                       |             |
+| **Solr**              | [helm.zop.dev/solr](https://helm.zop.dev/solr)                           |             |
+| **OpenTSDB**          | [helm.zop.dev/opentsdb](https://helm.zop.dev/opentsdb)                   |             |
+| **ChromaDB**          | [helm.zop.dev/chromadb](https://helm.zop.dev/chromadb)                   |             |
+| **Cassandra**         | [helm.zop.dev/cassandra](https://helm.zop.dev/cassandra)                 |             |
+| **CockroachDB**       | [helm.zop.dev/cockroachdb](https://helm.zop.dev/cockroachdb)             |             |
+| **Kafka**             | [helm.zop.dev/kafka](https://helm.zop.dev/kafka)                         |             |
+| **Redis-Distributed** | [helm.zop.dev/redis-distributed](https://helm.zop.dev/redis-distributed) |             |
+| **SolrCloud**         | [helm.zop.dev/solrcloud](https://helm.zop.dev/solrcloud)                 |             |
+
+
+2. **APPLICATIONS**
+
+| **Name**       | **Link**                                                   |
+|----------------|------------------------------------------------------------|
+| **JupyterHub** | [helm.zop.dev/jupyterhub](https://helm.zop.dev/jupyterhub) |
+| **Outline**    | [helm.zop.dev/outline](https://helm.zop.dev/outline)       |
+| **Superset**   | [helm.zop.dev/superset](https://helm.zop.dev/superset)     |
+| **WordPress**  | [helm.zop.dev/wordpress](https://helm.zop.dev/wordpress)   |
+
+
+3. **OTHERS**
+
+| **Name**     | **Link**                                               | **Metrics** |
+|--------------|--------------------------------------------------------|-------------|
+| **Cron-Job** | [helm.zop.dev/cron-job](https://helm.zop.dev/cron-job) | ✅           |
+| **Service**  | [helm.zop.dev/service](https://helm.zop.dev/service)   | ✅           |
+
+
+📊 **Metrics Export** - All charts that support metrics expose them on port 2121 by default.
 
 ---
-
 
 ## 👍 **Contribute**
 
