@@ -4,33 +4,75 @@ on:
   push:
     branches:
       - main
+      - development
     paths:
       - 'charts/**'
 
 jobs:
-  release:
+  lint:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+
+      - name: Helm Lint
+        run: |
+          for dir in charts/*/; do
+            helm lint "$dir"
+          done
+
+  release_stage:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/development'
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
       - name: Configure Git
         run: |
           git config user.name "$GITHUB_ACTOR"
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
 
+      - name: Release to Stage
+        run: |
+          helm upgrade --install stage-release charts/service --namespace stage --values charts/service/values-stage.yaml
+
+      - name: Run chart-releaser
+        uses: helm/chart-releaser-action@v1.6.0
+        env:
+          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          CR_GENERATE_RELEASE_NOTES: true
+
+  release_prod:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
       - name: Install Helm
         uses: azure/setup-helm@v4
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-      - name: Helm Lint
+
+      - name: Configure Git
         run: |
-          cd charts/service
-          helm lint
-          cd ../..
-          cd charts/cron-job
-          helm lint
-          cd ../..
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Release to Prod
+        run: |
+          helm upgrade --install prod-release charts/service --namespace prod --values charts/service/values-prod.yaml
 
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.6.0
