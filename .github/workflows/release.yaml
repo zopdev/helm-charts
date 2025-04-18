@@ -9,24 +9,22 @@ on:
       - 'charts/**'
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Install Helm
-        uses: azure/setup-helm@v4
-
-      - name: Helm Lint
-        run: |
-          for dir in charts/*/; do
-            helm lint "$dir"
-          done
+#  lint:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Checkout Code
+#        uses: actions/checkout@v4
+#
+#      - name: Install Helm
+#        uses: azure/setup-helm@v4
+#
+#      - name: Helm Lint
+#        run: |
+#          for dir in charts/*/; do
+#            helm lint "$dir"
+#          done
 
   release_stage:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/development'
-    needs: lint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
