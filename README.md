@@ -109,7 +109,7 @@ Below is a list of available charts along with their links:
 | **Cassandra**         | [helm.zop.dev/cassandra](https://helm.zop.dev/cassandra)                 |             |
 | **CockroachDB**       | [helm.zop.dev/cockroachdb](https://helm.zop.dev/cockroachdb)             |             |
 | **Kafka**             | [helm.zop.dev/kafka](https://helm.zop.dev/kafka)                         |             |
-| **Redis-Distributed** | [helm.zop.dev/redis-distributed](https://helm.zop.dev/redis-distributed) | ✅           |
+| **RedisDistributed**  | [helm.zop.dev/redisdistributed](https://helm.zop.dev/redisdistributed)   | ✅           |
 | **SolrCloud**         | [helm.zop.dev/solrcloud](https://helm.zop.dev/solrcloud)                 |             |
 
 
