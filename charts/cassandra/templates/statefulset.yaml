@@ -46,14 +46,14 @@ spec:
             - name: CASSANDRA_CLUSTER_NAME
               value: "Cluster"
             - name: CASSANDRA_NUM_TOKENS
-              value: 256"
+              value: "256"
             - name: CASSANDRA_SEEDS
-              value: dc1
+              value: "{{ .Release.Name }}-cassandra-0.{{ .Release.Name }}-cassandra.{{ .Release.Namespace }}.svc.cluster.local"
             - name: CASSANDRA_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ $.Release.Name }}-cassandra-database-secret
-                  key: pod_password
+                  key: root-password
             - name: CASSANDRA_USER
               value: "superuser"
             - name: CASSANDRA_DATACENTER
