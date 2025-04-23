@@ -2,7 +2,7 @@ apiVersion: v1
 appVersion: "1.0"
 description: Helm chart for deploying cassandra
 name: cassandra
-version: 0.0.4
+version: 0.0.5
 icon: "https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20241223/d7c22b49-c87b-4d41-a109-334a83b44f8d-cassandra.png"
 maintainers:
   - name: ZopDev
