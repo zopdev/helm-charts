@@ -18,8 +18,8 @@ spec:
         - name: POD_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: {{ $.Release.Name }}-cassandra-root-secret
-              key: pod_password
+              name: {{ $.Release.Name }}-cassandra-database-secret
+              key: root-password
       volumeMounts:
         - name: script-volume
           mountPath: /etc/config
