@@ -6,7 +6,7 @@
 {{- $generatedPassword := printf "%s%s%s" (randAlpha 4) (randNumeric 4) (randAlpha 4 | upper) }}
 
 {{/* Define Secret Name */}}
-{{- $secretName := printf "%s-%s-%s-mysql-database-secret" $.Release.Name (replace "_" "-" $service.database) $service.name }}
+{{- $secretName := printf "%s-%s-%s-cassandra-database-secret" $.Release.Name (replace "_" "-" $service.database) $service.name }}
 
 {{/* Retrieve existing secret (if any) */}}
 {{- $existingSecret := lookup "v1" "Secret" $.Release.Namespace $secretName }}

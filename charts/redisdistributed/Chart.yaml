@@ -2,7 +2,7 @@ apiVersion: v2
 appVersion: "1.0"
 description: Helm chart deploys redis distributed instance
 name: redisdistributed
-version: 0.0.6
+version: 0.0.7
 icon: "https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20241227/beaa0bf2-efc3-4096-9616-69568624a7d6-redisdistributed.png"
 maintainers:
   - name: ZopDev
