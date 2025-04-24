@@ -120,7 +120,7 @@ spec:
           image: prom/mysqld-exporter:v0.15.1
           ports:
             - containerPort: 2121
-              name: metrics
+              name: metrics-port
           env:
             - name: MYSQLD_EXPORTER_PASSWORD
               valueFrom:
