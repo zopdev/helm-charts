@@ -56,6 +56,38 @@ spec:
             - name: security-config
               mountPath: /var/solr/data/security.json
               subPath: security.json
+        - name: solr-exporter
+          image: "solr:{{ .Values.version }}"
+          command:
+            - "/opt/solr/contrib/prometheus-exporter/bin/solr-exporter"
+            - "-p"
+            - "2121"
+            - "-b"
+            - "http://localhost:8983/solr"
+            - "-config-file"
+            - "/opt/solr/contrib/prometheus-exporter/conf/solr-exporter-config.xml"
+          ports:
+            - containerPort: 2121
+              name: metrics
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 200m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: 2121
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: 2121
+            initialDelaySeconds: 15
+            periodSeconds: 10
       volumes:
         - name: security-config
           configMap:
