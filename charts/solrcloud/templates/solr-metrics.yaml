@@ -1,0 +1,17 @@
+apiVersion: solr.apache.org/v1beta1
+kind: SolrPrometheusExporter
+metadata:
+  name: {{ .Release.Name }}-prom-exporter
+  namespace: {{ .Release.Namespace }}
+spec:
+  customKubeOptions:
+    podOptions:
+      resources:
+        requests:
+          cpu: 300m
+          memory: 900Mi
+  solrReference:
+    basicAuthSecret: {{ .Release.Name }}-solrcloud-basic-auth
+    cloud:
+      name: {{ .Release.Name }}
+  numThreads: 6

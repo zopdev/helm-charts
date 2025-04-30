@@ -1,0 +1,17 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ .Release.Name }}-solr-metrics
+  labels:
+    app: {{ .Release.Name }}-solr-metrics
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      solr-prometheus-exporter: {{ .Release.Name }}-prom-exporter
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  endpoints:
+    - port: solr-metrics
+      interval: 10s
