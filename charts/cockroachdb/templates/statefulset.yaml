@@ -27,6 +27,10 @@ spec:
         app.kubernetes.io/name: {{ template "cockroachdb.name" . }}
         app.kubernetes.io/instance: {{ .Release.Name | quote }}
         app.kubernetes.io/component: cockroachdb
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/_status/vars"
+        prometheus.io/port: "8080"
     spec:
       affinity:
         podAntiAffinity:

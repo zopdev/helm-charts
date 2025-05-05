@@ -1,0 +1,97 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+  generation: 1
+  labels:
+    app: kube-prometheus-stack
+    heritage: Helm
+    release: prometheus
+spec:
+  groups:
+    - name: {{ .Release.Namespace }}.{{ .Release.Name }}-cockroachdb.rules
+      rules:
+        - alert: CockroachDBNodeDown
+          expr: cockroachdb_liveness_liveness{namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-cockroachdb-.*"} == 0
+          for: 1m
+          labels:
+            severity: critical
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'CockroachDB node of {{ .Release.Name }} is down'
+            description: 'CockroachDB node of {{ .Release.Name }} has been down for more than 1 minute'
+
+        - alert: CockroachDBHighLatency
+          expr: rate(cockroachdb_sql_latency_seconds_sum{namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-cockroachdb-.*"}[5m]) / rate(cockroachdb_sql_latency_seconds_count{namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-cockroachdb-.*"}[5m]) > 0.5
+          for: 5m
+          labels:
+            severity: warning
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'CockroachDB instance {{ .Release.Name }} has high query latency'
+            description: 'CockroachDB instance {{ .Release.Name }} has high query latency (> 500ms) for more than 5 minutes'
+
+        - alert: CockroachDBHighMemoryUsage
+          expr: cockroachdb_sys_memory_usage_bytes{namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-cockroachdb-.*"} / cockroachdb_sys_memory_available_bytes{namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-cockroachdb-.*"} * 100 > 80
+          for: 5m
+          labels:
+            severity: warning
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'CockroachDB instance {{ .Release.Name }} high memory usage'
+            description: 'CockroachDB instance {{ .Release.Name }} is using more than 80% of available memory'
+
+        - alert: CockroachDBHighDiskUsage
+          expr: cockroachdb_capacity_used_bytes{namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-cockroachdb-.*"} / cockroachdb_capacity_bytes{namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-cockroachdb-.*"} * 100 > 80
+          for: 5m
+          labels:
+            severity: warning
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'CockroachDB instance {{ .Release.Name }} high disk usage'
+            description: 'CockroachDB instance {{ .Release.Name }} is using more than 80% of available disk space'
+
+        - alert: CockroachDBUnavailableRanges
+          expr: cockroachdb_replicas_unavailable{namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-cockroachdb-.*"} > 0
+          for: 5m
+          labels:
+            severity: critical
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'CockroachDB instance {{ .Release.Name }} has unavailable ranges'
+            description: 'CockroachDB instance {{ .Release.Name }} has unavailable ranges'
+
+        - alert: CockroachDBHighTransactionRestarts
+          expr: rate(cockroachdb_txn_restarts{namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-cockroachdb-.*"}[5m]) > 10
+          for: 5m
+          labels:
+            severity: warning
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'CockroachDB instance {{ .Release.Name }} high transaction restarts'
+            description: 'CockroachDB instance {{ .Release.Name }} is experiencing high transaction restarts (> 10 per 5 minutes)'
+
+        - alert: CockroachDBTooManyConnections
+          expr: cockroachdb_sql_conns{namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-cockroachdb-.*"} > 1000
+          for: 5m
+          labels:
+            severity: warning
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'CockroachDB instance {{ .Release.Name }} too many connections'
+            description: 'CockroachDB instance {{ .Release.Name }} has more than 1000 active connections'
