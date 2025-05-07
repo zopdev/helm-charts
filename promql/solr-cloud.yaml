@@ -59,7 +59,7 @@ queries:
           item="hitratio"
         }
       )
-    unit: "percent"
+    unit: "%"
 
   index_size:
     query: >-
@@ -81,17 +81,6 @@ queries:
         }
       )
     unit: "bytes"
-
-
-  jvm_gc_time:
-    query: >-
-      sum by (pod) (
-        rate(solr_metrics_jvm_gc_seconds_total{
-          namespace='<application-name>',
-          pod=~'<service-name>.*'
-        }[1m])
-      )
-    unit: "seconds"
 
   document_count:
     query: >-

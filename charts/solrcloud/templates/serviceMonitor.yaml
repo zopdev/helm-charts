@@ -15,3 +15,5 @@ spec:
   endpoints:
     - port: solr-metrics
       interval: 10s
+      path: /metrics
+      scheme: http
