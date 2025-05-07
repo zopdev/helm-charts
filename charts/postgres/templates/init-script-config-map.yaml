@@ -52,7 +52,7 @@ data:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: postgres-{{ $.Release.Name }}-{{ $service.name }}-init
+  name: postgres-{{ $.Release.Name }}-{{ $service.name }}-init-job
   namespace: {{ $.Release.Namespace }}
 spec:
   containers:
@@ -83,6 +83,32 @@ spec:
             BEGIN
               IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '{{ $username }}') THEN
                 CREATE USER \"{{ $username }}\" WITH ENCRYPTED PASSWORD '{{ $password }}';
+                BEGIN
+                  GRANT CONNECT, CREATE ON DATABASE \"{{ $service.database }}\" TO \"{{ $username }}\";
+                EXCEPTION WHEN OTHERS THEN
+                  RAISE NOTICE 'Error granting database privileges: %', SQLERRM;
+                  RAISE;
+                END;
+                BEGIN
+                  GRANT CREATE, USAGE ON SCHEMA public TO \"{{ $username }}\";
+                EXCEPTION WHEN OTHERS THEN
+                  RAISE NOTICE 'Error granting schema privileges: %', SQLERRM;
+                  RAISE;
+                END;
+                BEGIN
+                  ALTER DEFAULT PRIVILEGES FOR USER postgres IN SCHEMA public
+                  GRANT INSERT, REFERENCES, SELECT, UPDATE, DELETE, TRUNCATE ON TABLES TO \"{{ $username }}\";
+                EXCEPTION WHEN OTHERS THEN
+                  RAISE NOTICE 'Error granting table privileges: %', SQLERRM;
+                  RAISE;
+                END;
+                BEGIN
+                  ALTER DEFAULT PRIVILEGES FOR USER postgres IN SCHEMA public
+                  GRANT SELECT, UPDATE ON SEQUENCES TO \"{{ $username }}\";
+                EXCEPTION WHEN OTHERS THEN
+                  RAISE NOTICE 'Error granting sequence privileges: %', SQLERRM;
+                  RAISE;
+                END;
               ELSE
                 ALTER USER \"{{ $username }}\" PASSWORD '{{ $password }}';
               END IF;
