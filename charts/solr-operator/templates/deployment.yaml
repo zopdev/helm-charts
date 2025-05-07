@@ -77,7 +77,7 @@ spec:
 
         {{- if .Values.metrics.enable }}
         ports:
-          - containerPort: 2121
+          - containerPort: 8080
             name: metrics
         {{- end }}
       {{- if (include "solr-operator.mTLS.volumes" .) }}
