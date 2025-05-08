@@ -1,0 +1,113 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ .Release.Name }}-mariadb-alerts
+  namespace: {{ .Release.Namespace }}
+  generation: 1
+  labels:
+    app: kube-prometheus-stack
+    heritage: Helm
+    release: prometheus
+spec:
+  groups:
+    - name: {{ .Release.Namespace }}.{{ .Release.Name }}-mariadb.rules
+      rules:
+        - alert: MariaDBDown
+          expr: mysql_up{namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-mariadb-.*"} == 0
+          for: 0m
+          labels:
+            severity: critical
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'MariaDB instance {{ .Release.Name }} is down'
+            description: 'MariaDB instance {{ .Release.Name }} is down'
+
+        - alert: MariaDBTooManyConnections
+          expr: |
+            max_over_time(mysql_global_status_threads_connected{namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-mariadb-.*"}[1m])
+            / mysql_global_variables_max_connections{namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-mariadb-.*"} * 100 > 80
+          for: 2m
+          labels:
+            severity: warning
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'MariaDB instance {{ .Release.Name }} has too many connections'
+            description: 'More than 80% of MariaDB connections of {{ .Release.Name }} are in use'
+
+        - alert: MariaDBHighPreparedStatementsUtilization
+          expr: |
+            max_over_time(mysql_global_status_prepared_stmt_count{namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-mariadb-.*"}[1m])
+            / mysql_global_variables_max_prepared_stmt_count{namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-mariadb-.*"} * 100 > 80
+          for: 2m
+          labels:
+            severity: warning
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'MariaDB instance {{ .Release.Name }} high prepared statements utilization'
+            description: 'MariaDB instance {{ .Release.Name }} has high utilization of prepared statements'
+
+        - alert: MariaDBSlowQueries
+          expr: increase(mysql_global_status_slow_queries{namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-mariadb-.*"}[1m]) > 0
+          for: 2m
+          labels:
+            severity: warning
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'MariaDB instance {{ .Release.Name }} slow queries'
+            description: 'MariaDB instance {{ .Release.Name }} has new slow queries'
+
+        - alert: MariaDBRestarted
+          expr: mysql_global_status_uptime{namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-mariadb-.*"} < 60
+          for: 0m
+          labels:
+            severity: info
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'MariaDB instance {{ .Release.Name }} restarted'
+            description: 'MariaDB instance {{ .Release.Name }} restarted < 1 minute ago'
+
+        - alert: MariaDBHighQps
+          expr: irate(mysql_global_status_questions{namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-mariadb-.*"}[1m]) > 10000
+          for: 2m
+          labels:
+            severity: info
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'MariaDB instance {{ .Release.Name }} has High QPS'
+            description: 'MariaDB instance {{ .Release.Name }} is experiencing high QPS (> 10k)'
+
+        - alert: MariaDBReplicationLag
+          expr: mysql_slave_status_seconds_behind_master{namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-mariadb-.*"} > 30
+          for: 1m
+          labels:
+            severity: warning
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'MariaDB replica {{ .Release.Name }} lag'
+            description: 'MariaDB replica {{ .Release.Name }} is lagging by more than 30 seconds'
+
+        - alert: MariaDBReplicationNotRunning
+          expr: mysql_slave_status_slave_io_running{namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-mariadb-.*"} == 0 or mysql_slave_status_slave_sql_running{namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-mariadb-.*"} == 0
+          for: 0m
+          labels:
+            severity: critical
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'MariaDB replica {{ .Release.Name }} not running'
+            description: 'Replication on MariaDB replica {{ .Release.Name }} is not running'

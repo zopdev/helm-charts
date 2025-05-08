@@ -21,15 +21,6 @@ spec:
         app.kubernetes.io/part-of: mysql
         app: {{ .Release.Name }}-mysql
     spec:
-      {{- if eq .Values.version "5.7" }}
-      initContainers:
-        - name: cleanup-data-dir
-          image: busybox
-          command: [ 'sh', '-c', 'rm -rf /var/lib/mysql/*' ]
-          volumeMounts:
-            - name: {{ .Release.Name }}-mysql-persistent-storage
-              mountPath: /var/lib/mysql
-      {{- end }}
       containers:
         - name: mysql
           image: mysql:{{ .Values.version }}
