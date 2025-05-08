@@ -115,6 +115,29 @@ spec:
             - name: config
               mountPath: /opt/bitnami/mariadb/conf/my.cnf
               subPath: my.cnf
+
+        - name: mariadb-exporter
+          image: prom/mysqld-exporter:v0.15.1
+          ports:
+            - containerPort: 2121
+              name: metrics-port
+          env:
+            - name: MYSQLD_EXPORTER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-mariadb-secrets"
+                  key: mariadb-root-password
+          args:
+            - "--mysqld.username=root"
+            - "--web.listen-address=:2121"
+            - "--log.level=debug"
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
       volumes:
         - name: config
           configMap:
