@@ -1,0 +1,16 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ .Release.Name }}-mariadb-slave
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: "{{ template "mariadb.name" . }}"
+      component: "slave"
+      release: "{{ .Release.Name }}"
+  endpoints:
+    - port: metrics-port
+      interval: 30s
+      path: /metrics
