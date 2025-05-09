@@ -59,11 +59,14 @@ spec:
                 - "mysqladmin ping -u root -p$MYSQL_ROOT_PASSWORD"
             initialDelaySeconds: 5
             periodSeconds: 10
-
           volumeMounts:
             - name: {{.Release.Name }}-mysql-persistent-storage
               mountPath: /var/lib/mysql
-
+{{- if .Values.customMyCnf }}
+            - name: custom-mycnf
+              mountPath: /etc/mysql/conf.d/custom.cnf
+              subPath: custom.cnf
+{{- end }}
         - name: mysql-exporter
           image: prom/mysqld-exporter:v0.15.1
           ports:
@@ -79,6 +82,12 @@ spec:
             - "--mysqld.username=root"
             - "--web.listen-address=:2121"
             - "--log.level=debug"
+{{- if .Values.customMyCnf }}
+      volumes:
+        - name: custom-mycnf
+          configMap:
+            name: {{ include "mysql.fullname" . }}-custom-mycnf
+{{- end }}
   volumeClaimTemplates:
     - metadata:
         name: {{.Release.Name }}-mysql-persistent-storage

@@ -74,6 +74,7 @@ The following table describes the configurable parameters of the MySQL Helm char
 | `resources.requests.memory`| `string`| Minimum memory resources required by the MySQL container.                                       | `"256M"`             |
 | `resources.limits.cpu`  | `string`  | Maximum CPU resources the MySQL container can use.                                              | `"1500m"`            |
 | `resources.limits.memory`| `string` | Maximum memory resources the MySQL container can use.                                           | `"1Gi"`              |
+| `customMyCnf`           | `string`  | Custom MySQL configuration to be layered on top of the default config. Provided as a full INI file. | `""`                 |
 
 You can override these values in your `values.yaml` file or pass them as flags when installing the chart.
 
@@ -102,6 +103,21 @@ To use this configuration, save it in a `values.yaml` file and pass it to the He
 ```bash
 helm install my-mysql zopdev/mysql -f values.yaml
 ```
+
+### Example: Providing Custom MySQL Configuration
+
+To override or add to the default MySQL configuration, provide your own `my.cnf` content using the `customMyCnf` value. This will be mounted as `/etc/mysql/conf.d/custom.cnf` in the container and layered on top of the default config.
+
+Example `values.yaml`:
+
+```yaml
+customMyCnf: |
+  [mysqld]
+  max_connections = 200
+  sql_mode = STRICT_ALL_TABLES
+```
+
+This allows you to specify any MySQL configuration options you need, without losing the chart's defaults.
 
 ---
 
