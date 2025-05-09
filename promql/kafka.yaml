@@ -1,0 +1,93 @@
+queries:
+  "<=0.0.4":
+    kafka_up:
+      query: >-
+        avg by (pod) (
+          kafka_exporter_build_info{
+            namespace='<application-name>',
+            pod=~'<service-name>.*'
+          }
+        )
+
+    kafka_broker_count:
+      query: >-
+        kafka_brokers{
+          namespace='<application-name>'
+        }
+
+    kafka_topic_count:
+      query: >-
+        count(
+          count by (topic) (
+            kafka_topic_partitions{
+              namespace='<application-name>'
+            }
+          )
+        )
+
+    kafka_partition_count:
+      query: >-
+        sum(
+          kafka_topic_partitions{
+            namespace='<application-name>'
+          }
+        )
+
+    consumer_group_lag:
+      query: >-
+        sum by (consumergroup, topic) (
+          kafka_topic_partition_current_offset{
+            namespace='<application-name>',
+            pod=~'<service-name>.*'
+          }
+          - on(topic, partition) group_right(consumergroup)
+          kafka_consumergroup_current_offset{
+            namespace='<application-name>',
+            pod=~'<service-name>.*'
+          }
+        ) > 0
+
+    consumer_group_members:
+      query: >-
+        sum by (consumergroup) (
+          kafka_consumergroup_members{
+            namespace='<application-name>',
+            pod=~'<service-name>.*'
+          }
+        )
+
+    partition_isr_count:
+      query: >-
+        avg by (topic, partition) (
+          kafka_topic_partition_in_sync_replica{
+            namespace='<application-name>',
+            pod=~'<service-name>.*'
+          }
+        )
+
+    partition_replica_count:
+      query: >-
+        avg by (topic, partition) (
+          kafka_topic_partition_replicas{
+            namespace='<application-name>',
+            pod=~'<service-name>.*'
+          }
+        )
+
+    message_in_rate:
+      query: >-
+        sum(
+          rate(
+            kafka_topic_partition_current_offset{
+              namespace='<application-name>',
+              pod=~'<service-name>.*'
+            }[1m]
+          )
+        ) by (topic)
+
+    broker_info:
+      query: >-
+        kafka_broker_info{
+          namespace='<application-name>',
+          pod=~'<service-name>.*'
+        }

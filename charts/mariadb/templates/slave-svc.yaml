@@ -14,6 +14,9 @@ spec:
   - name: mysql
     port: 3306
     targetPort: mysql
+  - name: metrics-port
+    port: 2121
+    targetPort: metrics-port
   selector:
     app: "{{ template "mariadb.name" . }}"
     component: "slave"

@@ -39,6 +39,22 @@ spec:
             weight: 1
      {{- end }}
       containers:
+      - name: kafka-exporter
+        image: danielqsj/kafka-exporter:v1.9.0
+        imagePullPolicy: IfNotPresent
+        ports:
+           - containerPort: 2121
+             name: metrics
+        args:
+          - "--kafka.server=localhost:9092"
+          - "--web.listen-address=:2121"
+        resources:
+          limits:
+            cpu: 100m
+            memory: 128Mi
+          requests:
+            cpu: 50m
+            memory: 64Mi
       - name: {{ .Chart.Name }}
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
