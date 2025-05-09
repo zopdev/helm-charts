@@ -9,6 +9,6 @@ resources:
     cpu: "1500m"
     memory: "1024M"
 
-version: "5.7"
+version: "8.0"
 
-customMyCnf: "[mysqld]\ncharacter-set-server=UTF8\ncollation-server=utf8_general_ci\n[client]\ndefault-character-set=UTF8\n"
+customMyCnf: ""
