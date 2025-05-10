@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-solr-metrics-2121
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    service-type: metrics
+    solr-prometheus-exporter: {{ .Release.Name }}-prom-exporter
+  annotations:
+    cloud.google.com/neg: '{"ingress":true}'
+    prometheus.io/path: /metrics
+    prometheus.io/scheme: http
+    prometheus.io/scrape: 'true'
+spec:
+  type: ClusterIP
+  ports:
+    - name: solr-metrics
+      protocol: TCP
+      appProtocol: http
+      port: 2121
+      targetPort: 8080
+  selector:
+    solr-prometheus-exporter: {{ .Release.Name }}-prom-exporter
+    technology: solr-prometheus-exporter
