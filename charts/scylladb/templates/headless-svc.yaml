@@ -1,22 +1,30 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "scylla.names.fullname" . }}
+  name: {{ printf "%s-headless" (include "scylla.names.fullname" .) | trunc 63 | trimSuffix "-" }}
   namespace: {{ include "scylla.names.namespace" . | quote }}
   labels: {{- include "common.labels.standard" . | nindent 4 }}
     app.kubernetes.io/part-of: scylladb
     app.kubernetes.io/component: scylladb
 spec:
-  type: ClusterIP
+  clusterIP: None
+  publishNotReadyAddresses: true
   ports:
+    - name: intra
+      port: 7000
+      targetPort: intra
+    - name: tls
+      port: 7001
+      targetPort: tls
+    - name: jmx
+      port: 7199
+      targetPort: jmx
     - name: cql
       port: 9042
       targetPort: cql
-      nodePort: null
     - name: cql-shard
       port: 19042
-      targetPort: cql-shard
-      nodePort: null
+      targetPort: cql
   selector: {{- include "common.labels.matchLabels" . | nindent 4 }}
     app.kubernetes.io/part-of: scylladb
     app.kubernetes.io/component: scylladb
