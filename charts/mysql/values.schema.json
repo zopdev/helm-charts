@@ -15,8 +15,7 @@
     },
     "version": {
       "default": "8.0",
-      "mutable": true,
-      "editDisabled": true
+      "mutable": true
     },
     "resources": {
       "type": "object",
