@@ -1,0 +1,141 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+  generation: 1
+  labels:
+    app: kube-prometheus-stack
+    heritage: Helm
+    release: prometheus
+spec:
+  groups:
+    - name: {{ .Release.Namespace }}.{{ .Release.Name }}-solr.rules
+      rules:
+        - alert: SolrDown
+          expr: solr_ping{namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-solr-.*"} == 0
+          for: 1m
+          labels:
+            severity: critical
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'All Solrcloud instances of {{ .Release.Name }} are down'
+            description: 'Solrcloud instance of {{ .Release.Name }} are down'
+
+        - alert: ZooKeeperDown
+          expr: solr_zookeeper_status{namespace="{{ .Release.Namespace }}"} == 0
+          for: 1m
+          labels:
+            severity: critical
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'ZooKeeper ensemble for Solrcloud {{ .Release.Name }} is down'
+            description: 'ZooKeeper ensemble health check failed for Solr cluster {{ .Release.Name }}'
+
+        - alert: SolrHighQueryLatency
+          expr: |
+            avg(solr_metrics_core_query_local_p95_ms{
+              namespace="{{ .Release.Namespace }}",
+              instance=~"{{ .Release.Name }}-solr-.*",
+              searchHandler="/select"
+            }) > 500
+          for: 5m
+          labels:
+            severity: warning
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'Solrcloud {{ .Release.Name }} high query latency'
+            description: 'Solrcloud p95 query latency is >500ms for 5 minutes'
+
+        - alert: SolrLowCacheHitRatio
+          expr: |
+            avg(solr_metrics_core_searcher_cache_ratio{
+              namespace="{{ .Release.Namespace }}",
+              instance=~"{{ .Release.Name }}-solr-.*",
+              type="queryResultCache",
+              item="hitratio"
+            }) < 0.7
+          for: 10m
+          labels:
+            severity: warning
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'Solrcloud {{ .Release.Name }} low cache hit ratio'
+            description: 'Query result cache hit ratio is below 70% for 10 minutes'
+
+        - alert: SolrHighHeapUsage
+          expr: |
+            avg(solr_metrics_jvm_memory_heap_bytes{
+              namespace="{{ .Release.Namespace }}",
+              instance=~"{{ .Release.Name }}-solr-.*",
+              item="used"
+            } /
+            solr_metrics_jvm_memory_heap_bytes{
+              namespace="{{ .Release.Namespace }}",
+              instance=~"{{ .Release.Name }}-solr-.*",
+              item="max"
+            }) > 0.85
+          for: 5m
+          labels:
+            severity: warning
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'Solrcloud {{ .Release.Name }} high JVM heap usage'
+            description: 'JVM heap usage is above 85% for 5 minutes'
+
+        - alert: SolrReplicaNotActive
+          expr: solr_collections_replica_state{namespace="{{ .Release.Namespace }}", state!="active"} == 1
+          for: 5m
+          labels:
+            severity: critical
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'Solrcloud replica {{ .Release.Name }} is not active'
+            description: 'Solrcloud replica in collection {{ .Release.Name }} has been inactive for 5 minutes'
+
+        - alert: SolrHighGC
+          expr: |
+            rate(solr_metrics_jvm_gc_seconds_total{
+              namespace="{{ .Release.Namespace }}",
+              instance=~"{{ .Release.Name }}-solr-.*"
+            }[5m]) > 5
+          for: 10m
+          labels:
+            severity: warning
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'Solrcloud {{ .Release.Name }} high GC activity'
+            description: 'JVM garbage collection is taking more than 5 seconds per minute'
+
+        - alert: SolrHighHTTPErrors
+          expr: |
+            sum by (instance) (
+              rate(solr_metrics_jetty_response_total{
+                namespace="{{ .Release.Namespace }}",
+                instance=~"{{ .Release.Name }}-solr-.*",
+                status=~"4xx|5xx"
+              }[5m])
+            ) > 10
+          for: 5m
+          labels:
+            severity: warning
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'Solrcloud {{ .Release.Name }} high HTTP error rate'
+            description: 'HTTP 4xx/5xx error rate is >10 per minute for 5 minutes'
