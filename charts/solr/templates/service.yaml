@@ -13,3 +13,8 @@ spec:
     - protocol: TCP
       port: 8983
       targetPort: 8983
+      name: solr
+    - protocol: TCP
+      port: 2121
+      targetPort: 2121
+      name: metrics

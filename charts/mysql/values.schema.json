@@ -8,10 +8,14 @@
       "mutable": true,
       "editDisabled": true
     },
+    "customMyCnf": {
+      "type": "string",
+      "default": "",
+      "mutable": true
+    },
     "version": {
       "default": "8.0",
-      "mutable": true,
-      "editDisabled": true
+      "mutable": true
     },
     "resources": {
       "type": "object",

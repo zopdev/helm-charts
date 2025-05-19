@@ -2,7 +2,7 @@ apiVersion: v2
 appVersion: "1.0"
 description: Helm chart for deploying Apache Solr datastore
 name: solr
-version: 0.0.4
+version: 0.0.5
 icon: "https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20250403/a45b7860-5846-4fa9-b68d-6765251210bd-solr.png"
 maintainers:
   - name: ZopDev
