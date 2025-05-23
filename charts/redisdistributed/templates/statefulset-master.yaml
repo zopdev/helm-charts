@@ -1,25 +1,25 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ .Release.Name }}-redisdistributed
+  name: {{ .Release.Name }}-redisdistributed-master
   namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/part-of: redis
-    app: "{{ .Release.Name }}-redisdistributed"
+    app: "{{ .Release.Name }}-redisdistributed-master"
 spec:
   replicas: 1
   serviceName: "{{ .Release.Name }}-redis-headless-service"
   selector:
     matchLabels:
       app.kubernetes.io/part-of: redis
-      app: "{{ .Release.Name }}-redisdistributed"
+      app: "{{ .Release.Name }}-redisdistributed-master"
   updateStrategy:
     type: RollingUpdate
   template:
     metadata:
       labels:
         app.kubernetes.io/part-of: redis
-        app: "{{ .Release.Name }}-redisdistributed"
+        app: "{{ .Release.Name }}-redisdistributed-master"
     spec:
       containers:
         - name: redis
