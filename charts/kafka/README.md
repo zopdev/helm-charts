@@ -12,6 +12,46 @@ The Kafka Helm chart provides an easy way to deploy Apache Kafka, a distributed 
 
 ---
 
+## Dependencies
+
+Before installing the chart, you need to download the required dependencies. Run the following command in the chart directory:
+
+```bash
+helm dependency build
+```
+
+This command will:
+1. Read the dependencies from `Chart.yaml`
+2. Download the required charts (ZooKeeper) from the specified repositories
+3. Store them in the `charts/` directory
+4. Create or update the `Chart.lock` file with the exact versions
+
+If you encounter any issues with the dependencies, you can try:
+```bash
+helm dependency update  # Updates dependencies to the latest versions
+```
+
+This chart requires the following dependencies to be installed:
+
+### ZooKeeper
+- **Chart**: `zookeeper`
+- **Version**: `0.0.1`
+- **Repository**: `https://helm.zop.dev`
+- **Condition**: `zookeeper.enabled`
+- **Purpose**: Provides distributed coordination and configuration management for Kafka
+
+To install this dependency automatically, ensure the following in your `values.yaml`:
+
+```yaml
+zookeeper:
+  enabled: true
+  # Additional ZooKeeper configuration...
+```
+
+The dependency will be automatically installed when you deploy the Kafka chart. You can customize its configuration through the respective section in your `values.yaml` file.
+
+---
+
 ## Add Helm Repository
 
 Before deploying the Kafka chart, add the Helm repository to your local setup:

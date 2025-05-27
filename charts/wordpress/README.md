@@ -13,6 +13,55 @@ This Helm chart deploys WordPress, the world's most popular content management s
 
 ---
 
+## Dependencies
+
+Before installing the chart, you need to download the required dependencies. Run the following command in the chart directory:
+
+```bash
+helm dependency build
+```
+
+This command will:
+1. Read the dependencies from `Chart.yaml`
+2. Download the required charts (MySQL and Service) from the specified repositories
+3. Store them in the `charts/` directory
+4. Create or update the `Chart.lock` file with the exact versions
+
+If you encounter any issues with the dependencies, you can try:
+```bash
+helm dependency update  # Updates dependencies to the latest versions
+```
+
+This chart requires the following dependencies to be installed:
+
+### MySQL
+- **Chart**: `mysql`
+- **Version**: `0.0.3`
+- **Repository**: `https://helm.zop.dev`
+- **Purpose**: Provides the primary database for WordPress content and configuration
+
+### Service
+- **Chart**: `service`
+- **Version**: `0.0.17`
+- **Repository**: `https://helm.zop.dev`
+- **Purpose**: Manages the WordPress application deployment and service configuration
+
+To install these dependencies automatically, ensure the following in your `values.yaml`:
+
+```yaml
+mysql:
+  enabled: true
+  # Additional MySQL configuration...
+
+service:
+  enabled: true
+  # Additional service configuration...
+```
+
+The dependencies will be automatically installed when you deploy the WordPress chart. You can customize their configuration through the respective sections in your `values.yaml` file.
+
+---
+
 ## Add Helm Repository
 
 Add the Helm repository by running:
@@ -123,13 +172,6 @@ service:
   maxMemory: "1500Mi"
   minReplicas: 1
   maxReplicas: 1
-
-  nginx:
-    annotations:
-      kubernetes.io/ingress.class: "nginx"
-      nginx.ingress.kubernetes.io/auth-realm: ''
-      nginx.ingress.kubernetes.io/auth-secret: ''
-      nginx.ingress.kubernetes.io/auth-type: ''
 
   env:
     WORDPRESS_DB_HOST: "$(DB_HOST):$(DB_PORT)"

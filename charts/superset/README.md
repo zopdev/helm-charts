@@ -27,6 +27,56 @@ For more details, see the [Helm Repository Documentation](https://helm.sh/docs/h
 
 ---
 
+## Dependencies
+
+Before installing the chart, you need to download the required dependencies. Run the following command in the chart directory:
+
+```bash
+helm dependency build
+```
+
+This command will:
+1. Read the dependencies from `Chart.yaml`
+2. Download the required charts (PostgreSQL and Redis) from the specified repositories
+3. Store them in the `charts/` directory
+4. Create or update the `Chart.lock` file with the exact versions
+
+If you encounter any issues with the dependencies, you can try:
+```bash
+helm dependency update  # Updates dependencies to the latest versions
+```
+
+This chart requires the following dependencies to be installed:
+
+### PostgreSQL
+- **Condition**: `postgres.enabled`
+- **Chart**: `postgres`
+- **Version**: `0.0.6`
+- **Repository**: `https://helm.zop.dev`
+- **Purpose**: Provides the primary database for Superset metadata storage
+
+### Redis
+- **Condition**: `redis.enabled`
+- **Chart**: `redis`
+- **Version**: `0.0.1`
+- **Repository**: `https://helm.zop.dev`
+- **Purpose**: Used for caching and as a message broker for Celery tasks
+
+To install these dependencies automatically, ensure the following in your `values.yaml`:
+
+```yaml
+postgres:
+  enabled: true
+  # Additional PostgreSQL configuration...
+
+redis:
+  enabled: true
+  # Additional Redis configuration...
+```
+
+The dependencies will be automatically installed when you deploy the Superset chart. You can customize their configuration through the respective sections in your `values.yaml` file.
+
+
 ## Install Helm Chart
 
 To deploy the Superset Helm chart, use the following command:
@@ -175,28 +225,6 @@ init:
     lastname: Admin
     email: admin@superset.com
     password: admin
-
-  initscript: |-
-    #!/bin/sh
-    set -eu
-    echo "Upgrading DB schema..."
-    superset db upgrade
-    echo "Initializing roles..."
-    superset init
-    {{ if .Values.init.createAdmin }}
-    echo "Creating admin user..."
-    superset fab create-admin \
-                    --username {{ .Values.init.adminUser.username }} \
-                    --firstname {{ .Values.init.adminUser.firstname }} \
-                    --lastname {{ .Values.init.adminUser.lastname }} \
-                    --email {{ .Values.init.adminUser.email }} \
-                    --password {{ .Values.init.adminUser.password }} \
-                    || true
-    {{- end }}
-    if [ -f "/app/configs/import_datasources.yaml" ]; then
-      echo "Importing database connections.... "
-      superset import_datasources -p /app/configs/import_datasources.yaml
-    fi
 
 postgres:
   enabled: true

@@ -81,21 +81,20 @@ You can override these values in your `values.yaml` file or pass them as flags w
 ### Example `values.yaml` File
 
 ```yaml
-mysqlRootPassword: my-secure-password
-updateStrategy:
-  type: RollingUpdate
+diskSize: "10Gi"
 
-diskSize: "20Gi"
-
-image: mysql:8.0
-
+# Resource configuration
 resources:
   requests:
-    cpu: "1"
-    memory: "512Mi"
+    cpu: "500m"
+    memory: "256M"
   limits:
-    cpu: "2"
-    memory: "2Gi"
+    cpu: "1500m"
+    memory: "1024M"
+
+version: "8.0"
+
+customMyCnf: ""
 ```
 
 To use this configuration, save it in a `values.yaml` file and pass it to the Helm install command:

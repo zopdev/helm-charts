@@ -140,35 +140,6 @@ imagePullSecrets:  []
 replicaCount: 3
 minAvailable: 1
 
-livenessProbe:
-  enabled: true
-  initialDelaySeconds: 30
-  periodSeconds: 10
-  timeoutSeconds: 5
-  failureThreshold: 6
-  successThreshold: 1
-
-readinessProbe:
-  enabled: true
-  initialDelaySeconds: 10
-  periodSeconds: 10
-  timeoutSeconds: 5
-  failureThreshold: 6
-  successThreshold: 1
-
-
-podSecurityContext:
-  fsGroup: 1000
-
-securityContext:
-  allowPrivilegeEscalation: false
-  readOnlyRootFilesystem: true
-  runAsUser: 1000
-  runAsGroup: 1000
-  capabilities:
-    drop:
-      - ALL
-
 resources:
   requests:
     cpu: "100m"
@@ -178,26 +149,6 @@ resources:
     memory: "1000Mi"
 
 diskSize : 1Gi
-
-## Zookeeper Configuration
-tickTime: 2000
-initLimit: 10
-syncLimit: 5
-maxClientCnxns: 60
-autopurge:
-  purgeInterval: 24
-  snapRetainCount: 3
-quorumListenOnAllIPs: true
-maxSessionTimeout: 40000
-adminEnableServer: true
-heapOpts: "-XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=50.0"
-log4jRootLogLevel: INFO
-
-port:
-  peers: 2888
-  leader: 3888
-  admin: 8080
-  client: 2181
 ```
 
 ---
