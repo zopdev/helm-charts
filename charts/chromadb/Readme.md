@@ -82,17 +82,17 @@ You can override these values in a `values.yaml` file or via the command line du
 ### Example `values.yaml` File
 
 ```yaml
-version: 0.6.3
+image: ghcr.io/chroma-core/chroma:latest
 
 resources:
   requests:
-    memory: "1Gi"
-    cpu: "100m"
-  limits:
     memory: "2Gi"
-    cpu: "1000m"
+    cpu: "200m"
+  limits:
+    memory: "4Gi"
+    cpu: "2"
 
-diskSize: "10Gi"
+diskSize: 20Gi
 ```
 
 To use this configuration, save it to a `values.yaml` file and apply it during installation:

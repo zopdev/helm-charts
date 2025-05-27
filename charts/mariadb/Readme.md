@@ -119,35 +119,48 @@ The table below outlines the essential global configuration options. For specifi
 ## Example `values.yaml`
 
 ```yaml
-version: 10.3.22-debian-10-r27
+image:
+  registry: docker.io
+  repository: bitnami/mariadb
+  tag: 10.3.22-debian-10-r27
+  pullPolicy: IfNotPresent
+
+rootUser:
+  password: "root"
 
 replication:
   enabled: true
+  user: replicator
+  password: "root"
 
 master:
   resources:
     requests:
       cpu: "500m"
-      memory: "256M"
+      memory: "256Mi"
     limits:
       cpu: "1500m"
       memory: "1Gi"
   persistence:
     size: 10Gi
+  service:
+    type: ClusterIP
+    port: 3306
 
 slave:
   replicas: 1
-
   resources:
     requests:
       cpu: "500m"
-      memory: "256M"
+      memory: "256Mi"
     limits:
       cpu: "1500m"
       memory: "1Gi"
-
   persistence:
     size: 10Gi
+  service:
+    type: ClusterIP
+    port: 3306
 ```
 
 ---

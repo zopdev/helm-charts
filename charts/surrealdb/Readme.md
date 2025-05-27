@@ -87,20 +87,24 @@ Override these values in a `values.yaml` file or via command-line arguments duri
 Below is an example configuration for custom installation:
 
 ```yaml
-# image version for surrealdb
-version: v2
+replicaCount: 2
 
-# Resource configuration
+image: surrealdb/surrealdb:latest
+
 resources:
   requests:
-    cpu: "100m"
-    memory: "256M"
+    cpu: "200m"
+    memory: "512M"
   limits:
-    cpu: "1000m"
-    memory: "1Gi"
+    cpu: "2"
+    memory: "2Gi"
 
-# disk size for surrealdb
-diskSize: "10Gi"
+diskSize: "20Gi"
+
+updateStrategy:
+  type: RollingUpdate
+
+port: 8080
 ```
 
 Use the custom configuration with the following command:

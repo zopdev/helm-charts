@@ -87,17 +87,25 @@ You can override these values in a `values.yaml` file or via the command line.
 ### Example `values.yaml` File
 
 ```yaml
-version: "9.8"
+image: "solr:8.4"
 
 resources:
   requests:
-    memory: "2500Mi"
-    cpu: "250m"
+    memory: "1Gi"
+    cpu: "200m"
   limits:
-    memory: "3000Mi"
-    cpu: "500m"
+    memory: "4Gi"
+    cpu: "2"
 
-diskSize: "10Gi"
+securityContext:
+  runAsUser: 1001
+  fsGroup: 1001
+
+tlsSecretName: "solr-tls-secret"
+host: "solr.example.com"
+tlsHost: "secure-solr.example.com"
+
+diskSize: "20Gi"
 ```
 
 Apply the configuration file during installation:
