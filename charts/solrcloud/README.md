@@ -97,10 +97,10 @@ resources:
     cpu: "1000m"
     memory: "1500Mi"
 
-diskSize: "20Gi"
+diskSize : "20Gi"
 
 solr-operator:
-  version: "v0.9.0"
+  version : "v0.9.0"
   resources:
     requests:
       cpu: "100m"

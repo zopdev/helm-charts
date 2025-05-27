@@ -134,8 +134,8 @@ image:
   registry: docker.io
   repository: confluentinc/cp-zookeeper
   tag: "7.8.0"
-  pullPolicy: 
-imagePullSecrets: []
+  pullPolicy:
+imagePullSecrets:  []
 
 replicaCount: 3
 minAvailable: 1
@@ -156,6 +156,7 @@ readinessProbe:
   failureThreshold: 6
   successThreshold: 1
 
+
 podSecurityContext:
   fsGroup: 1000
 
@@ -166,7 +167,7 @@ securityContext:
   runAsGroup: 1000
   capabilities:
     drop:
-    - ALL
+      - ALL
 
 resources:
   requests:
@@ -176,8 +177,9 @@ resources:
     cpu: "500m"
     memory: "1000Mi"
 
-diskSize: 1Gi
+diskSize : 1Gi
 
+## Zookeeper Configuration
 tickTime: 2000
 initLimit: 10
 syncLimit: 5

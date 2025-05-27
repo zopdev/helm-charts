@@ -104,13 +104,6 @@ The table below outlines the essential configuration options. For a complete lis
 
 ## Example `values.yaml`
 ```yaml
-global:
-  image:
-    repository: dgraph/dgraph
-    tag: v23.0.0
-  debug: false
-  serviceAccount: default
-
 zero:
   replicas: 3
   resources:

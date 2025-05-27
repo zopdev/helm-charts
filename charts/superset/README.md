@@ -123,9 +123,9 @@ The Superset Helm chart includes several configuration options to tailor the dep
 ```yaml
 service:
   nginx:
-    host: "superset.example.com"
-    tlshost: "superset.example.com"
-    tlsSecretname: "superset-tls"
+    host :
+    tlshost :
+    tlsSecretname :
 
 resources:
   requests:
@@ -135,38 +135,76 @@ resources:
     cpu: 500m
     memory: 500Mi
 
+# SuperSet Configs
 supersetNode:
   connections:
-    redis_host: "my-superset-redis-headless-service"
+    # Redis Configs
+    redis_host: "{{ .Release.Name }}-redis-headless-service"
     redis_port: "6379"
-    db_host: "my-superset-postgres"
+    redis_user: ""
+    redis_cache_db: "1"
+    redis_celery_db: "0"
+    redis_ssl:
+      enabled: false
+      ssl_cert_reqs: CERT_NONE
+
+    # Postgresql Configs 
+    db_host: "{{ .Release.Name }}-postgres"
     db_port: "5432"
-    db_user: "superset_user"
-    db_pass: "superset"
-    db_name: "superset"
+    db_user: superset_user
+    db_pass: superset
+    db_name: superset
+
+  # Feature flags configuration
+  featureFlags: {}
+
+  # Additional Superset configurations
+  config: {}
+
+supersetCeleryBeat:
+  enabled: false
+
+supersetCeleryFlower:
+  enabled: false
 
 init:
   createAdmin: true
   adminUser:
-    username: "admin"
-    firstname: "Superset"
-    lastname: "Admin"
-    email: "admin@example.com"
-    password: "secure-password"
+    username: admin
+    firstname: Superset
+    lastname: Admin
+    email: admin@superset.com
+    password: admin
 
-supersetCeleryBeat:
-  enabled: true
-
-supersetCeleryFlower:
-  enabled: true
+  initscript: |-
+    #!/bin/sh
+    set -eu
+    echo "Upgrading DB schema..."
+    superset db upgrade
+    echo "Initializing roles..."
+    superset init
+    {{ if .Values.init.createAdmin }}
+    echo "Creating admin user..."
+    superset fab create-admin \
+                    --username {{ .Values.init.adminUser.username }} \
+                    --firstname {{ .Values.init.adminUser.firstname }} \
+                    --lastname {{ .Values.init.adminUser.lastname }} \
+                    --email {{ .Values.init.adminUser.email }} \
+                    --password {{ .Values.init.adminUser.password }} \
+                    || true
+    {{- end }}
+    if [ -f "/app/configs/import_datasources.yaml" ]; then
+      echo "Importing database connections.... "
+      superset import_datasources -p /app/configs/import_datasources.yaml
+    fi
 
 postgres:
   enabled: true
   postgresRootPassword: "superset"
   services:
-    - name: "superset"
-      password: "superset"
-      database: "superset"
+    - name : superset
+      password : superset
+      database : superset
 
 redis:
   enabled: true

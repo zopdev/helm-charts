@@ -96,8 +96,6 @@ The chart includes several pre-configured Kafka settings:
 ### Example `values.yaml` File
 
 ```yaml
-image: danielqsj/kafka-exporter:v1.9.0
-
 version: "7.8.0"
 
 zookeeper:

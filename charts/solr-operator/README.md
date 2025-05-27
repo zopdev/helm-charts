@@ -88,7 +88,7 @@ The Solr Operator Helm chart includes several configuration options to tailor th
 ## Example `values.yaml`
 
 ```yaml
-version: "v0.9.0"
+version : "v0.9.0"
 
 zookeeper-operator:
   install: true
@@ -104,10 +104,10 @@ resources:
     memory: "256Mi"
 
 mTLS:
-  clientCertSecret: "solr-client-cert"
-  caCertSecret: "solr-ca-cert"
+  clientCertSecret: ""
+  caCertSecret: ""
   caCertSecretKey: ca-cert.pem
-  insecureSkipVerify: false
+  insecureSkipVerify: true
   watchForUpdates: true
 
 metrics:

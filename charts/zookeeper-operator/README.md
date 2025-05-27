@@ -143,20 +143,16 @@ The Zookeeper Operator deployment includes:
 After installing the Zookeeper Operator, you can create Zookeeper clusters using the custom resource. Here's an example:
 
 ```yaml
-apiVersion: zookeeper.zop.dev/v1
-kind: ZookeeperCluster
-metadata:
-  name: my-zookeeper
-spec:
-  replicas: 3
-  image: confluentinc/cp-zookeeper:7.8.0
-  resources:
-    requests:
-      cpu: "100m"
-      memory: "500Mi"
-    limits:
-      cpu: "500m"
-      memory: "1000Mi"
+crd:
+  create: true
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "200m"
+    memory: "256Mi"
 ```
 
 The operator will automatically:

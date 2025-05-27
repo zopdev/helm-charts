@@ -85,6 +85,7 @@ You can override these values in a `values.yaml` file or via the command line du
 
 ```yaml
 image: "scylladb/scylla:latest"
+pullPolicy: IfNotPresent
 
 resources:
   requests:
@@ -100,6 +101,8 @@ config:
   cluster_name: "MyCluster"
 
 scylladbRootPassword: "my-secure-password"
+
+services:
 ```
 
 ---

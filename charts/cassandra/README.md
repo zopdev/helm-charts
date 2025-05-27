@@ -81,8 +81,6 @@ You can override these values in a `values.yaml` file or via the command line du
 ### Example `values.yaml` File
 
 ```yaml
-image: bitnami/cassandra:5.0.2-debian-12-r3
-  
 resources:
   requests:
     memory: "2000Mi"

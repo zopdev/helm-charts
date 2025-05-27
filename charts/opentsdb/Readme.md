@@ -86,26 +86,21 @@ You can override these values in a `values.yaml` file or via the command line du
 ### Example `values.yaml` File
 
 ```yaml
-replicaCount: 2
+# values.yaml for OpenTSDB Helm chart
+version: 2.2
 
-image:
-  opentsdb: petergrace/opentsdb-docker:latest
-  pullPolicy: Always
-
+# Resource configuration
 resources:
   requests:
-    cpu: "500m"
-    memory: "512M"
+    cpu: "100m"
+    memory: "256M"
   limits:
-    cpu: "2000m"
-    memory: "2Gi"
+    cpu: "1000m"
+    memory: "1Gi"
 
-diskSize: "20Gi"
+diskSize: "10Gi"
 
-updateStrategy:
-  type: RollingUpdate
-
-opentsdb_port: 4242
+# Update strategy for the StatefulSet
 ```
 
 Apply the configuration file during installation:

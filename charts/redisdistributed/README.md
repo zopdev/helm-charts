@@ -117,11 +117,7 @@ The table below outlines the essential global configuration options. For specifi
 ## Example `values.yaml`
 
 ```yaml
-image:
-  registry: docker.io
-  repository: redis
-  tag: 6.2.13
-  pullPolicy: IfNotPresent
+version: "6.2.13"
 
 master:
   resources:
@@ -131,15 +127,13 @@ master:
     limits:
       cpu: "500m"
       memory: "1000Mi"
+
   persistence:
     size: 10Gi
-  service:
-    type: ClusterIP
-    port: 6379
 
 slave:
-  enable: true
-  count: 2
+  enable : true
+  count: 1
   resources:
     requests:
       cpu: "100m"
@@ -147,11 +141,9 @@ slave:
     limits:
       cpu: "500m"
       memory: "1000Mi"
+
   persistence:
     size: 10Gi
-  service:
-    type: ClusterIP
-    port: 6379
 ```
 
 ---

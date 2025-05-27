@@ -82,17 +82,17 @@ You can override these values in a `values.yaml` file or via the command line du
 ### Example `values.yaml` File
 
 ```yaml
-image: cockroachdb/cockroach:v25.1.2
-
 resources:
-  requests:
-    memory: "512Mi"
-    cpu: "100m"
   limits:
-    memory: "512Mi"
-    cpu: "100m"
+    cpu: 100m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 512Mi
 
-diskSize: 10Gi
+diskSize : 10Gi
+
+version: v25.1.2
 ```
 
 To use this configuration, save it to a `values.yaml` file and apply it during installation:
