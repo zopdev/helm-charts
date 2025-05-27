@@ -4,7 +4,7 @@ metadata:
   annotations:
     configmap.reloader.stakater.com/reload: "{{ .Values.name }},{{ .Values.name }}-env-configmap"
     {{- if .Values.appSecrets }}
-    secret.reloader.stakater.com/reload: "{{ .Values.name }}-secrets-application"
+    secret.reloader.stakater.com/reload: "{{ .Values.name }}-application-secrets"
     {{- end }}
     {{- if .Values.extraAnnotations }}
     {{- range $key, $value := .Values.extraAnnotations }}
