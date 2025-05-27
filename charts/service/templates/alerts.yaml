@@ -23,7 +23,7 @@ spec:
             service: {{ .Values.name }}
             namespace: {{ .Release.Namespace }}
         # Alert if the pod restarts.
-        {{- if ne .Values.alerts.standard.infra.podRestartThreshold -1 }}
+        {{- if ne (int .Values.alerts.standard.infra.podRestartThreshold) -1 }}
         - alert: {{ snakecase .Values.name }}_pod_restarts
           annotations:
             description: "{{ .Values.name }} replicas has been restarting in {{ .Release.Namespace }} namespace."
@@ -35,7 +35,7 @@ spec:
             namespace: {{ .Release.Namespace }}
         {{- end}}
         # Alert if replicas of service are in unavailable state.
-        {{- if ne .Values.alerts.standard.infra.unavailableReplicasThreshold -1 }}
+        {{- if ne (int .Values.alerts.standard.infra.unavailableReplicasThreshold) -1 }}
         - alert: {{ snakecase .Values.name }}_unavailable_replicas
           annotations:
             description: "{{ .Values.name }} replicas has been unavailable in {{ .Release.Namespace }} namespace."
@@ -69,7 +69,7 @@ spec:
             namespace: {{ .Release.Namespace }}
         {{- end}}
         # Alert if memory utilization is beyond threshold for service in any pod
-        {{- if ne .Values.alerts.standard.infra.serviceMemoryUtilizationThreshold -1 }}
+        {{- if ne (int .Values.alerts.standard.infra.serviceMemoryUtilizationThreshold) -1 }}
         - alert: {{ snakecase .Values.name }}_service_memory_utilization_above_{{ .Values.alerts.standard.infra.serviceMemoryUtilizationThreshold}}
           annotations:
             description: "Memory Utilisation of {{ .Values.name }} exceeded {{ .Values.alerts.standard.infra.serviceMemoryUtilizationThreshold}} percent of the resource limits"
@@ -81,7 +81,7 @@ spec:
             namespace: {{ .Release.Namespace }}
         {{- end}}
         # Alert if CPU utilization is beyond threshold for service in any pod
-        {{- if ne .Values.alerts.standard.infra.serviceCpuUtilizationThreshold -1 }}
+        {{- if ne (int .Values.alerts.standard.infra.serviceCpuUtilizationThreshold) -1 }}
         - alert: {{ snakecase .Values.name }}_service_cpu_utilization_above_{{ .Values.alerts.standard.infra.serviceCpuUtilizationThreshold }}
           annotations:
             description: "CPU Utilisation of {{ .Values.name }} exceeded {{ .Values.alerts.standard.infra.serviceCpuUtilizationThreshold }} percent of the resource limits"
