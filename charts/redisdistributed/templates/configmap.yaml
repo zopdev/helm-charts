@@ -1,16 +1,28 @@
+# Specifies this object is a ConfigMap (used to store configuration data)
 apiVersion: v1
 kind: ConfigMap
+
+# Metadata for identifying the ConfigMap in Kubernetes
 metadata:
+  # Generates the ConfigMap name dynamically based on the Helm release name
   name: "{{ .Release.Name }}-redis-configmap"
+  # Sets the namespace for the ConfigMap using the Helm release namespace
   namespace: {{ .Release.Namespace | quote }}
   labels:
+    # Label to indicate this ConfigMap is for the master component of Redis
     app.kubernetes.io/component: master
+
+# Configuration data for Redis master and replica
 data:
   master.conf: |
+    # Directory where Redis will store data files
     dir /data
+    # Rename commands to disable flush operations for safety
     rename-command FLUSHDB ""
     rename-command FLUSHALL ""
   
   replica.conf: |
+    # Directory where Redis will store data files for replica
     dir /data
+    # Ensure the replica is read-only to prevent data modification
     slave-read-only yes
