@@ -1,0 +1,92 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+  generation: 1
+  labels:
+    app: kube-prometheus-stack
+    heritage: Helm
+    release: prometheus
+spec:
+  groups:
+    - name: {{ .Release.Namespace }}.{{ .Release.Name }}-solr.rules
+      rules:
+        - alert: SolrDown
+          expr: up{namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-solr-.*"} == 0
+          for: 0m
+          labels:
+            severity: critical
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'Solr instance {{ .Release.Name }} is down'
+            description: 'Solr instance {{ .Release.Name }} is down'
+
+        - alert: SolrHighHeapMemoryUsage
+          expr: |
+            solr_metrics_jvm_memory_heap_bytes{item="used", namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-solr-.*"}
+            / solr_metrics_jvm_memory_heap_bytes{item="max", namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-solr-.*"} * 100 > 80
+          for: 2m
+          labels:
+            severity: warning
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'Solr instance {{ .Release.Name }} high heap memory usage'
+            description: 'More than 80% of Solr heap memory is in use for {{ .Release.Name }}'
+
+        - alert: SolrHighCpuUsage
+          expr: |
+            solr_metrics_jvm_os_cpu_load{item="processCpuLoad", namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-solr-.*"} > 0.8
+          for: 2m
+          labels:
+            severity: warning
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'Solr instance {{ .Release.Name }} high CPU usage'
+            description: 'Solr instance {{ .Release.Name }} CPU load is > 80%'
+
+        - alert: SolrLowDiskSpace
+          expr: |
+            solr_metrics_node_core_root_fs_bytes{item="usableSpace", namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-solr-.*"}
+            / solr_metrics_node_core_root_fs_bytes{item="totalSpace", namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-solr-.*"} * 100 < 15
+          for: 2m
+          labels:
+            severity: warning
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'Solr instance {{ .Release.Name }} low disk space'
+            description: 'Solr instance {{ .Release.Name }} has less than 15% free disk space'
+
+        - alert: SolrServerErrors
+          expr: |
+            increase(solr_metrics_node_server_errors_total{namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-solr-.*"}[1m]) > 0
+          for: 2m
+          labels:
+            severity: warning
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'Solr instance {{ .Release.Name }} server errors'
+            description: 'Solr instance {{ .Release.Name }} is experiencing server errors'
+
+        - alert: SolrClientErrors
+          expr: |
+            increase(solr_metrics_node_client_errors_total{namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-solr-.*"}[1m]) > 10
+          for: 2m
+          labels:
+            severity: warning
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'Solr instance {{ .Release.Name }} client errors'
+            description: 'Solr instance {{ .Release.Name }} is experiencing > 10 client errors per minute'

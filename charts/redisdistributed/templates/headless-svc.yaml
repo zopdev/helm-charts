@@ -4,7 +4,7 @@ metadata:
   name: "{{ .Release.Name }}-redis-headless-service"
   namespace: {{ .Release.Namespace | quote }}
   labels:
-    app: "{{ .Release.Name }}-redisdistributed"
+    app: "{{ .Release.Name }}-redisdistributed-master"
     app.kubernetes.io/component: master
 spec:
   type: ClusterIP
@@ -17,4 +17,4 @@ spec:
       port: 2121
       targetPort: 2121
   selector:
-    app: "{{ .Release.Name }}-redisdistributed"
+    app: "{{ .Release.Name }}-redisdistributed-master"

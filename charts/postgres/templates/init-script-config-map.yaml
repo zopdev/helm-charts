@@ -52,7 +52,7 @@ data:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: postgres-{{ $.Release.Name }}-{{ $service.name }}-init
+  name: postgres-{{ $.Release.Name }}-{{ $service.name }}-init-job
   namespace: {{ $.Release.Namespace }}
 spec:
   containers:

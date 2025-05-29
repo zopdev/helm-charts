@@ -1,0 +1,62 @@
+queries:
+  "<=0.0.5":
+    solr_up:
+      query: >-
+        up{job='<job-name>', namespace='<namespace>', pod=~'<service-name>.*' }
+
+    cpu_load:
+      query: >-
+        solr_metrics_jvm_os_cpu_load{item="processCpuLoad", namespace='<application-name>', pod=~'<service-name>.*'}
+
+    open_file_descriptors:
+      query: >-
+        solr_metrics_jvm_os_file_descriptors{item="openFileDescriptorCount", namespace='<application-name>', pod=~'<service-name>.*'}
+
+    http_requests_per_second:
+      query: >-
+        sum by (pod) (
+          rate(solr_metrics_node_requests_total{namespace='<application-name>', pod=~'<service-name>.*'}[1m])
+        )
+
+    http_errors_per_second:
+      query: >-
+        sum by (pod) (
+          rate(solr_metrics_node_errors_total{namespace='<application-name>', pod=~'<service-name>.*'}[1m])
+        )
+
+    gc_time_seconds:
+      query: >-
+        rate(solr_metrics_jvm_gc_seconds_total{namespace='<application-name>', pod=~'<service-name>.*'}[1m])
+
+    gc_count:
+      query: >-
+        rate(solr_metrics_jvm_gc_total{namespace='<application-name>', pod=~'<service-name>.*'}[1m])
+
+    thread_count:
+      query: >-
+        solr_metrics_jvm_threads{item="count", namespace='<application-name>', pod=~'<service-name>.*'}
+
+    response_codes:
+      query: >-
+        sum by (pod, status) (
+          rate(solr_metrics_jetty_response_total{namespace='<application-name>', pod=~'<service-name>.*'}[1m])
+        )
+
+    request_methods:
+      query: >-
+        sum by (pod, method) (
+          rate(solr_metrics_jetty_requests_total{namespace='<application-name>', pod=~'<service-name>.*'}[1m])
+        )
+
+    request_handler_time:
+      query: >-
+        rate(solr_metrics_node_time_seconds_total{namespace='<application-name>', pod=~'<service-name>.*'}[1m])
+
+    loaded_cores:
+      query: >-
+        solr_metrics_node_cores{item="loaded", namespace='<application-name>', pod=~'<service-name>.*'}
+
+    memory_usage:
+      query: >-
+        solr_metrics_jvm_memory_bytes{item="used", namespace='<application-name>', pod=~'<service-name>.*'}
+      unit: "bytes"

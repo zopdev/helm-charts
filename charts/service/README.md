@@ -1,6 +1,6 @@
-# Service 
+# Service Helm Chart
 
-Installs the service, a collection of kubernetes manifest for Deployment, Services, HPA, PDB, ServiceMonitor, Alerts, etc.
+This Helm chart deploys a generic service with configurable components for Kubernetes. It provides a flexible template for deploying applications with features like health checks, resource management, monitoring, and alerting.
 
 ## Prerequisites
 
@@ -36,78 +36,279 @@ This removes all the Kubernetes components associated with the chart and deletes
 
 _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command documentation._
 
-# Configuration
+## Configuration
 
-| Inputs                             | Type    | Description                                                                                                         | Default                              |
-|------------------------------------|---------|---------------------------------------------------------------------------------------------------------------------|--------------------------------------|
-| appSecrets                        | boolean | Boolean whether to mount csi secrets on the container                                                               | `false`                              |
-| cliService                         | boolean | Whether application is a CLI service                                                                                | `false`                              |
-| env                                | map     | Environment Variables can be provided to the container                                                              | `eg APP_NAME: hello-api`             |
-| envFrom.configmaps                 | list    | List of Configmaps from which env should be mounted on to containers                                                | `[]`                                 |
-| envFrom.secrets                    | list    | List of secrets from which env should be mounted on to containers                                                   | `[]`                                 |
-| heartbeatURL                       | string  | Heartbeat URL of the service                                                                                        | `""`                                 |
-| httpPort                           | number  | HTTP Port on which container runs its services                                                                      | `8000`                               |
-| image                              | string  | Docker container image with tag                                                                                     | `zopdev/sample-go-api:latest` |
-| imagePullSecrets                   | list    | configuration to specify secrets that contain credentials for pulling container images from private registries      | `[]`                                 |
-| livenessProbe.enable               | boolean | Whether liveness Probe should be configured on the container or not                                                 | `false`                              |
-| livenessProbe.initialDelaySeconds  | number  | Specifies how long Kubernetes should wait after the container starts before it begins liveness probes (in seconds)  | `3`                                  |
-| livenessProbe.timeoutSeconds       | number  | Specifies the number of seconds after which the probe times out                                                     | `3`                                  |
-| livenessProbe.periodSeconds        | number  | Specifies how often (in seconds) to perform the liveness probe                                                      | `10`                                 |
-| livenessProbe.failureThreshold     | number  | Specifies the number of consecutive failures needed to mark the probe as failed                                     | `3`                                  |
-| maxCPU                             | string  | Specify the maximum amount of CPU that the container is limited to use                                              | `"500m"`                             |
-| maxMemory                          | string  | Specify the maximum amount of Memory that the container is limited to use                                           | `"512Mi"`                            |
-| maxReplicas                        | number  | Specify maximum number of pod replicas that the autoscaler can scale up to in response to increased load            | `4`                                  |
-| metricsPort                        | number  | Metrics port for scraping the metrics from container                                                                | `2121`                               |
-| metricsScrapeInterval              | string  | Time interval that metrics will be scraped                                                                          | `"30s"`                              |
-| minAvailable                       | number  | Minimum number of pods that must be available during voluntary disruptions                                          | `1`                                  |
-| minCPU                             | string  | Specify the minimum amount of CPU that the container requires                                                       | `"250m"`                             |
-| minMemory                          | string  | Specify the minimum amount of Memory that the container requires                                                    | `"128Mi"`                            |
-| minReplicas                        | number  | Specify the baseline number of identical pods allowed to be running                                                 | `2`                                  |
-| name                               | string  | Name of the service                                                                                                 | `"hello-api"`                        |
-| ports                              | map     | Provide the ports on which container runs its services                                                              | `null`                               |
-| readinessProbe.enable              | boolean | Whether Readiness Probe should be configured on the container or not                                                | `false`                              |
-| readinessProbe.initialDelaySeconds | number  | Specifies how long Kubernetes should wait after the container starts before it begins readiness probes (in seconds) | `3`                                  |
-| readinessProbe.timeoutSeconds      | number  | Specifies the number of seconds after which the probe times out                                                     | `3`                                  |
-| readinessProbe.periodSeconds       | number  | Specifies how often (in seconds) to perform the readiness probe                                                     | `10`                                 |
-| readinessProbe.failureThreshold    | number  | Specifies the number of consecutive failures needed to mark the probe as failed                                     | `3`                                  |
-| replicaCount                       | number  | Number of replicas to run                                                                                           | `2`                                  |
-| volumeMounts.configmaps            | list    | List of Configmaps with name and mount-path to be mounted into the container to inject configuration data           | `[]`                                 |
-| volumeMounts.pvc                   | list    | List of Persistent Volume Claims with name and mount-path to be mounted into the container for bounding             | `[]`                                 |
-| volumeMounts.secrets               | list    | List of Secrets with name and mount-path to be mounted into the container to inject sensitive information           | `[]`                                 |
+### Basic Configuration
+
+| Parameter | Type | Description | Default |
+|-----------|------|-------------|---------|
+| `name` | string | Name of the service | `"hello-api"` |
+| `replicaCount` | integer | Number of replicas to run | `2` |
+| `image` | string | Docker container image with tag | `"zopdev/sample-go-api:latest"` |
+| `httpPort` | integer | HTTP Port on which container runs its services | `8000` |
+| `metricsPort` | integer | Metrics port for scraping the metrics from container | `2121` |
+| `metricsScrapeInterval` | string | Time interval that metrics will be scraped | `"30s"` |
+
+### Resource Configuration
+
+| Parameter | Type | Description | Default |
+|-----------|------|-------------|---------|
+| `minCPU` | string | Minimum CPU resources required | `"100m"` |
+| `minMemory` | string | Minimum memory resources required | `"128M"` |
+| `maxCPU` | string | Maximum CPU resources allowed | `"500m"` |
+| `maxMemory` | string | Maximum memory resources allowed | `"512M"` |
+| `minReplicas` | integer | Minimum number of replicas | `2` |
+| `maxReplicas` | integer | Maximum number of replicas | `4` |
+| `minAvailable` | integer | Minimum number of pods that must be available during voluntary disruptions | `1` |
+
+### Health Checks
+
+| Parameter | Type | Description | Default |
+|-----------|------|-------------|---------|
+| `livenessProbe.enable` | boolean | Whether to enable liveness probe | `false` |
+| `livenessProbe.initialDelaySeconds` | integer | Initial delay for liveness probe | `3` |
+| `livenessProbe.timeoutSeconds` | integer | Timeout for liveness probe | `3` |
+| `livenessProbe.periodSeconds` | integer | Period for liveness probe | `10` |
+| `livenessProbe.failureThreshold` | integer | Failure threshold for liveness probe | `3` |
+| `readinessProbe.enable` | boolean | Whether to enable readiness probe | `false` |
+| `readinessProbe.initialDelaySeconds` | integer | Initial delay for readiness probe | `3` |
+| `readinessProbe.timeoutSeconds` | integer | Timeout for readiness probe | `3` |
+| `readinessProbe.periodSeconds` | integer | Period for readiness probe | `10` |
+| `readinessProbe.failureThreshold` | integer | Failure threshold for readiness probe | `3` |
+
+### Environment Configuration
+
+| Parameter | Type | Description | Default |
+|-----------|------|-------------|---------|
+| `env` | map | Environment variables for the container | `{}` |
+| `envList` | list | Environment variables as a list | `[]` |
+| `envFrom.configmaps` | list | List of ConfigMaps to mount as environment variables | `[]` |
+| `envFrom.secrets` | list | List of Secrets to mount as environment variables | `[]` |
+
+### Volume Configuration
+
+| Parameter | Type | Description | Default |
+|-----------|------|-------------|---------|
+| `volumeMounts.emptyDir` | list | List of emptyDir volumes to mount | `[]` |
+| `volumeMounts.configmaps` | list | List of ConfigMaps to mount | `[]` |
+| `volumeMounts.secrets` | list | List of Secrets to mount | `[]` |
+| `volumeMounts.pvc` | list | List of PVCs to mount | `[]` |
+
+### Alerting Configuration
+
+| Parameter | Type | Description | Default |
+|-----------|------|-------------|---------|
+| `alerts.standard.infra.unavailableReplicasThreshold` | integer | Alert if available replicas is less than desired | `0` |
+| `alerts.standard.infra.podRestartThreshold` | integer | Alert if pod restarts exceed threshold | `0` |
+| `alerts.standard.infra.hpaNearingMaxPodThreshold` | integer | Alert if replica count exceeds threshold percentage | `80` |
+| `alerts.standard.infra.serviceMemoryUtilizationThreshold` | integer | Alert if memory utilization exceeds threshold | `90` |
+| `alerts.standard.infra.serviceCpuUtilizationThreshold` | integer | Alert if CPU utilization exceeds threshold | `90` |
+
+### Custom Alerts
+
+| Parameter | Type | Description | Default |
+|-----------|------|-------------|---------|
+| `alerts.custom[].name` | string | Name of the custom alert | `""` |
+| `alerts.custom[].description` | string | Description of the alert | `""` |
+| `alerts.custom[].alertRule` | string | Metric name exposed by /metric endpoint | `""` |
+| `alerts.custom[].sumByLabel` | string | Metric events key | `""` |
+| `alerts.custom[].percentile` | number | Percentile for histogram queries | `-1.0` |
+| `alerts.custom[].labelValue` | string | Metric event name | `""` |
+| `alerts.custom[].queryOperator` | string | Query operator for comparison | `">"` |
+| `alerts.custom[].timeWindow` | string | Time window for the alert | `"5m"` |
+| `alerts.custom[].threshold` | number | Threshold value for the alert | `0` |
+
+## Example values.yaml
+
+```yaml
+# Name of the service
+name: hello-api
+
+# Number of replicas to run
+replicaCount: 2
+
+# Docker container image with tag
+image: "zopdev/sample-go-api:latest"
+
+extraAnnotations:
+
+Containers:
+  privileged: false
+
+imagePullSecrets:
+# - gcr-secrets
+# - acr-secrets
+# - ecr-secrets
+
+# Port on which container runs its services
+httpPort: 8000
+metricsPort: 2121
+
+ports: # Provide the ports on which container runs its services
+# grpc: 9100
+
+nginx:
+  host:
+  annotations:
+  tlsHost:
+  tlsSecretName:
+
+metricsScrapeInterval: 30s
+
+envFrom:
+  secrets: [] #List of secrets
+  configmaps: [] #List of Configmaps
+
+# Resource allocations
+minCPU: "100m"
+minMemory: "128M"
+maxCPU: "500m"
+maxMemory: "512M"
+minReplicas: 2
+maxReplicas: 4
+minAvailable: 1
+
+# Whether application is a CLI service
+cliService: false
+
+# Heartbeat URL
+heartbeatURL: ""
+
+readinessProbe:
+  enable: false
+#  initialDelaySeconds: 3
+#  timeoutSeconds: 3
+#  periodSeconds: 10
+#  failureThreshold: 3
+
+livenessProbe:
+  enable: false
+#  initialDelaySeconds: 3
+#  timeoutSeconds: 3
+#  periodSeconds: 10
+#  failureThreshold: 3
+
+# All environment variables can be passed as a map
+env:
+# APP_NAME: hello-api
+
+# Environment variables as a list (new format)
+envList:
+# - name: APP_NAME
+#   value: hello-api
+# - name: DB_HOST
+#   value: localhost
 
 
-### ALERTS
-##### Note:
-1. The thresholds which has default values as `-1`, the alerts associated to that thresholds will not be created unless the thresholds are modified to a value greater than  `-1`.
-2. Alerts can be disabled by modifying the threshold value of respective alert to `-1`.
+appSecrets: false
 
+command :
 
-| Inputs                                                                    | Type             | <div style="width:400px">Description</div>                                                                                                | Default      |
-|---------------------------------------------------------------------------|------------------|-------------------------------------------------------------------------------------------------------------------------------------------|--------------|
-| alerts.custom                                                             | list             | For creating the custom alerts you can refer the below table values. It takes the list of values as inputs                                | `[]`         |
-| alerts.standard.infra.healthCheckFailureThreshold                      | optional(number) | Alert if  application health-check failures goes beyond 50 in a 5-minute window                                                           | `50`         |
-| alerts.standard.infra.healthCheckFailureTimeWindow                    | optional(string) | Time window for health check failure                                                                                                      | `"5m"`       |
-| alerts.standard.infra.hpaNearingMaxPodThreshold                       | optional(number) | Alert if replica count crosses the threshold percentage of max pod count                                                                  | `80`         |
-| alerts.standard.infra.podRestartThreshold                               | optional(number) | Alert if the pod restarts goes beyond threshold over a 5-minute window                                                                    | `0`          |
-| alerts.standard.infra.podRestartTimeWindow                             | optional(string) | Time window for pod restart                                                                                                               | `"5m"`       |
-| alerts.standard.infra.serviceMemoryUtilizationThreshold                | optional(number) | Alert if service memory utilization exceeds threshold                                                                                     | `90`         |
-| alerts.standard.infra.serviceCpuUtilizationThreshold                   | optional(number) | Alert if service cpu utilization exceeds threshold                                                                                        | `90`         |
-| alerts.standard.infra.serviceCpuUtilizationTimeWindow                 | optional(string) | Time window for service cpu utilization                                                                                                   | `"5m"`       |
-| alerts.standard.infra.unavailableReplicasThreshold                      | optional(number) | Alert if the available replicas is lesser than number of desired replicas                                                                 | `0`          |
+volumeMounts:
+  emptyDir:
+  #    - name: zopdev-emptydir
+  configmaps:
+  #    - name: zopdev-configmap
+  #      mountPath: /etc/env
+  #      configName:
+  #      readOnly: true
+  secrets:
+  #    - name: zopdev-secret
+  #      mountPath: /etc/secret
+  #      readOnly: true
+  #      secretName: 
+  pvc:
+#    - name: zopdev-volume
+#      mountPath: /etc/data
+#      pvcName: zopdev-pvc
 
-#### `custom-alerts`
+alerts:
+  standard:
+    infra:
+      unavailableReplicasThreshold: 0                   # Alert if the available replicas is lesser than number of desired replicas
+      podRestartThreshold: 0                            # Alert if the pod restarts goes beyond threshold over a 5-minute window.
+      podRestartTimeWindow: "5m"                        # Time window  ,default "5m"
+      hpaNearingMaxPodThreshold: 80                     # Alert if replica count crosses the threshold percentage of max pod count
+      serviceMemoryUtilizationThreshold: 90             # Alert if service memory exceeds threshold
+      serviceCpuUtilizationThreshold: 90                # Alert if service cpu exceeds threshold
+      serviceCpuUtilizationTimeWindow: "5m"             # Time window for service cpu utilization
+      healthCheckFailureThreshold: 50                   # Alert if  application health-check failures goes beyond 50 in a 5-minute window.
+      healthCheckFailureTimeWindow: "5m"                # Time window  ,default "5m"
+  custom:
+  # - name: "Custom alert if user_created events goes below threshold for 5 min"
+  #   description: "Custom alert if user_created events goes below threshold for 5 min"
+  #   alertRule: "user_post_get_counter" # Metric Name exposed by /metric endpoint
+  #   sumByLabel: "events" # Metric events key; can be empty string
+  #   percentile: -1.0 #Percentile is useful for histogram queries
+  #   labelValue: "user_created" # Metric Event Name; can be empty string
+  #   queryOperator: <= # Query Operator, by default its `>`
+  #   timeWindow: "5m"
+  #   threshold: 1
+  #   labels:
+  #     severity: critical
 
-| Inputs          | Type             | Description                                                                                     | Default |
-|-----------------|------------------|-------------------------------------------------------------------------------------------------|---------|
-| alertRule      | optional(string) | Metric Name exposed by /metric endpoint (eg. "user_post_get_counter")                           | nil     |
-| description     | optional(string) | Description of custom alert (eg. "alert if user_created events goes below threshold for 5 min") | `""`    |
-| labelValue     | optional(string) | Metric Event Name (eg. "user_created")                                                          | `""`    |
-| labels.severity | optional(string) | Severity for the alert (eg. "critical" or "warning")                                            | `""`    |
-| name            | string           | Name of the alert (eg. "custom alert if user_created events goes below threshold for 5 min")    | `""`    |
-| percentile      | optional(number) | Percentile is useful for histogram queries (eg. 0.99 percentile)                                | `0.0`   |
-| queryOperator  | optional(string) | Query Operator to compare the thresholds values                                                 | `>`     |
-| sumByLabel    | optional(string) | Metric events key (eg. "events")                                                                | `""`    |
-| timeWindow     | optional(string) | Time window for the custom alerts                                                               | `""`    |
-| threshold       | optional(number) | Threshold value for custom alerts                                                               | `""`    |
+  # initContainer can be used to run database migration or other types of initialization operation before deployment
+  #initContainer:
+  #  image:
+  #  args: ["gofr migrate -method=UP -database=gorm"]
+  #  env:
+  #    cloud: "AWS"
+  #  secrets:
+  #   DB_PASSWORD: zs-test-postgresqldb-db-secret      # Secrets will be in the format env_variable: AWS_Secret_Name
 
+# This section deals with creating custom dashboards for grafana
+grafanaDashboard:
+#  sample format for using json model
+#  custom_dashboard.json: 
+#  {"annotations":{"list":[{"builtIn":1,"datasource":"-- Grafana --","enable":true,"hide":true,"iconColor":"rgba(0, 211, 255, 1)","name":"Annotations & Alerts","target":{"limit":100,"matchAny":false,"tags":[],"type":"dashboard"},"type":"dashboard"}]},"editable":true,"gnetId":null,"graphTooltip":0,"id":27,"links":[],"panels":[],"schemaVersion":30,"style":"dark","tags":[],"templating":{"list":[]},"time":{"from":"now-6h","to":"now"},"timepicker":{},"timezone":"","title":"Custom dashboard","version":1} 
+
+datastores:
+  mysql:
+  postgres:
+  redis:
+  solr:
+  surrealdb:
+  chromadb:
+  mariadb:
+  cockroachdb:
+  cassandra:
+  redisdistributed:
+  scylladb:
+  kafka:
+  solrcloud:
+```
+
+## Features
+
+- Configurable resource limits and requests
+- Health monitoring with liveness and readiness probes
+- Environment variable management
+- Volume mounting support
+- Prometheus metrics integration
+- Custom alerting rules
+- Horizontal Pod Autoscaling
+- Pod Disruption Budget
+- Service monitoring
+- Custom Grafana dashboards support
+
+## Architecture
+
+The service deployment includes:
+- Application pods with configurable replicas
+- Service for network access
+- Horizontal Pod Autoscaler
+- Pod Disruption Budget
+- ServiceMonitor for Prometheus
+- ConfigMaps and Secrets management
+- Volume management
+- Health check endpoints
+- Metrics endpoints
+
+## Contributing
+
+We welcome contributions to improve this Helm chart. Please refer to the [CONTRIBUTING.md](../../CONTRIBUTING.md) file for contribution guidelines.
+
+## License
+
+This project is licensed under the [LICENSE](../../LICENSE). Please review it for terms of use.
 

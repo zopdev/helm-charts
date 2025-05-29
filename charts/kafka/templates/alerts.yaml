@@ -1,0 +1,121 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+  generation: 1
+  labels:
+    app: kube-prometheus-stack
+    heritage: Helm
+    release: prometheus
+spec:
+  groups:
+    - name: {{ .Release.Namespace }}.{{ .Release.Name }}-kafka.rules
+      rules:
+        - alert: KafkaDown
+          expr: kafka_exporter_build_info{namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-kafka-.*"} == 0
+          for: 0m
+          labels:
+            severity: critical
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'Kafka cluster {{ .Release.Name }} is down'
+            description: 'Kafka exporter for {{ .Release.Name }} is not reporting metrics'
+
+        - alert: KafkaBrokerDown
+          expr: sum(kafka_brokers{namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-kafka-.*"}) < 3
+          for: 1m
+          labels:
+            severity: critical
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'Kafka broker(s) in {{ .Release.Name }} are down'
+            description: 'One or more Kafka brokers in the {{ .Release.Name }} cluster are down'
+
+        - alert: KafkaUnderReplicatedPartitions
+          expr: sum(kafka_topic_partition_under_replicated_partition{namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-kafka-.*"}) > 0
+          for: 5m
+          labels:
+            severity: warning
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'Kafka cluster {{ .Release.Name }} has under-replicated partitions'
+            description: 'Kafka cluster {{ .Release.Name }} has under-replicated partitions'
+
+        - alert: KafkaOfflinePartitions
+          expr: sum(kafka_topic_partition_leader{namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-kafka-.*"} < 0) > 0
+          for: 0m
+          labels:
+            severity: critical
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'Kafka cluster {{ .Release.Name }} has offline partitions'
+            description: 'Kafka cluster {{ .Release.Name }} has offline partitions'
+
+        - alert: KafkaConsumerGroupLag
+          expr: sum by (consumergroup, topic) (kafka_topic_partition_current_offset{namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-kafka-.*"} - on(topic, partition) group_right(consumergroup) kafka_consumergroup_current_offset{namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-kafka-.*"}) > 10000
+          for: 10m
+          labels:
+            severity: warning
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'Kafka consumer group lag is high for {{ .Release.Name }}'
+            description: 'Kafka consumer group for {{ .Release.Name }} is experiencing high lag'
+
+        - alert: KafkaPreferredReplicaImbalance
+          expr: sum(kafka_topic_partition_leader_is_preferred{namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-kafka-.*"} == 0) > 0
+          for: 15m
+          labels:
+            severity: warning
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'Kafka cluster {{ .Release.Name }} has leader imbalance'
+            description: 'Kafka cluster {{ .Release.Name }} has partitions not on their preferred replica'
+
+        - alert: KafkaInSyncReplicasLow
+          expr: min by (topic, partition) (kafka_topic_partition_in_sync_replica{namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-kafka-.*"}) < kafka_topic_partition_replicas{namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-kafka-.*"}
+          for: 5m
+          labels:
+            severity: warning
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'Kafka topics in {{ .Release.Name }} have fewer in-sync replicas than configured'
+            description: 'One or more topics in {{ .Release.Name }} have fewer in-sync replicas than configured'
+
+        - alert: KafkaConsumerGroupMembersZero
+          expr: sum by (consumergroup) (kafka_consumergroup_members{namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-kafka-.*"}) == 0
+          for: 5m
+          labels:
+            severity: warning
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'Kafka consumer group has no active members in {{ .Release.Name }}'
+            description: 'One or more consumer groups in {{ .Release.Name }} have no active members'
+
+        - alert: KafkaRestarted
+          expr: (time() - process_start_time_seconds{job=~".*kafka.*", namespace="{{ .Release.Namespace }}", instance=~"{{ .Release.Name }}-kafka-.*"}) < 300
+          for: 0m
+          labels:
+            severity: info
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name }}
+          annotations:
+            summary: 'Kafka broker in {{ .Release.Name }} restarted'
+            description: 'Kafka broker in {{ .Release.Name }} restarted less than 5 minutes ago'

@@ -110,7 +110,7 @@ global:
     tag: v23.0.0
   debug: false
   serviceAccount: default
-
+  
 zero:
   replicas: 3
   resources:
