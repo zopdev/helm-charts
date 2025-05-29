@@ -85,20 +85,18 @@ You can override these values in a `values.yaml` file or pass them as flags duri
 ### Example `values.yaml` File
 
 ```yaml
-image: "redis:6.2.13"
+diskSize: "10Gi"
 
+version: "6.2.13"
+
+# Resource configuration
 resources:
   requests:
-    cpu: "1"
-    memory: "512Mi"
+    cpu: "500m"
+    memory: "256M"
   limits:
-    cpu: "2"
-    memory: "2Gi"
-
-diskSize: "20Gi"
-
-updateStrategy:
-  type: RollingUpdate
+    cpu: "1500m"
+    memory: "1Gi"
 ```
 
 To use this configuration, save it in a `values.yaml` file and apply it during installation:

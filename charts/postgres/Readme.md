@@ -86,22 +86,21 @@ You can override these values in a `values.yaml` file or pass them as flags duri
 ### Example `values.yaml` File
 
 ```yaml
-postgresRootPassword: my-secure-password
+version: "17.4.0"
 
-image: "postgres:15.9"
+replication:
+  enabled: false
+  count: 1
+
+diskSize : "10Gi"
 
 resources:
   requests:
-    cpu: "1"
-    memory: "512Mi"
+    cpu: "250m"
+    memory: "500Mi"
   limits:
-    cpu: "2"
-    memory: "2Gi"
-
-diskSize: "20Gi"
-
-updateStrategy:
-  type: RollingUpdate
+    cpu: "500m"
+    memory: "1000Mi"
 ```
 
 To use this configuration, save it in a `values.yaml` file and apply it during installation:
