@@ -93,7 +93,7 @@ This annotation ensures that the chart is automatically reflected in the zop.dev
 - **Functionality Testing:**  
   Ensure that all default configurations work as expected.
 - **Uninstallation Testing:**  
-  Verify that the chart can be uninstalled cleanly without errors.
+  Ensure that the chart can be uninstalled smoothly without producing errors.
 
 ---
 
@@ -101,7 +101,7 @@ This annotation ensures that the chart is automatically reflected in the zop.dev
 
 ### Pull Request Guidelines
 - **Title & Description:**  
-  Use a clear and descriptive title. Provide a detailed description of your changes, including:
+  Use a clear, descriptive title and provide a detailed explanation of your changes, including:
   - The problem your changes address.
   - Any new features or bug fixes.
   - References to any related GitHub issues.
