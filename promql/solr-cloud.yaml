@@ -1,0 +1,140 @@
+queries:
+  solr_up:
+    query: >-
+      avg by (pod) (
+        solr_ping{
+          namespace='<application-name>',
+          pod=~'<service-name>.*'
+        }
+      )
+
+  zookeeper_status:
+    query: >-
+      avg by (pod) (
+        solr_zookeeper_status{
+          namespace='<application-name>',
+          pod=~'<service-name>.*'
+        }
+      )
+
+  query_rate:
+    query: >-
+      sum by (pod) (
+        rate(solr_metrics_core_query_local_count{
+          namespace='<application-name>',
+          pod=~'<service-name>.*',
+          searchHandler="/select"
+        }[1m])
+      )
+
+  query_latency_median:
+    query: >-
+      avg by (pod) (
+        solr_metrics_core_query_local_median_ms{
+          namespace='<application-name>',
+          pod=~'<service-name>.*',
+          searchHandler="/select"
+        }
+      )
+    unit: "ms"
+
+  query_latency_p95:
+    query: >-
+      avg by (pod) (
+        solr_metrics_core_query_local_p95_ms{
+          namespace='<application-name>',
+          pod=~'<service-name>.*',
+          searchHandler="/select"
+        }
+      )
+    unit: "ms"
+
+  cache_hit_ratio:
+    query: >-
+      avg by (pod) (
+        solr_metrics_core_searcher_cache_ratio{
+          namespace='<application-name>',
+          pod=~'<service-name>.*',
+          type="queryResultCache",
+          item="hitratio"
+        }
+      )
+    unit: "%"
+
+  index_size:
+    query: >-
+      avg by (pod) (
+        solr_metrics_core_index_size_bytes{
+          namespace='<application-name>',
+          pod=~'<service-name>.*'
+        }
+      )
+    unit: "bytes"
+
+  jvm_heap_max:
+    query: >-
+      avg by (pod) (
+        solr_metrics_jvm_memory_heap_bytes{
+          namespace='<application-name>',
+          pod=~'<service-name>.*',
+          item="max"
+        }
+      )
+    unit: "bytes"
+
+  document_count:
+    query: >-
+      avg by (pod) (
+        solr_metrics_core_searcher_documents{
+          namespace='<application-name>',
+          pod=~'<service-name>.*',
+          item="numDocs"
+        }
+      )
+
+  update_operations:
+    query: >-
+      sum by (pod) (
+        rate(solr_metrics_core_update_handler_adds_total{
+          namespace='<application-name>',
+          pod=~'<service-name>.*'
+        }[1m])
+      )
+
+  http_requests:
+    query: >-
+      sum by (pod) (
+        rate(solr_metrics_jetty_requests_total{
+          namespace='<application-name>',
+          pod=~'<service-name>.*'
+        }[1m])
+      )
+
+  http_errors:
+    query: >-
+      sum by (pod) (
+        rate(solr_metrics_jetty_response_total{
+          namespace='<application-name>',
+          pod=~'<service-name>.*',
+          status=~"4xx|5xx"
+        }[1m])
+      )
+
+  replica_state:
+    query: >-
+      avg by (pod) (
+        solr_collections_replica_state{
+          namespace='<application-name>',
+          pod=~'<service-name>.*',
+          state="active"
+        }
+      )
+
+  shard_leader:
+    query: >-
+      avg by (pod) (
+        solr_collections_shard_leader{
+          namespace='<application-name>',
+          pod=~'<service-name>.*'
+        }
+      )
