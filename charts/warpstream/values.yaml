@@ -1,0 +1,164 @@
+# charts/warpstream/values.yaml
+# Default configuration for WarpStream
+replicaCount: 1
+
+image:
+  # Official WarpStream Docker image from Amazon ECR
+  repository: public.ecr.aws/warpstream-labs/warpstream_agent
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext:
+  fsGroup: 2000
+
+securityContext:
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1000
+
+service:
+  type: ClusterIP
+  # Kafka protocol port
+  port: 9092
+  # Metrics port
+  metricsPort: 8080
+  # Schema Registry port
+  schemaRegistryPort: 9094
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 2Gi
+  requests:
+    cpu: 500m
+    memory: 1Gi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity:
+  # Spread across availability zones
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      podAffinityTerm:
+        labelSelector:
+          matchExpressions:
+          - key: app.kubernetes.io/name
+            operator: In
+            values:
+            - warpstream
+        topologyKey: topology.kubernetes.io/zone
+
+# Topology spread constraints for better distribution
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: topology.kubernetes.io/zone
+    whenUnsatisfiable: DoNotSchedule
+    labelSelector:
+      matchLabels:
+        app.kubernetes.io/name: warpstream
+
+# WarpStream specific configuration
+warpstream:
+  # Agent configuration
+  agent:
+    # WarpStream API key (required) - will be stored in secret
+    apiKey: ""
+    # Virtual cluster ID (required)
+    virtualClusterId: ""
+    # Agent Pool ID (optional)
+    agentPoolId: ""
+    # Cluster region (required)
+    region: "us-east-1"
+    # Log level: debug, info, warn, error, analytics
+    logLevel: "info"
+    # Agent roles: agent, proxy, proxy-produce, proxy-consume, jobs
+    roles:
+      - "agent"
+    # Availability zone (auto-detected if not set)
+    availabilityZone: ""
+    
+  # Object storage configuration
+  storage:
+    # Bucket URL for S3-compatible storage (required for production)
+    bucketURL: ""
+    
+  # Performance tuning
+  performance:
+    # GOMAXPROCS setting (should match CPU limit)
+    gomaxprocs: ""
+    
+  # Additional environment variables
+  extraEnvVars: []
+  # - name: CUSTOM_VAR
+  #   value: "custom_value"
+
+# Kubernetes RBAC for availability zone detection
+rbac:
+  # Specifies whether RBAC resources should be created
+  create: true
+
+# Pod Disruption Budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Monitoring configuration (following zopdev patterns)
+monitoring:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    namespace: ""
+    interval: 30s
+    scrapeTimeout: 10s
+    path: /metrics
+    port: metrics
+  # Prometheus alerts
+  alerts:
+    enabled: true
+
+# Ingress configuration
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: warpstream.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+# Persistence for temporary data
+persistence:
+  enabled: false
+  accessMode: ReadWriteOnce
+  size: 8Gi
+  storageClass: ""
+  
