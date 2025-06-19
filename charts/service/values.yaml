@@ -19,7 +19,8 @@ imagePullSecrets:
 
 # Port on which container runs its services
 httpPort: 8000
-metricsPort: 2121
+
+injectIstio: false
 
 ports: # Provide the ports on which container runs its services
 # grpc: 9100

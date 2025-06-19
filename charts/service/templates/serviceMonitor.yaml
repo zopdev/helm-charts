@@ -14,5 +14,10 @@ spec:
     - port: metrics-port
       interval: {{.Values.metricsScrapeInterval }}
       path: /metrics
+    {{- if .Values.injectIstio }}
+    - interval: 15s
+      path: /stats/prometheus
+      port: http-envoy-prom
+    {{- end }}
 {{- end }}
 ---

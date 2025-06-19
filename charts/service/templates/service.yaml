@@ -18,7 +18,13 @@ spec:
     - name: {{ $k}}
       port: {{ $v }}
       targetPort: {{ $v }}
-      {{- end }}
+    {{- end }}
+    {{- if .Values.injectIstio }}
+    - name: http-envoy-prom
+      protocol: TCP
+      port: 15090
+      targetPort: 15090
+    {{- end }}
   selector:
     app: {{ .Values.name }}
   type: NodePort
