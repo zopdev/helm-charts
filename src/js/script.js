@@ -1,11 +1,9 @@
 import integrationsData from './config.js'
 
-
 const currentSearchTerm = ""
 let searchOverlay
 let searchOverlayInput
 let searchSuggestions
-
 
 document.addEventListener("DOMContentLoaded", () => {
  initializeElements()
@@ -85,7 +83,6 @@ function renderIntegrationCards(container, integrations) {
  })
 }
 
-
 function createIntegrationCard(integration, index) {
  const card = document.createElement("article")
  card.className = "integration-card"
@@ -98,7 +95,7 @@ function createIntegrationCard(integration, index) {
 
 
 card.innerHTML = `
- <a href="readme.html?id=${encodeURIComponent(integration.id)}" class="integration-card-link">
+ <a href="../src/readme.html?id=${encodeURIComponent(integration.id)}" class="integration-card-link">
    <div class="integration-card-header">
      <img
        src="${integration.icon}"
@@ -429,7 +426,7 @@ function showSearchSuggestions(searchTerm) {
 
 function createSearchSuggestion(integration, index) {
  return `
- <a href="readme.html?id=${encodeURIComponent(integration.id)}" class="integration-card-link">
+ <a href="../src/readme.html?id=${encodeURIComponent(integration.id)}" class="integration-card-link">
    <div class="search-suggestion" tabindex="0" role="option" aria-label="${integration.name} integration">
      <img
        src="${integration.icon}"
