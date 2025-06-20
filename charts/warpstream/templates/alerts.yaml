@@ -1,0 +1,40 @@
+{{- if .Values.monitoring.alerts.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "warpstream.fullname" . }}-alerts
+  labels:
+    {{- include "warpstream.labels" . | nindent 4 }}
+    grafana_alert: "1"
+data:
+  warpstream-alerts.yaml: |
+    groups:
+    - name: warpstream
+      rules:
+      - alert: WarpStreamDown
+        expr: up{job="{{ include "warpstream.fullname" . }}"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "WarpStream agent is down"
+          description: "WarpStream agent {{ "{{ $labels.instance }}" }} has been down for more than 2 minutes."
+      
+      - alert: WarpStreamHighMemoryUsage
+        expr: (container_memory_usage_bytes{pod=~"{{ include "warpstream.fullname" . }}.*"} / container_spec_memory_limit_bytes) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "WarpStream agent high memory usage"
+          description: "WarpStream agent {{ "{{ $labels.pod }}" }} memory usage is above 85%."
+      
+      - alert: WarpStreamHighCPUUsage
+        expr: (rate(container_cpu_usage_seconds_total{pod=~"{{ include "warpstream.fullname" . }}.*"}[5m]) / container_spec_cpu_quota * container_spec_cpu_period) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "WarpStream agent high CPU usage"
+          description: "WarpStream agent {{ "{{ $labels.pod }}" }} CPU usage is above 85%."
+{{- end }}

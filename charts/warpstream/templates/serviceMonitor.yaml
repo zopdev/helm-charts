@@ -1,0 +1,20 @@
+{{- if .Values.monitoring.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "warpstream.fullname" . }}
+  {{- if .Values.monitoring.serviceMonitor.namespace }}
+  namespace: {{ .Values.monitoring.serviceMonitor.namespace }}
+  {{- end }}
+  labels:
+    {{- include "warpstream.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "warpstream.selectorLabels" . | nindent 6 }}
+  endpoints:
+  - port: {{ .Values.monitoring.serviceMonitor.port }}
+    interval: {{ .Values.monitoring.serviceMonitor.interval }}
+    scrapeTimeout: {{ .Values.monitoring.serviceMonitor.scrapeTimeout }}
+    path: {{ .Values.monitoring.serviceMonitor.path }}
+{{- end }}
