@@ -64,34 +64,30 @@ textarea:focus {
  outline-offset: 2px;
 }
 
-.contributor-button-modifier {
- display: inline-block;
- background-color: #0C7996;
- border-radius: 12px;
- padding: 1rem;
- width: 100%;
- text-align: left;
- padding: 0.75rem 1rem;
- box-sizing: border-box;
- font-size: 1rem;
- color: white;
- cursor: pointer;
- outline: none;
- text-decoration: none;
- text-align: center;
- transition: background-color 0.3s ease;
-}
-
-.contri-button {
-  display: flex;
-  justify-content: center;
-  padding: 1rem;
-}
-
 @media (max-width: 600px) {
-  .contributor-button-modifier {
-    font-size: 0.9rem;
-    padding: 0.6rem 0.9rem;
+  .button-container {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .github-button {
+    align-self: flex-end;
+  }
+
+  .base-button,
+  .github-button {
+    width: 100%;
+    justify-content: center;
+    font-size: 14px;
+    padding: 10px;
+    height: auto;
+  }
+
+  .github-button img {
+    width: 18px;
+    height: 18px;
+    margin-right: 6px;
   }
 }
 
@@ -178,6 +174,9 @@ img {
  position: relative;
 }
 
+.contri-link{
+  text-decoration: none;
+}
 
 #search-integrations {
  width: 100%;
@@ -334,7 +333,7 @@ img {
 
 
 .category-title {
- font-size: 1.5rem;
+ font-size: 1.2rem;
  font-weight: 300;
  color: #1a1a1a;
  margin-bottom: 1.5rem;
@@ -361,26 +360,16 @@ img {
  height: 180px;
 }
 
-
-.integration-card:hover {
- border-color: rgba(163, 163, 163);
+.integration-card-link {
+ text-decoration: none;
 }
-
-
-.integration-card:focus-within {
- box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
- border-color: #8EC0E0;
-}
-
 
 .integration-card-header {
  display: flex;
  align-items: center;
  margin-bottom: 1rem;
 }
-.integration-card-link {
- text-decoration: none;
-}
+
 .integration-card-icon {
  width: 2.5rem;
  height: 2.5rem;
@@ -388,7 +377,6 @@ img {
  border-radius: 0.5rem;
  object-fit: contain;
 }
-
 
 .integration-card-title {
  font-size: 1.125rem;
@@ -406,6 +394,18 @@ img {
  display: -webkit-box;
  -webkit-line-clamp: 2;
  -webkit-box-orient: vertical;
+}
+
+
+
+.integration-card:hover {
+ border-color: rgba(163, 163, 163);
+}
+
+
+.integration-card:focus-within {
+ box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+ border-color: #8EC0E0;
 }
 
 
@@ -783,6 +783,64 @@ img {
 }
 
 
+
+.button-container {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-family: Arial, sans-serif;
+  flex-wrap: wrap;
+}
+
+.base-button {
+  display: flex;
+  align-items: center;
+  background-color: white;
+  border: 1px solid #E0E0E0;
+  padding: 10px 15px;
+  border-radius: 12px;
+  color: #374151;
+  font-size: 16px;
+  text-decoration: none;
+  height: 48px;
+  transition: border 0.3s;
+  cursor: pointer;
+}
+
+.base-button:hover {
+  border-color: #A3A3A3;
+  color: #111827;
+}
+
+.github-button {
+  display: flex;
+  align-items: center;
+  background-color: #ffffff;
+  border: 1px solid #E0E0E0;
+  padding: 22px 13px;
+  border-radius: 12px;
+  color: #374151;
+  font-size: 16px;
+  text-decoration: none;
+  height: 48px;
+  transition: border 0.3s;
+  cursor: pointer;
+}
+
+.github-button:hover {
+  border-color: #A3A3A3;
+  color: #111827;
+}
+
+.github-button img {
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+}
+
+
+
+
 @media (prefers-contrast: high) {
  .integration-card {
    border-width: 2px;
@@ -818,10 +876,51 @@ img {
 
 
 .integrations-header span {
-   margin-left: 20px;
-   background-color: white;
+   /* margin-left: 20px; */
+   /* background-color: white; */
 }
 
+.github-modifier {
+  display: inline-block;
+  border: 1px solid black;
+  border-radius: 12px;
+  width: 100%;
+  padding-top: 0.5rem;
+  padding-buttom: 0.5rem;
+  text-align: center;
+  box-sizing: border-box;
+  font-size: 1rem;
+  color: black;
+  cursor: pointer;
+  outline: none;
+  text-decoration: none;
+  transition: background-color 0.3s ease;
+}
+
+.contributor-button-modifier {
+ display: inline-block;
+ background-color: #0C7996;
+ border-radius: 12px;
+ padding: 1rem;
+ width: 100%;
+ text-align: left;
+ padding: 0.75rem 1rem;
+ box-sizing: border-box;
+ font-size: 1rem;
+ color: white;
+ cursor: pointer;
+ outline: none;
+ text-decoration: none;
+ text-align: center;
+ transition: background-color 0.3s ease;
+}
+
+.contri-button {
+  display: flex;
+  align-items: center; 
+  gap: 0.75rem;
+  /* padding: 1rem; */
+}
 
 @media print {
  .skip-link,

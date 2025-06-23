@@ -84,75 +84,71 @@ function renderIntegrationCards(container, integrations) {
 }
 
 function createIntegrationCard(integration, index) {
- const card = document.createElement("article")
- card.className = "integration-card"
- card.setAttribute("tabindex", "0")
- card.setAttribute("role", "button")
- card.setAttribute("aria-label", `${integration.name} integration. ${integration.description}`)
- card.setAttribute("data-integration-id", integration.id)
- card.setAttribute("title", integration.description)
- card.setAttribute("data-card-index", index)
+  const card = document.createElement("article");
+  card.className = "integration-card";
+  card.setAttribute("tabindex", "0");
+  card.setAttribute("role", "button");
+  card.setAttribute("aria-label", `${integration.name} integration. ${integration.description}`);
+  card.setAttribute("data-integration-id", integration.id);
+  card.setAttribute("title", integration.description);
+  card.setAttribute("data-card-index", index);
 
+  card.innerHTML = `
+    <div class="integration-card-header">
+      <img
+        src="${integration.icon}"
+        alt=""
+        class="integration-card-icon"
+        aria-hidden="true"
+        title="${integration.title}"
+      >
+      <h3 class="integration-card-title">${escapeHtml(integration.name)}</h3>
+    </div>
+    <p class="integration-card-description">${escapeHtml(integration.description)}</p>
+  `;
 
-card.innerHTML = `
- <a href="../src/readme.html?id=${encodeURIComponent(integration.id)}" class="integration-card-link">
-   <div class="integration-card-header">
-     <img
-       src="${integration.icon}"
-       alt=""
-       class="integration-card-icon"
-       aria-hidden="true"
-       title="${integration.title}"
-     >
-     <h3 class="integration-card-title">${escapeHtml(integration.name)}</h3>
-   </div>
-   <p class="integration-card-description">${escapeHtml(integration.description)}</p>
- </a>
-`;
+  card.addEventListener("click", () => {
+    const url = `./src/readme.html?id=${encodeURIComponent(integration.id)}`;
+    window.location.href = url;
+  });
 
+  card.addEventListener("keydown", (e) => handleCardKeydown(e, integration, index));
 
- card.addEventListener("click", () => handleCardInteraction(integration))
- card.addEventListener("keydown", (e) => handleCardKeydown(e, integration, index))
-
-
- return card
+  return card;
 }
-
 
 function handleCardInteraction(integration) {
- console.log("Integration selected:", integration)
- announceToScreenReader(`Selected ${integration.name} integration`)
+  const url = `./src/readme.html?id=${encodeURIComponent(integration.id)}`;
+  window.location.href = url;
 }
-
 
 function handleCardKeydown(e, integration, index) {
- switch (e.key) {
-   case "Enter":
-   case " ":
-     e.preventDefault()
-     handleCardInteraction(integration)
-     break
-   case "ArrowRight":
-   case "ArrowDown":
-     e.preventDefault()
-     focusNextCard(index)
-     break
-   case "ArrowLeft":
-   case "ArrowUp":
-     e.preventDefault()
-     focusPreviousCard(index)
-     break
-   case "Home":
-     e.preventDefault()
-     focusFirstCard()
-     break
-   case "End":
-     e.preventDefault()
-     focusLastCard()
-     break
- }
+  switch (e.key) {
+    case "Enter":
+    case " ":
+      e.preventDefault();
+      handleCardInteraction(integration);
+      break;
+    case "ArrowRight":
+    case "ArrowDown":
+      e.preventDefault();
+      focusNextCard(index);
+      break;
+    case "ArrowLeft":
+    case "ArrowUp":
+      e.preventDefault();
+      focusPreviousCard(index);
+      break;
+    case "Home":
+      e.preventDefault();
+      focusFirstCard();
+      break;
+    case "End":
+      e.preventDefault();
+      focusLastCard();
+      break;
+  }
 }
-
 
 function focusNextCard(currentIndex) {
  const cards = document.querySelectorAll(".integration-card")
@@ -426,7 +422,7 @@ function showSearchSuggestions(searchTerm) {
 
 function createSearchSuggestion(integration, index) {
  return `
- <a href="../src/readme.html?id=${encodeURIComponent(integration.id)}" class="integration-card-link">
+ <a href="./src/readme.html?id=${encodeURIComponent(integration.id)}" class="integration-card-link">
    <div class="search-suggestion" tabindex="0" role="option" aria-label="${integration.name} integration">
      <img
        src="${integration.icon}"
