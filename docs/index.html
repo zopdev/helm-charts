@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Zopdev Integration - Connect Your DevOps Tools</title>
+   <meta name="description" content="Zop simplifies cloud complexity with precision and ease, empowering teams to deploy faster, manage seamlessly, and remain cloud-agnostic. The design must visually communicate control, flow, and harmony, turning complexity into simplicity.">
+
+   <link rel="stylesheet" href="./src/css/style.css">
+
+   <link href="https://framerusercontent.com/images/gpe79icBMRFSfapAeW1fColQyw.png" rel="icon" media="(prefers-color-scheme: dark)">
+   <link rel="icon" type="image/png" href="https://framerusercontent.com/images/gpe79icBMRFSfapAeW1fColQyw.png">
+
+   <meta name="google-site-verification" content="6OKK0i1wXPc8sYwuorvFOL9a_MQffGeaJutAb5M04nQ">
+
+   <meta property="og:type" content="website">
+   <meta property="og:title" content="Zop.dev">
+   <meta property="og:description" content="Zop simplifies cloud complexity with precision and ease, empowering teams to deploy faster, manage seamlessly, and remain cloud-agnostic. The design must visually communicate control, flow, and harmony, turning complexity into simplicity.">
+   <meta property="og:image" content="https://framerusercontent.com/assets/lHTzut3iou5ujFWprWLnzNWH4.jpg">
+
+   <meta name="twitter:card" content="summary_large_image">
+   <meta name="twitter:title" content="Zop.dev">
+   <meta name="twitter:description" content="Zop simplifies cloud complexity with precision and ease, empowering teams to deploy faster, manage seamlessly, and remain cloud-agnostic. The design must visually communicate control, flow, and harmony, turning complexity into simplicity.">
+   <meta name="twitter:image" content="https://framerusercontent.com/assets/lHTzut3iou5ujFWprWLnzNWH4.jpg">
+
+   <meta name="generator" content="Framer 8f9ffef">
+   <meta name="framer-search-index" content="https://framerusercontent.com/sites/6Gd1gk3KWwkpNR7o4t51kC/searchIndex-y3n59Gv49Jhz.json">
+</head>
+
+<body>
+   <main id="main-content" role="main">
+       <section class="hero" aria-labelledby="hero-title">
+           <div class="container">
+               <div class="hero-content">
+                   <h1 id="hero-title">Connect Zopdev with the Tools You Already Use</h1>
+                   <p>Seamlessly connect Zopdev with the essential tools your DevOps team relies on every day—CI/CD platforms, monitoring solutions, alerting systems, cloud services, and collaboration apps—all in one place.</p>
+               </div>
+              
+               <div class="hero-image">
+                   <img src="./src/assets/logo.png" alt="Integration illustration showing connected tools">
+               </div>
+           </div>
+       </section>
+
+       <section class="integrations" aria-labelledby="integrations-title">
+           <div class="container">
+               <div class="integrations-header">
+                    <h2 id="integrations-title">Featured Integrations</h2>
+                    
+                    <span class="contri-button">
+                        <div class="button-container">
+                            <a href="https://github.com/zopdev/helm-charts" class="github-button">
+                                <img src="https://cdn-icons-png.flaticon.com/512/25/25231.png" alt="GitHub Logo" />
+                                <span>Github</span>
+                            </a>
+
+                            <a class="contri-link" href="./src/readme.html?id=contribution"><button class="base-button">Want to be a Contributor?</button></a>
+                        </div>
+                    </span>
+                </div>
+
+              
+               <div class="search-container">
+                   <label for="search-integrations" class="sr-only">Search integrations</label>
+                   <input
+                       type="text"
+                       id="search-integrations"
+                       placeholder="Search integrations... (Press '/' to focus)"
+                       aria-describedby="search-help"
+                       autocomplete="off"
+                   >
+                   <div id="search-help" class="sr-only">Press forward slash to focus search</div>
+               </div>
+
+
+               <div class="tabs" role="tablist" aria-label="Integration categories">
+
+
+                   <div class="tab-content">
+                       <div
+                           class="tab-pane active"
+                           id="categories"
+                           role="tabpanel"
+                           aria-labelledby="tab-categories"
+                       >
+                           <aside class="categories-sidebar" role="complementary" aria-label="Filter by category">
+                               <ul role="list" id="category-buttons">
+                                   <li>
+                                       <button class="category-btn" data-category="Applications" aria-pressed="false">
+                                           Applications
+                                       </button>
+                                   </li>
+                                   <li>
+                                       <button class="category-btn" data-category="Datastore" aria-pressed="false">
+                                           Datastore
+                                       </button>
+                                   </li>
+                               </ul>
+                           </aside>
+                          
+                           <div class="integration-sections">                               
+                               <section id="applications-section" class="category-section">
+                                   <h3 class="category-title">Applications</h3>
+                                   <div class="integration-cards" id="applications-cards" role="region" aria-live="polite" aria-label="Applications integration cards">
+                                   </div>
+                               </section>
+                              
+                               <section id="datastore-section" class="category-section">
+                                   <h3 class="category-title">Datastore</h3>
+                                   <div class="integration-cards" id="datastore-cards" role="region" aria-live="polite" aria-label="Datastore integration cards">
+                                   </div>
+                               </section>
+                              
+                           </div>
+                       </div>
+                   </div>
+               </div>
+           </div>
+       </section>
+
+
+   </main>
+
+
+   <div class="search-overlay" id="search-overlay" role="dialog" aria-modal="true" aria-labelledby="search-overlay-title">
+       <div class="search-overlay-content">
+           <div class="search-overlay-header">
+               <h2 id="search-overlay-title" class="sr-only">Search Integrations</h2>
+               <input
+                   type="text"
+                   id="search-overlay-input"
+                   placeholder="Search integrations..."
+                   aria-label="Search integrations"
+                   autocomplete="off"
+               >
+               <button class="search-overlay-close" aria-label="Close search">
+                   <span aria-hidden="true">&times;</span>
+               </button>
+           </div>
+           <div class="search-suggestions" id="search-suggestions" role="listbox" aria-label="Search suggestions">
+           </div>
+       </div>
+   </div>
+
+   <div id="sr-announcements" aria-live="polite" aria-atomic="true" class="sr-only"></div>
+
+</body>
+<script type="module" src="./src/js/script.js"></script>
+</html>
+
+
+
