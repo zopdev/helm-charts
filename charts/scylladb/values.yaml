@@ -1,19 +1,11 @@
-image: "scylladb/scylla:latest"
-pullPolicy: IfNotPresent
+version: "6.2.3-debian-12-r5"
 
 resources:
   requests:
-    memory: "1Gi"
-    cpu: "500m"
+    cpu : "1000m"
+    memory : "2048Mi"
   limits:
-    memory: "2Gi"
-    cpu: "1000m"
+    cpu: "1500m"
+    memory: "3072Mi"
 
 diskSize: "10Gi"
-
-config:
-  cluster_name: "Cluster"
-
-scylladbRootPassword:
-
-services:
