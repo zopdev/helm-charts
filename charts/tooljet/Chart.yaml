@@ -1,0 +1,20 @@
+apiVersion: v2
+name: tooljet
+description: A Helm chart for deploying ToolJet, an open-source low-code platform
+type: application
+version: 0.1.0
+appVersion: "v2.15.0"  # Change to latest ToolJet version
+icon: https://avatars.githubusercontent.com/u/87657345?s=200&v=4
+
+keywords:
+  - tooljet
+  - low-code
+  - platform
+  - open-source
+
+home: https://tooljet.com/
+sources:
+  - https://github.com/ToolJet/ToolJet
+maintainers:
+  - name: madira mahanandi reddy
+    email: madhirereddy4@gmail.com
