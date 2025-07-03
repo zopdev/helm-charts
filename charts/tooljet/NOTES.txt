@@ -1,0 +1,27 @@
+Crafted with 💻 and ☁️ by the community. Fork, deploy, and power your internal apps!
+
+
+---
+
+## 📋 Final `NOTES.txt` (save as `charts/tooljet/templates/NOTES.txt`)
+
+```txt
+✅ ToolJet has been successfully deployed!
+
+To access ToolJet locally:
+
+1. Forward the service port:
+
+   kubectl port-forward svc/{{ include "tooljet.fullname" . }} {{ .Values.service.port }}:{{ .Values.service.port }}
+
+2. Then open your browser and navigate to:
+
+   http://localhost:{{ .Values.service.port }}
+
+---
+
+📚 Documentation:
+- ToolJet: https://docs.tooljet.com
+- Helm: https://helm.sh/docs/
+
+🚀 Happy building with ToolJet!
