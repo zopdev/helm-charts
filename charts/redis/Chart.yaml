@@ -2,7 +2,7 @@ apiVersion: v2
 appVersion: "1.0"
 description: Helm chart deploys redis instance
 name: redis
-version: 0.0.4
+version: 0.0.5
 icon: "https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20241119/a322e6a1-2433-4ff5-b778-6372fc27bedd-cdnlogocomredis2min111.jpg"
 maintainers:
   - name: ZopDev
