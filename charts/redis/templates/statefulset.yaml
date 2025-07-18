@@ -57,7 +57,7 @@ spec:
               mountPath: /var/lib/redis
 
         - name: redis-exporter
-          image: oliver006/redis_exporter:latest
+          image: oliver006/redis_exporter:v1.74.0
           ports:
             - containerPort: 2121
               name: metrics
