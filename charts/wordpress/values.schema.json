@@ -22,7 +22,7 @@
       "type": "object",
       "properties": {
         "name": { "type": "string", "enum": ["wordpress"] },
-        "image": { "type": "string", "enum": ["wordpress:latest"] },
+        "image": { "type": "string", "enum": ["wordpress:php8.4"] },
         "minCPU": { "type": "string", "default": "250m", "mutable": true },
         "minMemory": { "type": "string", "default": "1000Mi", "mutable": true },
         "maxCPU": { "type": "string", "default": "500m", "mutable": true },
