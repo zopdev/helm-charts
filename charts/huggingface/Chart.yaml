@@ -1,0 +1,8 @@
+apiVersion: v2
+name: huggingface
+description: A Helm chart for deploying Hugging Face Text Generation Inference (TGI)
+type: application
+version: 0.1.0
+appVersion: "1.0"
+annotations:
+  type: application

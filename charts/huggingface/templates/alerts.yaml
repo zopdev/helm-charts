@@ -1,0 +1,19 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ .Release.Name }}-alerts
+  labels:
+    release: {{ .Release.Name }}
+    app: huggingface
+spec:
+  groups:
+    - name: huggingface-alerts
+      rules:
+        - alert: HuggingFaceDown
+          expr: absent(up{job="huggingface"} == 1)
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "HuggingFace deployment down"
+            description: "No HuggingFace instance is running for more than 1 minute."

@@ -1,0 +1,39 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/huggingface/tgi
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 80
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 2Gi
+  requests:
+    cpu: 500m
+    memory: 1Gi
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations: {}
+  hosts:
+    - host: huggingface.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
