@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Release.Name }}-login
+type: Opaque
+data:
+  username: {{ "admin" | b64enc }}
+  password: {{ randAlphaNum 16 | b64enc }}

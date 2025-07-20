@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "type": "object",
+  "properties": {
+    "replicaCount": {
+      "type": "integer",
+      "default": 1,
+      "mutable": true
+    },
+    "image": {
+      "type": "object",
+      "properties": {
+        "repository": { "type": "string", "editDisabled": true },
+        "tag": { "type": "string", "mutable": true },
+        "pullPolicy": { "type": "string", "mutable": true }
+      }
+    },
+    "service": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "mutable": true },
+        "port": { "type": "integer", "mutable": true }
+      }
+    }
+  }
+}
