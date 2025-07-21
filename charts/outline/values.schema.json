@@ -42,7 +42,14 @@
         "maxCPU": { "type": "string","default": "500m", "mutable": true },
         "maxMemory": { "type": "string","default": "1500Mi", "mutable": true
         },
-        "minReplicas": { "type": "integer", "enum": [1] }
+        "minReplicas": { "type": "integer", "enum": [1] },
+        "env": {
+          "type": "object",
+          "properties": {
+            "URL": {"type": "string"}
+          },
+          "required": ["URL"]
+        }
       }
     }
   }
