@@ -50,7 +50,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: cleanup-zookeeper
-          image: bitnami/kubectl:latest
+          image: bitnami/kubectl:1.33.2
           command:
             - /bin/bash
             - -c
