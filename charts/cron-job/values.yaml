@@ -2,7 +2,7 @@
 name: hello-api
 
 # Docker container image with tag
-image: "zopdev/sample-go-api:latest"
+image: "zopdev/sample-go-api:v0.0.4"
 
 imagePullSecrets:
 # - gcr-secrets
