@@ -2,7 +2,7 @@ apiVersion: v2
 appVersion: "1.0"
 description: Helm chart for deploying outline app
 name: outline
-version: 0.0.5
+version: 0.0.6
 type: application
 icon: "https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20241129/517f58c3-427a-4cd0-8d37-abe941776827-download1.jpeg"
 dependencies:
