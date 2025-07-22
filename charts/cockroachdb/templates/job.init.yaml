@@ -21,7 +21,7 @@ spec:
       terminationGracePeriodSeconds: 0
       containers:
         - name: cluster-init
-          image: "cockroachdb/cockroach:latest"
+          image: "cockroachdb/cockroach:v25.1.2"
           imagePullPolicy:  IfNotPresent
           command:
             - /bin/bash
