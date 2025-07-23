@@ -148,3 +148,13 @@ To maintain a healthy and collaborative community, please adhere to our [Code of
 ## License
 
 This project is licensed under the [LICENSE](../../LICENSE). Please review it for terms of use.
+
+---
+
+## Connection Config
+
+- **REDIS_PORT** : The port Redis is listening on.Default 6379.
+- **REDIS_HOST** : The internal DNS hostname pointing to the Redis headless service.
+- **REDIS_URL** : Full connection URL to Redis .
+
+---

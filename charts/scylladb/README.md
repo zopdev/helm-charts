@@ -146,3 +146,14 @@ To maintain a healthy and collaborative community, please adhere to our [Code of
 ## License
 
 This project is licensed under the [LICENSE](../../LICENSE). Please review it for terms of use.
+
+---
+
+## Connection Config 
+
+- **SCYLLADB_HOST** : Hostname of the ScyllaDB StatefulSet service.
+- **SCYLLADB_KEYSPACE** : Keyspace name in ScyllaDB.
+- **SCYLLADB_PORT** : Port number used to connect to ScyllaDB.Usually 9042 .
+- **SCYLLADB_USERNAME** : Username to connect to the keyspace.
+
+---

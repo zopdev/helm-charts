@@ -153,3 +153,12 @@ To maintain a healthy and collaborative community, please adhere to our [Code of
 ## License
 
 This project is licensed under the [LICENSE](../../LICENSE). Please review it for terms of use.
+
+---
+
+## Connection Config
+
+- **OPENTSDB_HOST** : Hostname or service name for the OpenTSDB server.
+- **OPENTSDB_PORT** : Port number to connect to OpenTSDB. Defaults at 4242.
+
+---
