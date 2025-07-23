@@ -46,7 +46,7 @@
         "env": {
           "type": "object",
           "properties": {
-            "URL": {"type": "string"}
+            "URL": {"type": "string", "mutable": true}
           },
           "required": ["URL"]
         }
