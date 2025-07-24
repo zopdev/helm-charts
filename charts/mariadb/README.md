@@ -176,3 +176,16 @@ To maintain a healthy and collaborative community, please adhere to our [Code of
 ## License
 
 This project is licensed under the [LICENSE](../../LICENSE). Please review it for terms of use.
+
+---
+
+## Connection Config
+
+- **DB_DIALECT** : Specifies the database dialect. Always set to “mariadb”
+- **DB_USER**: Username used to connect to the MariaDB database.
+- **DB_PORT** : Port number for the MariaDB server. Defaults to 3306.
+- **DB_NAME** : Name of the specific MariaDB database to connect to.
+- **DB_HOST** : Hostname or service name of the MariaDB server.
+- **DB_PASSWORD** : Password for DB_USER ,stored securely in Kubernetes secrets.
+
+---

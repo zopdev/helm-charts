@@ -127,3 +127,19 @@ To maintain a healthy and collaborative community, please adhere to our [Code of
 ## License
 
 This project is licensed under the [LICENSE](../../LICENSE). Please review it for terms of use.
+
+---
+
+## Connection Config
+
+- **CHROMA_SERVER_HOST** : Hostname or service name for the ChromaDB instance.
+- **CHROMA_SERVER_HTTP_PORT** : HTTP port on which ChromaDB listens. Default is 8000 .
+- **ANONYMIZED_TELEMETRY** : Enables/disables sending anonymized telemetry.False means disabled.
+- **ALLOW_RESET** : Allows resetting ChromaDB data if set to true.
+- **IS_PERSISTENT** : Determines if ChromaDB data should be persistent.
+- **CHROMA_LOG_LEVEL** : Log level for ChromaDB .
+- **CHROMA_DATA_DIR** : Directory path where ChromaDB stores its data.
+- **CHROMA_IMPORT_SETTING** : Indicates whether import settings are enabled .
+
+---
+
