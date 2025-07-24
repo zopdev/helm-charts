@@ -10,7 +10,7 @@ redis:
 
 service:
   name: outline
-  image: outlinewiki/outline
+  image: "outlinewiki/outline:0.84"
   minCPU: "250m"
   minMemory: "1000Mi"
   maxCPU: "500m"
@@ -35,6 +35,7 @@ service:
     PGSSLMODE: disable
     PORT: 3000
     FILE_STORAGE_LOCAL_ROOT_DIR : /data
+    URL:
 
   datastores:
     postgres:

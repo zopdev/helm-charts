@@ -36,13 +36,20 @@
       "type": "object",
       "properties": {
         "name": { "type": "string", "enum": ["outline"] },
-        "image": { "type": "string", "enum": ["outlinewiki/outline"] },
+        "image": { "type": "string", "enum": ["outlinewiki/outline:0.84"] },
         "minCPU": { "type": "string" ,"default": "250m", "mutable": true},
         "minMemory": { "type": "string","default": "1000Mi", "mutable": true },
         "maxCPU": { "type": "string","default": "500m", "mutable": true },
         "maxMemory": { "type": "string","default": "1500Mi", "mutable": true
         },
-        "minReplicas": { "type": "integer", "enum": [1] }
+        "minReplicas": { "type": "integer", "enum": [1] },
+        "env": {
+          "type": "object",
+          "properties": {
+            "URL": {"type": "string", "mutable": true}
+          },
+          "required": ["URL"]
+        }
       }
     }
   }
