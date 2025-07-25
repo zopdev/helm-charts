@@ -35,7 +35,7 @@ service:
     PGSSLMODE: disable
     PORT: 3000
     FILE_STORAGE_LOCAL_ROOT_DIR : /data
-    URL:
+    URL: ""
 
   datastores:
     postgres:
