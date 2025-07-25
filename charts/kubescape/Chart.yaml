@@ -1,0 +1,19 @@
+apiVersion: v2
+name: kubescape
+description: A Helm chart for deploying Kubescape Kubernetes security scanner
+version: 0.1.0
+appVersion: "3.0.0"
+keywords:
+  - security
+  - scanning
+  - kubernetes
+  - compliance
+home: https://github.com/kubescape/kubescape
+sources:
+  - https://github.com/kubescape/kubescape
+icon: https://raw.githubusercontent.com/kubescape/kubescape/master/docs/img/kubescape.png
+maintainers:
+  - name: Aman Luthra
+    email: amanluthra804@gmail.com
+type: application
+dependencies: []

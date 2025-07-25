@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "kubescape.fullname" . }}-config
+  labels:
+    {{- include "kubescape.labels" . | nindent 4 }}
+data:
+  config.yaml: |
+    logging:
+      level: {{ .Values.config.logLevel }}
+    scanning:
+      frameworks: 
+      {{- range .Values.scanning.frameworks }}
+        - {{ . }}
+      {{- end }}
+      schedule: {{ .Values.scanning.schedule | quote }}
+    storage:
+      persistent: {{ .Values.persistence.enabled }}
+    server:
+      port: {{ .Values.service.targetPort }}
+      enablePprof: {{ .Values.config.enablePprof }}
