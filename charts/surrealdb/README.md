@@ -135,3 +135,12 @@ To maintain a healthy and collaborative community, please adhere to our [Code of
 ## License
 
 This project is licensed under the [LICENSE](../../LICENSE). Please review it for terms of use.
+
+---
+
+## Connection Config
+
+- **SURREAL_PORT** : Port on which SurrealDB listens for incoming requests.Defaults at 8000.
+- **SURREAL_HOST** : Hostname or service name for the SurrealDB instance in the cluster.
+
+---

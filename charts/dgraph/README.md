@@ -170,3 +170,13 @@ To maintain a healthy and collaborative community, please adhere to our [Code of
 ## License
 
 This project is licensed under the [LICENSE](../../LICENSE). Please review it for terms of use.
+
+---
+
+### Connection Config
+
+- **DGRAPH_HOST** : Hostname or service name for the Dgraph Alpha service.
+- **DGRAPH_RPC_PORT** : Port for gRPC (RPC) connections to Dgraph. Defaults to 9080.
+- **DGRAPH_HTTP_PORT** : HTTP port for Dgraph’s API. Defaults to 8080.
+
+---

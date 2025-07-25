@@ -189,3 +189,13 @@ To maintain a healthy and collaborative community, please adhere to our [Code of
 ## License
 
 This project is licensed under the [LICENSE](../../LICENSE). Please review it for terms of use. 
+
+---
+
+## Connection Config
+
+- **REDIS_PORT** : Port on which Redis is exposed inside the cluster.Default 6379.
+- **REDIS_HOST** : Internal DNS name for the Redis headless service.
+- **REDIS_URL** : Redis connection string.
+
+---
