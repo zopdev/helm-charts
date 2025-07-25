@@ -1,0 +1,50 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/langchain-ai/langchainplus
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8000
+
+env:
+  MODEL_PROVIDER: ""
+  API_KEYS: ""
+
+resources:
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+  requests:
+    cpu: "250m"
+    memory: "256Mi"
+
+postgres:
+  enabled: true
+  image: postgres:15
+  username: langchain
+  password: langchain123
+  dbName: langchain_db
+
+redis:
+  enabled: true
+  image: redis:7
+
+ingress:
+  enabled: false
+  annotations: {}
+  hosts:
+    - host: langchain.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+persistence:
+  enabled: true
+  accessModes:
+    - ReadWriteOnce
+  storageClass: ""
+  size: 1Gi

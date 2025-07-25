@@ -1,0 +1,29 @@
+
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "langchain-server.fullname" . }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "langchain-server.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "langchain-server.name" . }}
+    spec:
+      containers:
+        - name: langchain-server
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          ports:
+            - containerPort: {{ .Values.service.port }}
+          env:
+            - name: MODEL_PROVIDER
+              value: "{{ .Values.env.MODEL_PROVIDER }}"
+            - name: API_KEYS
+              value: "{{ .Values.env.API_KEYS }}"
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: langchain-server
+description: Helm chart for deploying LangChain Server with optional Postgres, Redis, and LLM endpoints.
+type: application
+version: 0.1.0
+appVersion: "latest"
