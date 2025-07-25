@@ -1,13 +1,14 @@
 replicaCount: 1
 
 image:
-  repository: ghcr.io/langchain-ai/langchainplus
+  repository: nginx
   tag: latest
   pullPolicy: IfNotPresent
 
+
 service:
   type: ClusterIP
-  port: 8000
+  port: 80
 
 env:
   MODEL_PROVIDER: ""

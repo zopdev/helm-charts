@@ -4,3 +4,5 @@ description: Helm chart for deploying LangChain Server with optional Postgres, R
 type: application
 version: 0.1.0
 appVersion: "latest"
+icon: https://avatars.githubusercontent.com/u/139008216?s=200&v=4
+
