@@ -2,7 +2,7 @@ apiVersion: v2
 appVersion: "1.0"
 description: Helm chart for Deploying Apache Superset
 name: superset
-version: 0.0.5
+version: 0.0.7
 type: application
 icon: "https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20250226/195c1a30-da2a-4eb4-8394-68fe3fd52523-superset.png"
 maintainers:
@@ -11,7 +11,7 @@ maintainers:
 dependencies:
   - condition: postgres.enabled 
     name: postgres
-    version: 0.0.6
+    version: 0.0.11
     repository: https://helm.zop.dev
   - condition: redis.enabled 
     name: redis
