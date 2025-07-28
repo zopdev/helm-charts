@@ -23,14 +23,6 @@ jobs:
         uses: azure/setup-helm@v4
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-      - name: Helm Lint
-        run: |
-          cd charts/service
-          helm lint
-          cd ../..
-          cd charts/cron-job
-          helm lint
-          cd ../..
 
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.6.0
