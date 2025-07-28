@@ -106,6 +106,12 @@ func main() {
 		panic(err)
 	}
 
+	// early exit for no updated charts
+	if len(changedCharts) == 0 {
+		fmt.Println("No charts updated.")
+		return
+	}
+
 	failedCharts := make([]helmChart, 0)
 	passedCharts := make([]helmChart, 0)
 
