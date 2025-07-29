@@ -36,7 +36,7 @@ This chart requires the following dependencies to be installed:
 
 ### MySQL
 - **Chart**: `mysql`
-- **Version**: `0.0.3`
+- **Version**: `0.0.17`
 - **Repository**: `https://helm.zop.dev`
 - **Purpose**: Provides the primary database for WordPress content and configuration
 
@@ -80,14 +80,10 @@ For more details, see the [Helm Repository Documentation](https://helm.sh/docs/h
 To deploy the WordPress Helm chart, use the following command:
 
 ```bash
-helm install [RELEASE_NAME] zopdev/wordpress
+helm install wordpress zopdev/wordpress
 ```
 
-Replace `[RELEASE_NAME]` with your desired release name. Example:
-
-```bash
-helm install my-wordpress zopdev/wordpress
-```
+The release name must be `wordpress` for the chart to install properly.
 
 You can override default values during installation by providing a `values.yaml` file.
 
@@ -100,13 +96,7 @@ Refer to the [Helm Install Documentation](https://helm.sh/docs/helm/helm_install
 To remove the WordPress Helm chart and associated resources, run:
 
 ```bash
-helm uninstall [RELEASE_NAME]
-```
-
-Example:
-
-```bash
-helm uninstall my-wordpress
+helm uninstall wordpress
 ```
 
 Check the [Helm Uninstall Documentation](https://helm.sh/docs/helm/helm_uninstall/) for more information.

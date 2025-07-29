@@ -51,7 +51,7 @@ This chart requires the following dependencies to be installed:
 ### PostgreSQL
 - **Condition**: `postgres.enabled`
 - **Chart**: `postgres`
-- **Version**: `0.0.6`
+- **Version**: `0.0.11`
 - **Repository**: `https://helm.zop.dev`
 - **Purpose**: Provides the primary database for Superset metadata storage
 
@@ -82,14 +82,10 @@ The dependencies will be automatically installed when you deploy the Superset ch
 To deploy the Superset Helm chart, use the following command:
 
 ```bash
-helm install [RELEASE_NAME] zopdev/superset
+helm install superset zopdev/superset
 ```
 
-Replace `[RELEASE_NAME]` with your desired release name. Example:
-
-```bash
-helm install my-superset zopdev/superset
-```
+The release name must be `superset` for the chart to install properly.
 
 You can override default values during installation by providing a `values.yaml` file.
 
@@ -102,13 +98,7 @@ Refer to the [Helm Install Documentation](https://helm.sh/docs/helm/helm_install
 To remove the Superset Helm chart and associated resources, run:
 
 ```bash
-helm uninstall [RELEASE_NAME]
-```
-
-Example:
-
-```bash
-helm uninstall my-superset
+helm uninstall superset
 ```
 
 Check the [Helm Uninstall Documentation](https://helm.sh/docs/helm/helm_uninstall/) for more information.
