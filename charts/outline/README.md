@@ -37,7 +37,7 @@ This chart requires the following dependencies to be installed:
 
 ### PostgreSQL
 - **Chart**: `postgres`
-- **Version**: `0.0.3`
+- **Version**: `0.0.11`
 - **Repository**: `https://helm.zop.dev`
 - **Purpose**: Provides the primary database for Outline's content and user data
 
@@ -91,14 +91,10 @@ For more details, see the [Helm Repository Documentation](https://helm.sh/docs/h
 To deploy the Outline Helm chart, use the following command:
 
 ```bash
-helm install [RELEASE_NAME] zopdev/outline
+helm install outline zopdev/outline
 ```
 
-Replace `[RELEASE_NAME]` with your desired release name. Example:
-
-```bash
-helm install my-outline zopdev/outline
-```
+The release name must be `outline` for the chart to install properly. 
 
 You can override default values during installation by providing a `values.yaml` file.
 
@@ -111,13 +107,7 @@ Refer to the [Helm Install Documentation](https://helm.sh/docs/helm/helm_install
 To remove the Outline Helm chart and associated resources, run:
 
 ```bash
-helm uninstall [RELEASE_NAME]
-```
-
-Example:
-
-```bash
-helm uninstall my-outline
+helm uninstall outline
 ```
 
 Check the [Helm Uninstall Documentation](https://helm.sh/docs/helm/helm_uninstall/) for more information.
