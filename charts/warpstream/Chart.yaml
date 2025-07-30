@@ -1,0 +1,26 @@
+apiVersion: v2
+name: warpstream
+description: A Helm chart for WarpStream - a cloud-native, Kafka-compatible streaming platform
+type: application
+version: 0.0.1
+appVersion: "latest"
+keywords:
+  - kafka
+  - streaming
+  - warpstream
+  - data
+  - messaging
+  - byoc
+home: https://www.warpstream.com/
+sources:
+  - https://github.com/warpstreamlabs/charts
+  - https://github.com/warpstreamlabs/warpstream-docker-compose-example
+maintainers:
+  - name: zopdev
+    url: https://zop.dev
+  - name: warpstream
+    url: https://www.warpstream.com
+annotations:
+  # REQUIRED: zop.dev integration annotation
+  type: "application"
+

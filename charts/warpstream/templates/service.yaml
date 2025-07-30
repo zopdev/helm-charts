@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "warpstream.fullname" . }}
+  labels:
+    {{- include "warpstream.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: kafka
+      protocol: TCP
+      name: kafka
+    - port: {{ .Values.service.metricsPort }}
+      targetPort: metrics
+      protocol: TCP
+      name: metrics
+    - port: {{ .Values.service.schemaRegistryPort }}
+      targetPort: schema-registry
+      protocol: TCP
+      name: schema-registry
+  selector:
+    {{- include "warpstream.selectorLabels" . | nindent 4 }}
+    

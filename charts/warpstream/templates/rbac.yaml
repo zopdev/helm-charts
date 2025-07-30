@@ -1,0 +1,27 @@
+{{- if .Values.rbac.create -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "warpstream.fullname" . }}
+  labels:
+    {{- include "warpstream.labels" . | nindent 4 }}
+rules:
+- apiGroups: [""]
+  resources: ["nodes"]
+  verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "warpstream.fullname" . }}
+  labels:
+    {{- include "warpstream.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "warpstream.fullname" . }}
+subjects:
+- kind: ServiceAccount
+  name: {{ include "warpstream.serviceAccountName" . }}
+  namespace: {{ .Release.Namespace }}
+{{- end }}
