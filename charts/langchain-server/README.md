@@ -2,10 +2,11 @@
   <img src="https://zop.dev/resources/cdn/newsletter/zopdev-transparent-logo.png" alt="zop.dev Logo" width="200">
 </p>
 
-<h2 align="center">LangChain Server Helm Chart</h2>
+<h2 align="center">Helm Charts : An Extensive Collection of Helm Charts for Datastores & Applications</h2>
+
 <p align="center">
   <a href="./LICENSE">
-    <img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" alt="MIT License">
+    <img src="https://img.shields.io/badge/License-Apache_2.0-blue?style=for-the-badge" alt="Apache 2.0 License">
   </a>
   <a href="./CONTRIBUTING.md">
     <img src="https://img.shields.io/badge/Contribute-Guide-orange?style=for-the-badge" alt="Contributing">
@@ -68,7 +69,7 @@ The following configuration options are available in `values.yaml`:
 ```yaml
 image:
   repository: nginx
-  tag: "1.23"
+  tag: "1.28.0"
   pullPolicy: IfNotPresent
 ```
 
