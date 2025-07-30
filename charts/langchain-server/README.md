@@ -1,89 +1,83 @@
-# LangChain Server Helm Chart
+<p align="center">
+  <img src="https://zop.dev/resources/cdn/newsletter/zopdev-transparent-logo.png" alt="zop.dev Logo" width="200">
+</p>
 
-This Helm chart deploys the **LangChain Server**, a self-hosted orchestration platform for running Language Model (LLM) pipelines using LangChain components such as chains, agents, tools, and memory systems.
-
----
-
-## 🧠 Features
-
-* LangChain Server containerized deployment
-* Optional PostgreSQL database for metadata/session storage
-* Optional Redis instance for memory/cache layer
-* API exposure via Kubernetes Service and optional Ingress
-* Environment variable support for connecting to OpenAI, HuggingFace, Ollama, etc.
-* Configurable CPU/GPU resource limits
-* Persistent volume support for caching
+<h2 align="center">LangChain Server Helm Chart</h2>
+<p align="center">
+  <a href="./LICENSE">
+    <img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" alt="MIT License">
+  </a>
+  <a href="./CONTRIBUTING.md">
+    <img src="https://img.shields.io/badge/Contribute-Guide-orange?style=for-the-badge" alt="Contributing">
+  </a>
+</p>
 
 ---
 
-## 📦 Chart Structure
+## 🎯 Goal
 
-```
-charts/
-└── langchain-server/
-    ├── Chart.yaml
-    ├── values.yaml
-    ├── README.md
-    └── templates/
-        ├── deployment.yaml
-        ├── service.yaml
-        ├── ingress.yaml
-        ├── configmap.yaml
-        ├── pvc.yaml
-        └── _helpers.tpl
-```
+The `langchain-server` Helm chart enables seamless deployment of a LangChain Server on Kubernetes. It includes optional integration with Postgres and Redis, and is designed for cloud-native orchestration of LLM pipelines using chains, agents, tools, and memory components.
 
 ---
 
-## 🚀 Usage
+## 💡 Key Features
 
-### 1. Lint the chart
+* 🚀 LangChain Server containerized deployment
+* 📦 Optional PostgreSQL and Redis integration
+* 🔌 LLM provider integration via environment variables
+* 🔐 Ingress with TLS support
+* 💾 PersistentVolume support
+* ⚙️ Configurable resource limits and replica scaling
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+* [Helm](https://helm.sh/docs/intro/install/)
+* Access to a running Kubernetes cluster (e.g., Minikube, GKE, etc.)
+
+### Installation
 
 ```bash
-helm lint charts/langchain-server
+helm repo add zop https://helm.zop.dev
+helm install langchain-server zop/langchain-server
 ```
 
-### 2. Render the chart
+To install from source:
 
 ```bash
-helm template langchain charts/langchain-server
-```
-
-### 3. Deploy on Minikube
-
-```bash
-minikube start --driver=docker
 helm install langchain charts/langchain-server
 ```
 
-### 4. Access via browser
+### Overriding Values
 
 ```bash
-minikube service langchain-langchain
+helm install langchain charts/langchain-server -f values.yaml
 ```
 
 ---
 
-## 🔧 Configuration Parameters
+## 🧰 Configuration
 
-The following values can be set via `values.yaml` or CLI overrides:
+The following configuration options are available in `values.yaml`:
 
-### Deployment Options
+### Image
 
 ```yaml
-replicaCount: 1
 image:
-  repository: ghcr.io/langchain-ai/langchainplus
-  tag: latest
+  repository: nginx
+  tag: "1.23"
   pullPolicy: IfNotPresent
 ```
 
-### Service Options
+### Service
 
 ```yaml
 service:
   type: ClusterIP
-  port: 8000
+  port: 80
 ```
 
 ### Environment Variables
@@ -139,30 +133,51 @@ persistence:
 
 ---
 
-## 🧪 Testing Status
+## 🧪 Testing Checklist
 
-| Test Type       | Status                      |
-| --------------- | --------------------------- |
-| Helm Lint       | ✅ Passed                    |
-| Template Render | ✅ Passed                    |
-| Minikube Deploy | ✅ Passed (with nginx image) |
-| Local Access    | ✅ Success                   |
+| Test Type       | Status                 |
+| --------------- | ---------------------- |
+| Helm Lint       | ✅ Passed               |
+| Template Render | ✅ Passed               |
+| Minikube Deploy | ✅ Passed (with nginx)  |
+| Redis/Postgres  | ✅ Enabled, Deployable  |
+| Local Access    | ✅ Confirmed via tunnel |
 
 ---
 
-## 👨‍💻 Maintainer
+## 📂 Chart Structure
 
-**Developer:** Krishna Kumar
+```
+charts/
+└── langchain-server/
+    ├── Chart.yaml
+    ├── values.yaml
+    ├── README.md
+    └── templates/
+        ├── deployment.yaml
+        ├── service.yaml
+        ├── ingress.yaml
+        ├── configmap.yaml
+        ├── pvc.yaml
+        ├── postgres.yaml
+        ├── redis.yaml
+        └── _helpers.tpl
+```
 
-**Email:** [meet.kumarkrishna@gmail.com](mailto:meet.kumarkrishna@gmail.com)
+---
 
-**GitHub:** [Krishnaqwerty](https://github.com/krishnaqwerty)
+## 👷 **Maintainer**
+
+| Name   | Website                  | GitHub                      |
+|--------|--------------------------|-----------------------------|
+| ZopDev | [zop.dev](https://zop.dev) | [zopdev](https://github.com/zopdev) |
+
 
 ---
 
 ## 📄 License
 
-This Helm chart is open-source and may be used under the [MIT License](https://opensource.org/licenses/MIT) unless otherwise specified by ZopDev.
+This Helm chart is licensed under the [MIT License](https://opensource.org/licenses/MIT).
 
 ---
 
