@@ -22,7 +22,7 @@ jobs:
       - name: Run charts-linter
         run: ./charts-linter
         env:
-          GITHUB_TOKEN: "${{github.GITHUB_TOKEN}}"
+          GITHUB_TOKEN: "${{github.token}}"
           REPOSITORY_OWNER: "${{github.repository_owner}}"
           REPOSITORY_NAME: "${{github.repository}}"
           PR_NUMBER: "${{github.event.id}}"
