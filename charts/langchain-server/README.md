@@ -5,10 +5,10 @@
 <h2 align="center">Helm Charts : An Extensive Collection of Helm Charts for Datastores & Applications</h2>
 
 <p align="center">
-  <a href="./LICENSE">
+  <a href="../../LICENSE">
     <img src="https://img.shields.io/badge/License-Apache_2.0-blue?style=for-the-badge" alt="Apache 2.0 License">
   </a>
-  <a href="./CONTRIBUTING.md">
+  <a href="../../CONTRIBUTING.md">
     <img src="https://img.shields.io/badge/Contribute-Guide-orange?style=for-the-badge" alt="Contributing">
   </a>
 </p>
