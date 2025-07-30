@@ -2,7 +2,11 @@ module charts-lint
 
 go 1.24.5
 
-require helm.sh/helm/v3 v3.18.4
+require (
+	github.com/google/go-github/v74 v74.0.0
+	go.uber.org/mock v0.5.2
+	helm.sh/helm/v3 v3.18.4
+)
 
 require (
 	dario.cat/mergo v1.0.1 // indirect
@@ -38,6 +42,7 @@ require (
 	github.com/google/btree v1.1.3 // indirect
 	github.com/google/gnostic-models v0.6.9 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
+	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674 // indirect
