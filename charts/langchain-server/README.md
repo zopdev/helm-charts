@@ -176,6 +176,13 @@ charts/
 
 ---
 
+<h3>👨‍💻 Contributor</h3>
+<p><strong>Name:</strong> Krishna Kumar<br>
+<strong>Email:</strong> <a href="mailto:meet.kumarkrishna@gmail.com">meet.kumarkrishna@gmail.com</a><br>
+<strong>GitHub:</strong> <a href="https://github.com/krishnaqwerty">krishnaqwerty</a></p>
+
+---
+
 ## 📄 License
 
 This Helm chart is licensed under the [MIT License](https://opensource.org/licenses/MIT).
