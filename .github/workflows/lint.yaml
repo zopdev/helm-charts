@@ -25,4 +25,4 @@ jobs:
           GITHUB_TOKEN: "${{github.token}}"
           REPOSITORY_OWNER: "${{github.repository_owner}}"
           REPOSITORY_NAME: "${{github.repository}}"
-          PR_NUMBER: "${{github.event.id}}"
+          PR_NUMBER: "${{github.event.pull_request.number}}"
