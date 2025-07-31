@@ -19,3 +19,10 @@ A fully-templated, production-grade Helm chart for deploying the [Eclipse Mosqui
 
 helm repo add my-repo https://your.repo.url/
 helm install mosquitto my-repo/mosquitto
+
+### Testing
+
+This chart is validated using `helm lint` and `helm template` via GitHub Actions.  
+To run local rendering tests:
+
+helm template test charts/mosquitto -f charts/mosquitto/test-values.yaml
