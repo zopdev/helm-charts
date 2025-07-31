@@ -1,6 +1,6 @@
 image:
   repository: eclipse-mosquitto
-  tag: 2.0
+  tag: "2"
   pullPolicy: IfNotPresent
 
 auth:
