@@ -1,0 +1,16 @@
+image:
+  repository: eclipse-mosquitto
+  tag: 2.0
+  pullPolicy: IfNotPresent
+
+auth:
+  enabled: true
+
+tls:
+  enabled: true
+  certSecret: mosquitto-tls
+
+persistence:
+  enabled: true
+
+resources: {}

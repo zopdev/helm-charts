@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: { { include "mosquitto.fullname" . } }
+  labels:
+    app.kubernetes.io/name: { { include "mosquitto.name" . } }
+    app.kubernetes.io/instance: { { .Release.Name } }
+data:
+  mosquitto.conf: |
+    listener 1883
+    allow_anonymous {{ not .Values.auth.enabled | ternary "true" "false" }}
+
+    persistence {{ .Values.persistence.enabled | quote }}
+    persistence_location /mosquitto/data/
+    log_dest stdout
+
+    {{- if .Values.auth.enabled }}
+    password_file /mosquitto/passwords/passwd
+    {{- end }}
+
+    {{- if .Values.tls.enabled }}
+    listener 8883
+    cafile /mosquitto/certs/ca.crt
+    certfile /mosquitto/certs/tls.crt
+    keyfile /mosquitto/certs/tls.key
+    {{- end }}
