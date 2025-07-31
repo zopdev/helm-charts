@@ -7,17 +7,10 @@ metadata:
     app.kubernetes.io/instance: { { .Release.Name } }
 data:
   mosquitto.conf: |
-    listener 1883
-    allow_anonymous {{ not .Values.auth.enabled | ternary "true" "false" }}
-
-    persistence {{ .Values.persistence.enabled | quote }}
-    persistence_location /mosquitto/data/
-    log_dest stdout
-
-    {{- if .Values.auth.enabled }}
+    persistence {{ .Values.persistence.enabled }}
+    allow_anonymous false
     password_file /mosquitto/passwords/passwd
-    {{- end }}
-
+    listener 1883
     {{- if .Values.tls.enabled }}
     listener 8883
     cafile /mosquitto/certs/ca.crt
