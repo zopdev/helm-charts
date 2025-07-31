@@ -1,0 +1,19 @@
+apiVersion: v2
+name: flowise
+description: A Helm chart for deploying Flowise - Low-code visual builder for LangChain pipelines
+type: application
+version: 0.1.0
+appVersion: "1.4.0"
+home: https://github.com/FlowiseAI/Flowise
+sources:
+  - https://github.com/FlowiseAI/Flowise
+maintainers:
+  - name: Aman Luthra
+    email: amanluthra804@gmail.com
+keywords:
+  - flowise
+  - langchain
+  - ai
+  - ml
+  - visual-builder
+  - low-code
