@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "type": "object",
+  "properties": {
+    "image": {
+      "type": "object",
+      "properties": {
+        "repository": { "type": "string", "mutable": true },
+        "tag": { "type": "string", "mutable": true }
+      }
+    },
+    "auth": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean", "mutable": true },
+        "users": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "username": { "type": "string", "mutable": true },
+              "password": { "type": "string", "mutable": true }
+            }
+          }
+        }
+      }
+    },
+    "tls": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean", "mutable": true },
+        "certSecret": { "type": "string", "mutable": true }
+      }
+    }
+  }
+}

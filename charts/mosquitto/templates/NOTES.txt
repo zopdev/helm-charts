@@ -1,0 +1,32 @@
+{{- if contains "LoadBalancer" .Values.service.type }}
+Your Mosquitto broker is exposed via LoadBalancer.
+
+To get the external IP:
+  kubectl get svc {{ include "mosquitto.fullname" . }} -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
+
+Then connect your MQTT client to:
+  mqtt://<EXTERNAL-IP>:1883
+  {{- if .Values.tls.enabled }}
+  mqtts://<EXTERNAL-IP>:8883
+  {{- end }}
+{{- else }}
+Your Mosquitto broker is running inside the cluster.
+
+To access it, use port forwarding:
+  kubectl port-forward svc/{{ include "mosquitto.fullname" . }} 1883:1883
+
+Then connect using:
+  mqtt://localhost:1883
+  {{- if .Values.tls.enabled }}
+  mqtts://localhost:8883
+  {{- end }}
+{{- end }}
+
+{{- if .Values.auth.enabled }}
+Authentication is enabled.
+
+Default username/password:
+  - Defined in Kubernetes secret: {{ include "mosquitto.fullname" . }}-auth
+  - You can extract with:
+      kubectl get secret {{ include "mosquitto.fullname" . }}-auth -o yaml
+{{- end }}
