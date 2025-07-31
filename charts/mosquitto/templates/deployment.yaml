@@ -22,12 +22,12 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-          - containerPort: 1883
-            name: mqtt
-            {{- if .Values.tls.enabled }}
-            - containerPort: 8883
-            name: mqtts
-            {{- end }}
+           - containerPort: 1883
+             name: mqtt
+           {{- if .Values.tls.enabled }}
+           - containerPort: 8883
+             name: mqtts
+           {{- end }}
 
           volumeMounts:
             - name: config-volume
