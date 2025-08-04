@@ -24,9 +24,9 @@ persistence:
 
 # Authentication
 auth:
-  enabled: false
-  username: user
-  password: password123
+  enabled: true
+  users:
+    - username: user
 
 # TLS Configuration
 tls:

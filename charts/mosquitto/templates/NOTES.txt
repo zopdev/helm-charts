@@ -25,8 +25,14 @@ Then connect using:
 {{- if .Values.auth.enabled }}
 Authentication is enabled.
 
-Default username/password:
-  - Defined in Kubernetes secret: {{ include "mosquitto.fullname" . }}-auth
+User credentials are stored in a Kubernetes Secret:
+  - Secret Name: {{ include "mosquitto.fullname" . }}-auth
   - You can extract with:
       kubectl get secret {{ include "mosquitto.fullname" . }}-auth -o yaml
+
+Example decode command (for first user):
+  USER=$(kubectl get secret {{ include "mosquitto.fullname" . }}-auth -o jsonpath="{.data.username}" | base64 -d)
+  PASS=$(kubectl get secret {{ include "mosquitto.fullname" . }}-auth -o jsonpath="{.data.password}" | base64 -d)
+  echo "Username: $USER"
+  echo "Password: $PASS"
 {{- end }}
