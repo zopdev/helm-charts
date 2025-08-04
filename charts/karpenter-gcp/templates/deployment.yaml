@@ -1,0 +1,144 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "karpenter.fullname" . }}
+  labels:
+    {{- include "karpenter.labels" . | nindent 4 }}
+  {{- with .Values.additionalAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.controller.replicaCount }}
+  revisionHistoryLimit: {{ .Values.controller.revisionHistoryLimit }}
+  strategy:
+    rollingUpdate:
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      {{- include "karpenter.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "karpenter.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "karpenter.serviceAccountName" . }}
+      priorityClassName: gmp-critical
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: karpenter
+          image: "public.ecr.aws/cloudpilotai/gcp/karpenter:{{ .Values.controller.image.tag }}"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: HEALTH_PROBE_PORT
+              value: "8001"
+            - name: PROJECT_ID
+              value: {{ .Values.controller.settings.projectID }}
+            - name: REGION
+              value: {{ .Values.controller.settings.region }}
+            - name: CLUSTER_NAME
+              value: {{ .Values.controller.settings.clusterName }}
+            {{- if .Values.credentials.enabled }}
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: "/var/secrets/google/{{ .Values.credentials.secretKey }}"
+            {{- end }}
+            - name: KUBERNETES_MIN_VERSION
+              value: "1.26.0"
+            {{- with .Values.logLevel }}
+            - name: LOG_LEVEL
+              value: "{{ . }}"
+            {{- end }}
+            {{- with .Values.logOutputPaths }}
+            - name: LOG_OUTPUT_PATHS
+              value: "{{ join "," . }}"
+            {{- end }}
+            {{- with .Values.logErrorOutputPaths }}
+            - name: LOG_ERROR_OUTPUT_PATHS
+              value: "{{ join "," . }}"
+            {{- end }}
+            - name: SYSTEM_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: LEADER_ELECTION_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: MEMORY_LIMIT
+              valueFrom:
+                resourceFieldRef:
+                  containerName: karpenter
+                  divisor: "0"
+                  resource: limits.memory
+            - name: FEATURE_GATES
+              value: "SpotToSpotConsolidation=true"
+            {{- with .Values.controller.settings.batchMaxDuration }}
+            - name: BATCH_MAX_DURATION
+              value: "{{ . }}"
+            {{- end }}
+            {{- with .Values.controller.settings.batchIdleDuration }}
+            - name: BATCH_IDLE_DURATION
+              value: "{{ . }}"
+            {{- end }}
+            {{- with .Values.controller.settings.vmMemoryOverheadPercent }}
+            - name: VM_MEMORY_OVERHEAD_PERCENT
+              value: "{{ . }}"
+            {{- end }}
+            - name: METRICS_PORT
+              value: "{{ .Values.controller.metrics.port }}"
+            - name: KARPENTER_SERVICE
+              value: {{ include "karpenter.fullname" . }}
+            {{- with .Values.controller.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          ports:
+            - name: http
+              containerPort: 8001
+              protocol: TCP
+            - name: http-metrics
+              containerPort: {{ .Values.controller.metrics.port }}
+              protocol: TCP
+          livenessProbe:
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+            httpGet:
+              path: /healthz
+              port: http
+          readinessProbe:
+            initialDelaySeconds: 5
+            timeoutSeconds: 30
+            httpGet:
+              path: /readyz
+              port: http
+          resources:
+            {{- toYaml .Values.controller.resources | nindent 12 }}
+          volumeMounts:
+          {{- if .Values.credentials.enabled }}
+            - mountPath: "/var/secrets/google"
+              readOnly: true
+              name: gcp-secret
+          {{- end }}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: karpenter
+              topologyKey: kubernetes.io/hostname
+      tolerations: []
+      {{- if .Values.credentials.enabled }}
+      volumes:
+        - name: gcp-secret
+          secret:
+            secretName: {{ .Values.credentials.secretName | default (printf "%s-gcp-credentials" (include "karpenter.fullname" .)) }}
+            items:
+              - key: {{ .Values.credentials.secretKey }}
+                path: {{ .Values.credentials.secretKey }}
+      {{- end }}
