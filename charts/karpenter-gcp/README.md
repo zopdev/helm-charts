@@ -68,7 +68,7 @@ kubectl apply -f gcp-secret.yaml
 
 ## Install Helm Chart
 
-To deploy the JupyterHub Helm chart, use the following command:
+To deploy the Karpenter Helm chart, use the following command:
 
 ```bash
 helm install [RELEASE_NAME] zopdev/karpenter-gcp
@@ -138,7 +138,7 @@ spec:
 
 ## Uninstall Helm Chart
 
-To remove the JupyterHub Helm chart and associated resources, run:
+To remove the Karpenter Helm chart and associated resources, run:
 
 ```bash
 helm uninstall [RELEASE_NAME]
