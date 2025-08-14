@@ -26,7 +26,7 @@ spec:
         {{- if ne (int .Values.alerts.standard.infra.podRestartThreshold) -1 }}
         - alert: {{ snakecase .Values.name }}_pod_restarts
           annotations:
-            description: "{{ .Values.name }} replicas has been restarting in {{ .Release.Namespace }} namespace."
+            description: "One or more replicas of {{ .Values.name }} have restarted repeatedly in the {{ .Release.Namespace }} namespace within the observed time window."
           expr: sum(increase(kube_pod_container_status_restarts_total{namespace="{{ .Release.Namespace }}",pod=~"{{ .Values.name }}-.*" }[{{ .Values.alerts.standard.infra.podRestartTimeWindow }}])) > {{ .Values.alerts.standard.infra.podRestartThreshold }}
           labels:
             severity: critical
@@ -38,7 +38,7 @@ spec:
         {{- if ne (int .Values.alerts.standard.infra.unavailableReplicasThreshold) -1 }}
         - alert: {{ snakecase .Values.name }}_unavailable_replicas
           annotations:
-            description: "{{ .Values.name }} replicas has been unavailable in {{ .Release.Namespace }} namespace."
+            description: "One or more replicas of {{ .Values.name }} are currently unavailable in the {{ .Release.Namespace }} namespace."
           expr: sum(kube_deployment_status_replicas_unavailable{deployment="{{ .Values.name }}",namespace="{{ .Release.Namespace }}"}) > {{ .Values.alerts.standard.infra.unavailableReplicasThreshold }}
           labels:
             severity: critical
