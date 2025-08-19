@@ -1,50 +1,5 @@
-# Mosquitto Image Configuration
-image:
-  repository: eclipse-mosquitto
-  tag: 2.0.18
-  pullPolicy: IfNotPresent
+diskSize : "10Gi"
 
-# Broker Configuration
-config:
-  # Optional custom config file (overrides default if provided)
-  customConfig: ""
-
-# Service Configuration
-service:
-  type: ClusterIP # Use LoadBalancer for external access
-  port: 1883
-  tlsPort: 8883
-
-# Persistence
-persistence:
-  enabled: true
-  storageClass: ""
-  accessMode: ReadWriteOnce
-  size: 1Gi
-
-# Authentication
-auth:
-  enabled: true
-  users:
-    - username: user
-
-# TLS Configuration
-tls:
-  enabled: false
-  certSecret: mosquitto-tls-secret # Must contain tls.crt and tls.key
-
-# Probes
-livenessProbe:
-  enabled: true
-  initialDelaySeconds: 10
-  periodSeconds: 15
-
-readinessProbe:
-  enabled: true
-  initialDelaySeconds: 5
-  periodSeconds: 10
-
-# Resource Limits
 resources:
   limits:
     cpu: 100m
@@ -53,7 +8,4 @@ resources:
     cpu: 50m
     memory: 64Mi
 
-# Node selectors, tolerations, affinity (optional)
-nodeSelector: {}
-tolerations: []
-affinity: {}
+version: "1.0"
