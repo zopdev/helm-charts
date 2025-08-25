@@ -1,0 +1,92 @@
+# Default values for flowise
+replicaCount: 1
+
+image:
+  repository: flowiseai/flowise
+  pullPolicy: IfNotPresent
+  tag: "1.4.0"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext:
+  fsGroup: 1001
+
+securityContext:
+  allowPrivilegeEscalation: false
+  runAsNonRoot: true
+  runAsUser: 1001
+  capabilities:
+    drop:
+    - ALL
+
+service:
+  type: ClusterIP
+  port: 3000
+  targetPort: 3000
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: flowise.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Flowise specific configuration
+flowise:
+  # Database configuration
+  database:
+    type: "sqlite"
+    path: "/opt/flowise/.flowise"
+    
+  # Environment variables
+  env:
+    PORT: "3000"
+    FLOWISE_USERNAME: "admin"
+    FLOWISE_PASSWORD: "1234"
+    DEBUG: "false"
+    LOG_LEVEL: "info"
+
+# Persistence configuration
+persistence:
+  enabled: true
+  storageClass: ""
+  size: 1Gi
+  accessModes:
+    - ReadWriteOnce
+
+# ConfigMap data
+configMap:
+  data: {}
