@@ -1,4 +1,6 @@
-diskSize : "10Gi"
+diskSize: "10Gi"
+
+version: "1.0"
 
 resources:
   limits:
@@ -7,5 +9,3 @@ resources:
   requests:
     cpu: 50m
     memory: 64Mi
-
-version: "1.0"

@@ -19,8 +19,8 @@ spec:
     spec:
       containers:
         - name: mosquitto
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          image: "eclipse-mosquitto:{{ .Values.version }}"
+          imagePullPolicy: Always
           ports:
            - containerPort: 1883
              name: mqtt
