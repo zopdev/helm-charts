@@ -1,0 +1,60 @@
+replicaCount: 1
+
+image:
+  repository: quay.io/kubescape/operator
+  pullPolicy: IfNotPresent
+  tag: "v3.0.0"
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext:
+  fsGroup: 65534
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 65534
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+persistence:
+  enabled: true
+  size: 5Gi
+  storageClass: ""
+  accessMode: ReadWriteOnce
+
+scanning:
+  frameworks:
+    - nsa
+    - mitre
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  failedJobsHistoryLimit: 3
+  successfulJobsHistoryLimit: 3
+
+service:
+  type: ClusterIP
+  port: 8080
+  targetPort: 8080
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+config:
+  logLevel: info
+  enablePprof: false
