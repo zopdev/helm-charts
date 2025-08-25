@@ -1,0 +1,11 @@
+diskSize: "10Gi"
+
+version: "1.0"
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 50m
+    memory: 64Mi
