@@ -2,24 +2,68 @@
   "$schema": "http://json-schema.org/schema#",
   "type": "object",
   "properties": {
+    "version": {
+      "type": "string",
+      "mutable": true
+    },
+    "diskSize": {
+      "type": "string",
+      "mutable": true
+    },
     "image": {
       "type": "object",
       "properties": {
-        "repository": { "type": "string", "mutable": true },
-        "tag": { "type": "string", "mutable": true }
+        "repository": {
+          "type": "string",
+          "mutable": true
+        },
+        "tag": {
+          "type": "string",
+          "mutable": true
+        },
+        "pullPolicy": {
+          "type": "string",
+          "mutable": true
+        }
+      }
+    },
+    "persistence": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "mutable": true
+        },
+        "size": {
+          "type": "string",
+          "mutable": true
+        },
+        "storageClass": {
+          "type": "string",
+          "mutable": true
+        }
       }
     },
     "auth": {
       "type": "object",
       "properties": {
-        "enabled": { "type": "boolean", "mutable": true },
+        "enabled": {
+          "type": "boolean",
+          "mutable": true
+        },
         "users": {
           "type": "array",
           "items": {
             "type": "object",
             "properties": {
-              "username": { "type": "string", "mutable": true },
-              "password": { "type": "string", "mutable": true }
+              "username": {
+                "type": "string",
+                "mutable": true
+              },
+              "password": {
+                "type": "string",
+                "mutable": true
+              }
             }
           }
         }
@@ -28,8 +72,62 @@
     "tls": {
       "type": "object",
       "properties": {
-        "enabled": { "type": "boolean", "mutable": true },
-        "certSecret": { "type": "string", "mutable": true }
+        "enabled": {
+          "type": "boolean",
+          "mutable": true
+        },
+        "certSecret": {
+          "type": "string",
+          "mutable": true
+        }
+      }
+    },
+    "service": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "mutable": true
+        },
+        "port": {
+          "type": "integer",
+          "mutable": true
+        },
+        "tlsPort": {
+          "type": "integer",
+          "mutable": true
+        }
+      }
+    },
+    "resources": {
+      "type": "object",
+      "properties": {
+        "limits": {
+          "type": "object",
+          "properties": {
+            "cpu": {
+              "type": "string",
+              "mutable": true
+            },
+            "memory": {
+              "type": "string",
+              "mutable": true
+            }
+          }
+        },
+        "requests": {
+          "type": "object",
+          "properties": {
+            "cpu": {
+              "type": "string",
+              "mutable": true
+            },
+            "memory": {
+              "type": "string",
+              "mutable": true
+            }
+          }
+        }
       }
     }
   }

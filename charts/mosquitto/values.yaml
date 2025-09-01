@@ -1,6 +1,10 @@
 diskSize: "10Gi"
-
 version: "1.0"
+
+image:
+  repository: "eclipse-mosquitto"
+  tag: "latest"
+  pullPolicy: "Always"
 
 resources:
   limits:
@@ -9,3 +13,25 @@ resources:
   requests:
     cpu: 50m
     memory: 64Mi
+
+persistence:
+  enabled: true
+  size: "10Gi"
+  storageClass: ""
+
+auth:
+  enabled: true
+  users:
+    - username: "admin"
+      password: "admin123"
+    - username: "client"
+      password: "client123"
+
+tls:
+  enabled: false
+  certSecret: "mosquitto-tls-secret"
+
+service:
+  type: "ClusterIP"
+  port: 1883
+  tlsPort: 8883
