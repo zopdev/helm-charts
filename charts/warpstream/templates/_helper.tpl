@@ -60,29 +60,24 @@ Create the name of the service account to use
 {{- end }}
 
 {{/*
-WarpStream agent roles as comma-separated string
-*/}}
-{{- define "warpstream.roles" -}}
-{{- join "," .Values.warpstream.agent.roles }}
-{{- end }}
-
-{{/*
-WarpStream command args
+WarpStream agent arguments
 */}}
 {{- define "warpstream.args" -}}
 - "agent"
-{{- if .Values.warpstream.storage.bucketURL }}
-- "-bucketURL"
-- {{ .Values.warpstream.storage.bucketURL | quote }}
-{{- end }}
+{{- if .Values.warpstream.agent.virtualClusterId }}
 - "-defaultVirtualClusterID"
 - {{ .Values.warpstream.agent.virtualClusterId | quote }}
+{{- end }}
 - "-region"
 - {{ .Values.warpstream.agent.region | quote }}
+- "-roles"
+- {{ join "," .Values.warpstream.agent.roles | quote }}
 {{- if .Values.warpstream.agent.agentPoolId }}
 - "-agentPoolID"
 - {{ .Values.warpstream.agent.agentPoolId | quote }}
 {{- end }}
-- "-roles"
-- {{ include "warpstream.roles" . | quote }}
+{{- if .Values.warpstream.storage.bucketURL }}
+- "-bucketURL"
+- {{ .Values.warpstream.storage.bucketURL | quote }}
+{{- end }}
 {{- end }}

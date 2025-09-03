@@ -2,82 +2,58 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "properties": {
+    "image": {
+      "type": "object",
+      "properties": {
+        "tag": {
+          "type": "string",
+          "mutable": true,
+          "description": "WarpStream agent Docker image tag"
+        }
+      }
+    },
     "replicaCount": {
       "type": "integer",
       "minimum": 1,
       "mutable": true,
       "description": "Number of WarpStream agent replicas"
     },
-    "image": {
-      "type": "object",
-      "properties": {
-        "repository": {
-          "type": "string",
-          "mutable": false,
-          "description": "WarpStream agent Docker image repository"
-        },
-        "tag": {
-          "type": "string",
-          "mutable": true,
-          "description": "WarpStream agent Docker image tag"
-        },
-        "pullPolicy": {
-          "type": "string",
-          "enum": ["Always", "IfNotPresent", "Never"],
-          "mutable": true,
-          "description": "Image pull policy"
-        }
-      }
-    },
-    "service": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "type": "string",
-          "enum": ["ClusterIP", "NodePort", "LoadBalancer"],
-          "mutable": true,
-          "description": "Kubernetes service type"
-        },
-        "port": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 65535,
-          "mutable": true,
-          "description": "Kafka protocol port"
-        },
-        "metricsPort": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 65535,
-          "mutable": true,
-          "description": "Metrics port"
-        }
-      }
-    },
     "resources": {
       "type": "object",
+      "properties": {
+        "requests": {
+          "type": "object",
+          "properties": {
+            "cpu": {
+              "type": "string",
+              "default": "500m",
+              "mutable": true
+            },
+            "memory": {
+              "type": "string", 
+              "default": "1Gi",
+              "mutable": true
+            }
+          }
+        },
+        "limits": {
+          "type": "object",
+          "properties": {
+            "cpu": {
+              "type": "string",
+              "default": "1000m",
+              "mutable": true
+            },
+            "memory": {
+              "type": "string",
+              "default": "2Gi", 
+              "mutable": true
+            }
+          }
+        }
+      },
       "mutable": true,
       "description": "Resource limits and requests"
-    },
-    "autoscaling": {
-      "type": "object",
-      "properties": {
-        "enabled": {
-          "type": "boolean",
-          "mutable": true,
-          "description": "Enable horizontal pod autoscaling"
-        },
-        "minReplicas": {
-          "type": "integer",
-          "minimum": 1,
-          "mutable": true
-        },
-        "maxReplicas": {
-          "type": "integer",
-          "minimum": 1,
-          "mutable": true
-        }
-      }
     },
     "warpstream": {
       "type": "object",
@@ -95,76 +71,29 @@
               "mutable": true,
               "description": "Virtual cluster ID (required)"
             },
-            "agentPoolId": {
-              "type": "string",
-              "mutable": true,
-              "description": "Agent Pool ID (optional)"
-            },
             "region": {
               "type": "string",
               "mutable": true,
               "description": "Cluster region"
-            },
-            "logLevel": {
-              "type": "string",
-              "enum": ["debug", "info", "warn", "error", "analytics"],
-              "mutable": true,
-              "description": "Log level"
-            },
-            "roles": {
-              "type": "array",
-              "items": {
-                "type": "string",
-                "enum": ["agent", "proxy", "proxy-produce", "proxy-consume", "jobs"]
-              },
-              "mutable": true,
-              "description": "Agent roles"
-            }
-          },
-          "required": ["apiKey", "virtualClusterId", "region"]
-        },
-        "storage": {
-          "type": "object",
-          "properties": {
-            "bucketURL": {
-              "type": "string",
-              "mutable": true,
-              "description": "S3-compatible storage bucket URL"
             }
           }
         }
-      }
-    },
-    "monitoring": {
-      "type": "object",
-      "properties": {
-        "enabled": {
-          "type": "boolean",
-          "mutable": true,
-          "description": "Enable monitoring"
-        },
-        "serviceMonitor": {
-          "type": "object",
-          "mutable": true,
-          "description": "Prometheus ServiceMonitor configuration"
-        }
-      }
-    },
-    "rbac": {
-      "type": "object",
-      "properties": {
-        "create": {
-          "type": "boolean",
-          "mutable": true,
-          "description": "Create RBAC resources for AZ detection"
-        }
-      }
-    },
-    "ingress": {
-      "type": "object",
+      },
       "mutable": true,
-      "description": "Ingress configuration"
+      "description": "WarpStream specific configurations"
+    },
+    "services": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": ["name"]
+      }
     }
   },
-  "required": ["warpstream"]
+  "required": ["warpstream", "services"]
 }

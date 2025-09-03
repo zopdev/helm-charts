@@ -1,4 +1,3 @@
-# charts/warpstream/values.yaml
 # Default configuration for WarpStream
 replicaCount: 1
 
@@ -6,7 +5,7 @@ image:
   # Official WarpStream Docker image from Amazon ECR
   repository: public.ecr.aws/warpstream-labs/warpstream_agent
   pullPolicy: IfNotPresent
-  tag: "latest"
+  tag: "v694" 
 
 imagePullSecrets: []
 nameOverride: ""
@@ -98,15 +97,20 @@ warpstream:
     region: "us-east-1"
     # Log level: debug, info, warn, error, analytics
     logLevel: "info"
-    # Agent roles: agent, proxy, proxy-produce, proxy-consume, jobs
+    # Agent roles: Valid roles are proxy, jobs, proxy-produce, proxy-consume, pipelines
+    # proxy: handles all Kafka requests (produce, consume, metadata)
+    # jobs: required for background tasks (compaction, cleanup)
     roles:
-      - "agent"
+      - "proxy"
+      - "jobs"
     # Availability zone (auto-detected if not set)
     availabilityZone: ""
     
   # Object storage configuration
   storage:
     # Bucket URL for S3-compatible storage (required for production)
+    # For development/testing, use: "mem://dev-bucket"
+    # For production, use: "s3://bucket-name?region=us-east-1"
     bucketURL: ""
     
   # Performance tuning
@@ -161,4 +165,5 @@ persistence:
   accessMode: ReadWriteOnce
   size: 8Gi
   storageClass: ""
-  
+
+services: []

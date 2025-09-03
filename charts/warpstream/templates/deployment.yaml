@@ -30,7 +30,9 @@ spec:
       {{- with .Values.topologySpreadConstraints }}
       topologySpreadConstraints:
         {{- range . }}
-        - {{- toYaml . | nindent 10 }}
+        - maxSkew: {{ .maxSkew }}
+          topologyKey: {{ .topologyKey }}
+          whenUnsatisfiable: {{ .whenUnsatisfiable }}
           labelSelector:
             matchLabels:
               {{- include "warpstream.selectorLabels" $ | nindent 14 }}
