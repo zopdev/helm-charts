@@ -1,0 +1,26 @@
+{{- if .Values.headless.enabled}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "openobserve.fullname" . }}-headless
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "openobserve.labels" . | nindent 4 }}
+  {{- with .Values.headless.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 8 }}
+  {{- end }}
+spec:
+  clusterIP: None
+  ports:
+    - port: {{ .Values.service.http_port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+    - port: {{ .Values.service.grpc_port }}
+      targetPort: grpc
+      protocol: TCP
+      name: grpc
+  selector:
+    {{- include "openobserve.selectorLabels" . | nindent 4 }}
+{{- end }}

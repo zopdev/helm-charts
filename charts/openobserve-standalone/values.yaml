@@ -1,0 +1,403 @@
+# Default values for openobserve.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+image:
+  repository: o2cr.ai/openobserve/openobserve
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "v0.15.1"
+  busybox:
+    repository: busybox
+    tag: 1.37.0
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+clusterDomain: "cluster.local"
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # eks.amazonaws.com/role-arn: arn:aws:iam::12345353456:role/zo-s3-eks
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+labels: {}
+
+podSecurityContext:
+  fsGroup: 2000
+  runAsUser: 10000
+  runAsGroup: 3000
+  runAsNonRoot: true
+
+securityContext:
+  {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+persistence:
+  enabled: true
+  size: 10Gi
+  storageClass: ""
+  accessModes:
+    - ReadWriteOnce
+  annotations: {}
+  volumePermissions:
+    enabled: false
+
+extraVolumeMounts: []
+
+extraVolumes: []
+
+headless:
+  enabled: true
+  service:
+    annotations: {}
+
+# Credentials for authentication
+auth:
+  ZO_ROOT_USER_EMAIL: "root@example.com"
+  ZO_ROOT_USER_PASSWORD: "Complexpass#123"
+  ZO_ROOT_USER_TOKEN: ""
+
+  # do not need to set this if enabled minio is being used. settings will be picked from minio section. Also IRSA is preferred if on EKS. Set the Service account section with the correct IAM role ARN. Refer https://zinc.dev/docs/guide/ha_deployment/#amazon-eks-s3
+  ZO_S3_ACCESS_KEY: ""
+  ZO_S3_SECRET_KEY: ""
+
+  AZURE_STORAGE_ACCOUNT_KEY: ""
+  AZURE_STORAGE_ACCOUNT_NAME: ""
+
+# https://openobserve.ai/docs/environment-variables/
+config:
+  ZO_APP_NAME: "openobserve"
+  ZO_CLUSTER_NAME: "o2"
+  ZO_INSTANCE_NAME: ""
+  ZO_NODE_ROLE: "all"
+  ZO_LOCAL_MODE: "true"
+  ZO_LOCAL_MODE_STORAGE: "disk"
+  ZO_HTTP_PORT: "5080"
+  ZO_HTTP_ADDR: ""
+  ZO_HTTP_IPV6_ENABLED: "false"
+  ZO_GRPC_PORT: "5081"
+  ZO_GRPC_ADDR: ""
+  ZO_GRPC_CONNECT_TIMEOUT: "600"
+  ZO_GRPC_MAX_MESSAGE_SIZE: "16"
+  ZO_GRPC_CHANNEL_CACHE_DISABLED: "false"
+  ZO_GRPC_ORG_HEADER_KEY: "organization"
+  ZO_GRPC_STREAM_HEADER_KEY: "stream-name"
+  ZO_GRPC_TLS_ENABLED: "false"
+  ZO_GRPC_TLS_CERT_DOMAIN: ""
+  ZO_GRPC_TLS_CERT_PATH: ""
+  ZO_GRPC_TLS_KEY_PATH: ""
+  ZO_INTERNAL_GRPC_TOKEN: ""
+  ZO_DATA_DIR: "./data/"
+  ZO_DATA_DB_DIR: ""
+  ZO_DATA_WAL_DIR: ""
+  ZO_DATA_IDX_DIR: ""
+  ZO_DATA_STREAM_DIR: ""
+  ZO_DATA_CACHE_DIR: ""
+  ZO_UI_ENABLED: "true"
+  ZO_UI_SQL_BASE64_ENABLED: "false"
+  ZO_WEB_URL: ""
+  ZO_BASE_URI: ""
+  ZO_META_STORE: "sqlite"
+  ZO_META_POSTGRES_DSN: ""
+  ZO_META_CONNECTION_POOL_MIN_SIZE: "0"
+  ZO_META_CONNECTION_POOL_MAX_SIZE: "0"
+  ZO_META_TRANSACTION_RETRIES: "3"
+  ZO_META_TRANSACTION_LOCK_TIMEOUT: "600" # seconds
+  ZO_COLS_PER_RECORD_LIMIT: "200"
+  ZO_FEATURE_FULLTEXT_EXTRA_FIELDS: ""
+  ZO_FEATURE_INDEX_EXTRA_FIELDS: ""
+  ZO_FEATURE_DISTINCT_EXTRA_FIELDS: ""
+  ZO_FEATURE_QUERY_QUEUE_ENABLED: "true"
+  ZO_FEATURE_QUICK_MODE_FIELDS: "" # default fields for quick mode
+  ZO_FEATURE_QUERY_PARTITION_STRATEGY: "file_num"
+  ZO_FEATURE_PER_THREAD_LOCK: "false"
+  ZO_FEATURE_QUERY_STREAMING_AGGS: "false"
+  ZO_DATAFUSION_STREAMING_AGGS_CACHE_MAX_ENTRIES: "100000"
+  ZO_CACHE_DELAY_SECS: "300"
+  ZO_RESULT_CACHE_ENABLED: "false"
+  ZO_METRICS_CACHE_ENABLED: "true"
+  ZO_METRICS_CACHE_MAX_ENTRIES: "100000"
+  ZO_QUERY_OPTIMIZATION_NUM_FIELDS: "0"
+  ZO_SCHEMA_MAX_FIELDS_TO_ENABLE_UDS: "150"
+  ZO_USER_DEFINED_SCHEMA_MAX_FIELDS: "200"
+  ZO_QUICK_MODE_ENABLED: "false"
+  ZO_QUICK_MODE_FORCE_ENABLED: "true"
+  ZO_QUICK_MODE_NUM_FIELDS: "500"
+  ZO_QUICK_MODE_STRATEGY: ""
+  ZO_BLOOM_FILTER_ENABLED: "true"
+  ZO_BLOOM_FILTER_DEFAULT_FIELDS: ""
+  ZO_ENABLE_INVERTED_INDEX: "true"
+  ZO_FEATURE_QUERY_REMOVE_FILTER_WITH_INDEX: "true"
+  ZO_INVERTED_INDEX_COUNT_OPTIMIZER_ENABLED: "true"
+  ZO_INVERTED_INDEX_CAMEL_CASE_TOKENIZER_DISABLED: "false"
+  ZO_QUERY_ON_STREAM_SELECTION: "true"
+  ZO_DISTINCT_VALUES_INTERVAL: "10"
+  ZO_DISTINCT_VALUES_HOURLY: "false"
+  ZO_TRACING_ENABLED: "false"
+  ZO_TRACING_SEARCH_ENABLED: "false"
+  ZO_TRACING_HEADER_KEY: "Authorization"
+  ZO_TRACING_HEADER_VALUE: "Basic cm9vdEBleGFtcGxlLmNvbTpDb21wbGV4cGFzcyMxMjM="
+  OTEL_OTLP_HTTP_ENDPOINT: ""
+  ZO_TELEMETRY: "true"
+  ZO_TELEMETRY_HEARTBEAT: "1800"
+  ZO_TELEMETRY_URL: "https://e1.zinclabs.dev"
+  ZO_JSON_LIMIT: "209715200"
+  ZO_PAYLOAD_LIMIT: "209715200"
+  ZO_PARQUET_MAX_ROW_GROUP_SIZE: "0"
+  ZO_MAX_FILE_SIZE_ON_DISK: "128"
+  ZO_MAX_FILE_SIZE_IN_MEMORY: "128"
+  ZO_MAX_FILE_RETENTION_TIME: "600"
+  ZO_FILE_PUSH_INTERVAL: "10"
+  ZO_FILE_PUSH_LIMIT: "10000"
+  ZO_FILE_MOVE_THREAD_NUM: "0"
+  ZO_FILE_MERGE_THREAD_NUM: "0"
+  ZO_MEM_DUMP_THREAD_NUM: "0"
+  ZO_MEM_TABLE_MAX_SIZE: "0"
+  ZO_MEM_TABLE_BUCKET_NUM: "0"
+  ZO_MEM_PERSIST_INTERVAL: "2"
+  ZO_ENRICHMENT_TABLE_LIMIT: "10" # size in mb
+  ZO_WAL_WRITE_BUFFER_SIZE: "16384"
+  ZO_WAL_FSYNC_DISABLED: "false"
+  ZO_WAL_WRITE_QUEUE_ENABLED: "false"
+  ZO_QUERY_THREAD_NUM: "0"
+  ZO_QUERY_INDEX_THREAD_NUM: "0"
+  ZO_QUERY_TIMEOUT: "600"
+  ZO_ROUTE_TIMEOUT: "600"
+  ZO_ROUTE_MAX_CONNECTIONS: "1024"
+  ZO_ROUTE_STRATEGY: "workload"
+  ZO_HTTP_WORKER_NUM: "0"
+  ZO_HTTP_WORKER_MAX_BLOCKING: "0"
+  ZO_ACTIX_REQ_TIMEOUT: "30" # in second
+  ZO_ACTIX_KEEP_ALIVE: "30" # in second
+  ZO_ACTIX_SHUTDOWN_TIMEOUT: "10" # in second
+  ZO_ACTIX_SLOW_LOG_THRESHOLD: "5" # in second
+  ZO_INGEST_ALLOWED_UPTO: "24"
+  ZO_INGEST_FLATTEN_LEVEL: "3"
+  ZO_LOGS_FILE_RETENTION: "hourly"
+  ZO_TRACES_FILE_RETENTION: "hourly"
+  ZO_METRICS_FILE_RETENTION: "daily"
+  ZO_METRICS_DEDUP_ENABLED: "true"
+  ZO_METRICS_LEADER_PUSH_INTERVAL: "15"
+  ZO_METRICS_LEADER_ELECTION_INTERVAL: "30"
+  ZO_PROMETHEUS_HA_CLUSTER: "cluster"
+  ZO_PROMETHEUS_HA_REPLICA: "__replica__"
+  ZO_COMPACT_ENABLED: "true"
+  ZO_COMPACT_INTERVAL: "60"
+  ZO_COMPACT_SYNC_TO_DB_INTERVAL: "600"
+  ZO_COMPACT_STRATEGY: "file_time"
+  ZO_COMPACT_MAX_FILE_SIZE: "512"
+  ZO_COMPACT_DATA_RETENTION_DAYS: "3650"
+  ZO_COMPACT_DELETE_FILES_DELAY_HOURS: "2"
+  ZO_COMPACT_BATCH_SIZE: "0"
+  ZO_COMPACT_BLOCKED_ORGS: ""
+  ZO_MEMORY_CACHE_ENABLED: "true"
+  ZO_MEMORY_CACHE_STRATEGY: "lru"
+  ZO_MEMORY_CACHE_MAX_SIZE: "0"
+  ZO_MEMORY_CACHE_SKIP_SIZE: "0"
+  ZO_MEMORY_CACHE_RELEASE_SIZE: "0"
+  ZO_MEMORY_CACHE_GC_SIZE: "50"
+  ZO_MEMORY_CACHE_GC_INTERVAL: "0"
+  ZO_MEMORY_CACHE_DATAFUSION_MEMORY_POOL: ""
+  ZO_MEMORY_CACHE_DATAFUSION_MAX_SIZE: "0"
+  ZO_DISK_CACHE_ENABLED: "true"
+  ZO_DISK_CACHE_STRATEGY: "lru"
+  ZO_DISK_CACHE_MAX_SIZE: "0"
+  ZO_DISK_CACHE_SKIP_SIZE: "0"
+  ZO_DISK_CACHE_RELEASE_SIZE: "0"
+  ZO_DISK_CACHE_GC_SIZE: "100"
+  ZO_DISK_CACHE_GC_INTERVAL: "0"
+  # ZO_S3_PROVIDER: "minio" # Need to set this up only if minio is being for object storage. Will be set automatically if enabled minio is being used.valid values are s3, azure, minio
+  ZO_S3_SERVER_URL: "" # do not need to set this if enabled minio is being used. settings will be picked from minio section
+  ZO_S3_REGION_NAME: "us-east-2" # do not need to set this if enabled minio is being used. settings will be picked from minio section
+  ZO_S3_BUCKET_NAME: "o2-dev-bucket" # do not need to set this if enabled minio is being used. settings will be picked from minio section
+  ZO_S3_BUCKET_PREFIX: ""
+  ZO_S3_FEATURE_FORCE_HOSTED_STYLE: "false"
+  ZO_S3_FEATURE_HTTP1_ONLY: "false"
+  ZO_S3_FEATURE_HTTP2_ONLY: "false"
+  ZO_S3_SYNC_TO_CACHE_INTERVAL: "600"
+  ZO_S3_CONNECT_TIMEOUT: "10" # in seconds
+  ZO_S3_REQUEST_TIMEOUT: "3600" # in seconds
+  ZO_S3_ALLOW_INVALID_CERTIFICATES: "false"
+  ZO_S3_MAX_RETRIES: "10"
+  ZO_S3_MAX_IDLE_PER_HOST: "0"
+  ZO_S3_CONNECTION_KEEPALIVE_TIMEOUT: "20"
+  ZO_USAGE_REPORTING_ENABLED: "false"
+  ZO_USAGE_REPORTING_MODE: "local"
+  ZO_USAGE_REPORTING_URL: "http://localhost:5080/api/_meta/usage/_json"
+  ZO_USAGE_REPORTING_CREDS: ""
+  ZO_USAGE_ORG: "_meta"
+  ZO_USAGE_BATCH_SIZE: "2000"
+  ZO_PRINT_KEY_CONFIG: "false"
+  ZO_PRINT_KEY_EVENT: "false"
+  ZO_PRINT_KEY_SQL: "false"
+  ZO_IGNORE_FILE_RETENTION_BY_STREAM: "false"
+  ZO_RUM_ENABLED: "false"
+  ZO_RUM_CLIENT_TOKEN: ""
+  ZO_RUM_APPLICATION_ID: ""
+  ZO_RUM_SITE: ""
+  ZO_RUM_SERVICE: ""
+  ZO_RUM_ENV: ""
+  ZO_RUM_VERSION: "0.9.1"
+  ZO_RUM_ORGANIZATION_IDENTIFIER: "default"
+  ZO_RUM_API_VERSION: "v1"
+  ZO_RUM_INSECURE_HTTP: "false"
+  ZO_COOKIE_MAX_AGE: "2592000" # 30 days
+  ZO_COOKIE_SAME_SITE_LAX: "true"
+  ZO_COOKIE_SECURE_ONLY: "false"
+  ZO_PROF_PYROSCOPE_ENABLED: "false"
+  ZO_PROF_PYROSCOPE_SERVER_URL: "http://localhost:4040"
+  ZO_PROF_PYROSCOPE_PROJECT_NAME: "openobserve"
+  ZO_ENTRY_PER_SCHEMA_VERSION_ENABLED: "true"
+  ZO_MIN_AUTO_REFRESH_INTERVAL: "5"
+  ZO_MAX_DASHBOARD_SERIES: "100"
+  ZO_SWAGGER_ENABLED: "true"
+  ZO_WEBSOCKET_ENABLED: "true"
+  ZO_STREAMING_ENABLED: "true"
+  RUST_LOG: "info"
+  RUST_BACKTRACE: "0"
+
+# Add extra environment variables to all pods, useful for overriding secrets
+extraEnv: []
+# - name: ZO_S3_SECRET_KEY
+#   valueFrom:
+#     secretKeyRef:
+#       name: s3credentials-secret
+#       key: S3_KEY
+
+service:
+  type: ClusterIP
+  # type: LoadBalancer
+  http_port: 5080
+  grpc_port: 5081
+  annotations: {}
+
+certIssuer:
+  enabled: false
+
+secret:
+  annotations: {}
+
+ingress:
+  enabled: false
+  className: "nginx"
+  annotations:
+    cert-manager.io/issuer: letsencrypt
+    kubernetes.io/tls-acme: "true"
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    # nginx.ingress.kubernetes.io/connection-proxy-header: keep-alive
+    # nginx.ingress.kubernetes.io/proxy-connect-timeout: '600'
+    # nginx.ingress.kubernetes.io/proxy-send-timeout: '600'
+    # nginx.ingress.kubernetes.io/proxy-read-timeout: '600'
+    # nginx.ingress.kubernetes.io/proxy-body-size: 32m
+  hosts:
+    - host: openobserve.example.com
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls:
+    - secretName: openobserve.example.com
+      hosts:
+        - openobserve.example.com
+
+# You can specify resources for each deployment independently.
+# For example, to configure resources for the ingester, use
+# the code below:
+# resources:
+#   ingester:
+#     limits:
+#       cpu: 150m
+#       memory: 512Mi
+#     requests:
+#       cpu: 100m
+#       memory: 128Mi
+resources: {}
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# https://github.com/minio/minio/blob/master/helm/minio/values.yaml
+minio:
+  enabled: false # if true then minio will be deployed as part of openobserve
+  region: "us-east-1"
+  rootUser: rootuser
+  rootPassword: rootpass123
+  drivesPerNode: 1
+  replicas: 4
+  mode: distributed # or standalone
+  image:
+    repository: quay.io/minio/minio
+    tag: RELEASE.2023-02-10T18-48-39Z
+    pullPolicy: IfNotPresent
+  mcImage:
+    repository: quay.io/minio/mc
+    tag: RELEASE.2023-01-28T20-29-38Z
+    pullPolicy: IfNotPresent
+  buckets:
+    - name: mysuperduperbucket
+      policy: none
+      purge: false
+  resources:
+    requests:
+      memory: 256Mi
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: ""
+    accessModes:
+      - ReadWriteOnce
+    annotations: {}
+
+# zPlane enables elasticsearch compatibility for openobserve. Copyright (c) 2023 Zinc Labs Inc.
+# You can enable zPlane by setting enabled to true
+# zPlane is a commercial software and requires a license to be used.
+# Reach out to hello@zinclabs.io for commercial license if you continue to use zPlane
+zplane:
+  enabled: false # if true then zPlane will be deployed as part of openobserve
+  image:
+    repository: o2cr.ai/openobserve/zplane
+    tag: 0.1.6
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 9200
+    annotations: {}
+  ingress: # if enabled is true then this is required
+    enabled: false
+    className: ""
+    annotations:
+      {}
+      # kubernetes.io/ingress.class: nginx
+      # cert-manager.io/issuer: letsencrypt
+      # kubernetes.io/tls-acme: true
+    hosts:
+      - host: chart-example.local
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
+    tls:
+      []
+      # - secretName: chart-example-tls
+      #   hosts:
+      #     - chart-example.local
+
+probes:
+  enabled: true
+  initialDelaySeconds: 10
+  failureThreshold: 3
+  path: /healthz

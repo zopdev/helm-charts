@@ -1,0 +1,24 @@
+{{- if .Values.zplane.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "openobserve.fullname" . }}-zplane
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "openobserve.labels" . | nindent 4 }}
+    prometheus.io/scrape: "true"
+  {{- with .Values.zplane.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 8 }}
+  {{- end }}
+spec:
+  type: {{ .Values.zplane.service.type }}
+  ports:
+    - port: 9200
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "openobserve.selectorLabels" . | nindent 4 }}
+    role: zplane
+{{- end }}
