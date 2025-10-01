@@ -1,0 +1,1 @@
+# openobserve helm chart

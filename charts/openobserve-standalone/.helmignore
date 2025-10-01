@@ -1,0 +1,36 @@
+# Helmignore for a Helm Chart
+
+# Version control
+.git
+.git/
+.gitignore
+.svn/
+
+# Helm chart files
+*.lock
+
+# Temp files
+*.tmp
+*.temp
+*.bak
+*.swp
+*.viminfo
+
+# IDEs/Editors
+.vscode/
+.idea/
+*.iml
+
+# OS generated
+.DS_Store
+Thumbs.db
+__MACOSX/
+
+# Other
+secrets.yaml
+test/
+
+# test files
+install.sh
+uninstall.sh
+values_testing.yaml
