@@ -254,22 +254,10 @@ spec:
                         evictionSoft
                       rule: has(self.evictionSoftGracePeriod) ? self.evictionSoftGracePeriod.all(e,
                         (e in self.evictionSoft)):true
-                metadata:
+                labels:
                   additionalProperties:
                     type: string
-                  description: Metadata contains key/value pairs to set as instance
-                    metadata
-                  type: object
-                serviceAccount:
-                  description: ServiceAccount is the GCP IAM service account email to
-                    assign to the instance
-                  pattern: ^[^@]+@(developer\.gserviceaccount\.com|[^@]+\.iam\.gserviceaccount\.com)$
-                  type: string
-                tags:
-                  additionalProperties:
-                    type: string
-                  description: Tags to be applied on gce resources like instances and
-                    launch templates.
+                  description: Labels to be applied on GCE VM instance.
                   type: object
                   x-kubernetes-validations:
                     - message: empty tag keys aren't supported
@@ -284,6 +272,28 @@ spec:
                       rule: self.all(k, k !='karpenter.sh/nodeclaim')
                     - message: tag contains a restricted tag matching karpenter.k8s.gcp/gcenodeclass
                       rule: self.all(k, k !='karpenter.k8s.gcp/gcenodeclass')
+                metadata:
+                  additionalProperties:
+                    type: string
+                  description: Metadata contains key/value pairs to set as instance
+                    metadata
+                  type: object
+                networkTags:
+                  description: NetworkTags is a list of network tags to apply to the node.
+                  items:
+                    maxLength: 63
+                    pattern: ^[a-z]([-a-z0-9]{0,61}[a-z0-9])?$
+                    type: string
+                  maxItems: 64
+                  type: array
+                  x-kubernetes-validations:
+                    - message: network tag must match ^[a-z]([-a-z0-9]{0,61}[a-z0-9])?$
+                      rule: self.all(x, x.matches('^[a-z]([-a-z0-9]{0,61}[a-z0-9])?$'))
+                serviceAccount:
+                  description: ServiceAccount is the GCP IAM service account email to
+                    assign to the instance
+                  pattern: ^[^@]+@(developer\.gserviceaccount\.com|[^@]+\.iam\.gserviceaccount\.com)$
+                  type: string
               required:
                 - imageSelectorTerms
               type: object

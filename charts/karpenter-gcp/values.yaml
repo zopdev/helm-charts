@@ -36,7 +36,7 @@ controller:
 
   settings:
     projectID: ""
-    region: ""
+    location: ""
     clusterName: ""
     vmMemoryOverheadPercent: 0.065
     batchMaxDuration: 10s
