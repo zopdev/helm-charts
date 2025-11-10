@@ -23,9 +23,6 @@ auth:
   enabled: true
   users:
     - username: "admin"
-      password: "admin123"
-    - username: "client"
-      password: "client123"
 
 tls:
   enabled: false
