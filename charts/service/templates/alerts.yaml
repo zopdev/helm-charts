@@ -99,18 +99,20 @@ spec:
         - alert: {{ snakecase $v.name }}
           annotations:
             description: "{{ $v.description }} - Service: {{ $.Values.name }} - Namespace: {{ $.Release.Namespace }}{{- if $v.sumByLabel }} - {{ $v.sumByLabel | title }}: {{ `{{ $labels.` }}{{ $v.sumByLabel }}{{ ` }}` }}{{- end }}"
-          {{- if and (ne (default 0.0 $v.percentile) 0.0) (ne (default 0.0 $v.percentile) -1.0) }}
-          expr: (histogram_quantile({{ $v.percentile }}, sum(rate({{ $v.alertRule }}{{ printf ", namespace=\"%s\", service=\"%s\"" $.Release.Namespace $.Values.name }}{{ printf "}["}}{{ printf $v.timeWindow}}{{ printf "]))"}} by ({{ $v.sumByLabel }}))){{ $v.queryOperator | default (printf ">") }} {{ $v.threshold }}
+          {{- if $v.customExpr }}
+          expr: {{ $v.customExpr }}
+          {{- else if and (ne (default 0.0 $v.percentile) 0.0) (ne (default 0.0 $v.percentile) -1.0) }}
+          expr: (histogram_quantile({{ $v.percentile }}, sum(rate({{ $v.alertRule }}{{ printf "namespace=\"%s\", service=\"%s\"" $.Release.Namespace $.Values.name }}{{ printf "}["}}{{ printf $v.timeWindow}}{{ printf "]))"}} by ({{ $v.sumByLabel }}))){{ $v.queryOperator | default (printf ">") }} {{ $v.threshold }}
           {{- else }}
             {{- if  ne $v.sumByLabel ""  }}
                {{- if  ne $v.labelValue ""  }}
-          expr: sum by ({{ $v.sumByLabel }}) (increase({{ $v.alertRule }}{{printf ", %s=\"%s\"" $v.sumByLabel $v.labelValue }}{{ printf ", namespace=\"%s\", service=\"%s\"" $.Release.Namespace $.Values.name }}{{ printf "}["}}{{ printf $v.timeWindow}}{{ printf "]))"}}{{ $v.queryOperator | default (printf " > ") }}{{ $v.threshold}}
+          expr: sum by ({{ $v.sumByLabel }}) (increase({{ $v.alertRule }}{{printf "%s=\"%s\"" $v.sumByLabel $v.labelValue }}{{ printf ", namespace=\"%s\", service=\"%s\"" $.Release.Namespace $.Values.name }}{{ printf "}["}}{{ printf $v.timeWindow}}{{ printf "]))"}}{{ $v.queryOperator | default (printf " > ") }}{{ $v.threshold}}
                {{- else}}
-          expr: sum by ({{ $v.sumByLabel }}) (increase({{ $v.alertRule }}{{ printf ", namespace=\"%s\", service=\"%s\"" $.Release.Namespace $.Values.name }}{{ printf "}["}}{{ printf $v.timeWindow}}{{ printf "]))"}}{{  $v.queryOperator | default (printf ">") }}{{ $v.threshold}}
+          expr: sum by ({{ $v.sumByLabel }}) (increase({{ $v.alertRule }}{{ printf "namespace=\"%s\", service=\"%s\"" $.Release.Namespace $.Values.name }}{{ printf "}["}}{{ printf $v.timeWindow}}{{ printf "]))"}}{{  $v.queryOperator | default (printf ">") }}{{ $v.threshold}}
                {{- end }}
             {{- end }}
             {{- if  eq $v.sumByLabel ""  }}
-          expr: sum(increase({{ $v.alertRule }}{{ printf ", namespace=\"%s\", service=\"%s\"" $.Release.Namespace $.Values.name }}{{ printf "}["}}{{ printf $v.timeWindow}}{{ printf "]))"}}{{ $v.queryOperator | default (printf ">") }}{{ $v.threshold}}
+          expr: sum(increase({{ $v.alertRule }}{{ printf "namespace=\"%s\", service=\"%s\"" $.Release.Namespace $.Values.name }}{{ printf "}["}}{{ printf $v.timeWindow}}{{ printf "]))"}}{{ $v.queryOperator | default (printf ">") }}{{ $v.threshold}}
             {{- end }}
           {{- end }}
           labels:
