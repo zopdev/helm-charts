@@ -1,0 +1,73 @@
+{{- if .Values.zplane.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "openobserve.fullname" . }}-zplane
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "openobserve.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.zplane.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "openobserve.selectorLabels" . | nindent 6 }}
+      role: zplane
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "openobserve.selectorLabels" . | nindent 8 }}
+        role: zplane
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "openobserve.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.zplane.image.repository }}:{{ .Values.zplane.image.tag }}"
+          imagePullPolicy: {{ .Values.zplane.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 9200
+              protocol: TCP
+          # livenessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: 9200
+          # readinessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: 9200
+          resources:
+            {{- toYaml .Values.zplane.resources | nindent 12 }}
+          env:
+            - name: ZPLANE_ZO_USERNAME
+              value: "{{ .Values.auth.ZO_ROOT_USER_EMAIL }}"
+            - name: ZPLANE_ZO_PASSWORD
+              value: "{{ .Values.auth.ZO_ROOT_USER_PASSWORD }}"
+            - name: ZPLANE_ZO_ENDPOINT
+              value: "http://{{ include "openobserve.fullname" . }}.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}:{{ .Values.service.port }}"
+
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.zplane.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+{{- end }}

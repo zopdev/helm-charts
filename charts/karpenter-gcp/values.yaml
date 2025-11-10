@@ -1,0 +1,48 @@
+logLevel: info
+logOutputPaths:
+  - stdout
+logErrorOutputPaths:
+  - stderr
+
+additionalAnnotations: {}
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podDisruptionBudget:
+  minAvailable: 1
+
+controller:
+  replicaCount: 2
+  revisionHistoryLimit: 10
+  image:
+    tag: "v0.0.1"
+
+  env: []
+
+  resources:
+    requests:
+      cpu: 500m
+      memory: 500Mi
+
+  metrics:
+    port: 8080
+
+  settings:
+    projectID: ""
+    region: ""
+    clusterName: ""
+    vmMemoryOverheadPercent: 0.065
+    batchMaxDuration: 10s
+    batchIdleDuration: 1s
+
+credentials:
+  enabled: true
+  secretName: "karpenter-gcp-credentials"
+  secretKey: "key.json"
