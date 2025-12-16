@@ -1,10 +1,6 @@
 diskSize: "10Gi"
-version: "1.0"
 
-image:
-  repository: "eclipse-mosquitto"
-  tag: "latest"
-  pullPolicy: "Always"
+version: "8.0"
 
 resources:
   limits:
@@ -13,11 +9,6 @@ resources:
   requests:
     cpu: 50m
     memory: 64Mi
-
-persistence:
-  enabled: true
-  size: "10Gi"
-  storageClass: ""
 
 auth:
   enabled: true

@@ -1,16 +1,18 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: {{ include "mosquitto.fullname" . }}
   labels:
     app.kubernetes.io/name: {{ include "mosquitto.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
 spec:
-  replicas: 1
+  serviceName: {{ include "mosquitto.fullname" . }}
+  replicas: {{ .Values.replicaCount | default 1 }}
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ include "mosquitto.name" . }}
       app.kubernetes.io/instance: {{ .Release.Name }}
+
   template:
     metadata:
       labels:
@@ -21,53 +23,57 @@ spec:
         - name: mosquitto
           image: "eclipse-mosquitto:{{ .Values.version }}"
           imagePullPolicy: Always
+
           ports:
-           - containerPort: 1883
-             name: mqtt
-           {{- if .Values.tls.enabled }}
-           - containerPort: 8883
-             name: mqtts
-           {{- end }}
+            - containerPort: 1883
+              name: mqtt
+            {{- if .Values.tls.enabled }}
+            - containerPort: 8883
+              name: mqtts
+            {{- end }}
 
           volumeMounts:
             - name: config-volume
               mountPath: /mosquitto/config/mosquitto.conf
               subPath: mosquitto.conf
+
             {{- if .Values.persistence.enabled }}
             - name: data
               mountPath: /mosquitto/data
             {{- end }}
+
             {{- if .Values.auth.enabled }}
             - name: auth-volume
               mountPath: /mosquitto/passwords
               readOnly: true
             {{- end }}
+
             {{- if .Values.tls.enabled }}
             - name: tls-secret
               mountPath: /mosquitto/certs
               readOnly: true
             {{- end }}
+
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+
           livenessProbe:
             tcpSocket:
               port: 1883
             initialDelaySeconds: 10
             periodSeconds: 15
+
           readinessProbe:
             tcpSocket:
               port: 1883
             initialDelaySeconds: 5
             periodSeconds: 10
+
       volumes:
         - name: config-volume
           configMap:
             name: {{ include "mosquitto.fullname" . }}
-        {{- if .Values.persistence.enabled }}
-        - name: data
-          persistentVolumeClaim:
-            claimName: {{ include "mosquitto.fullname" . }}-pvc
-        {{- end }}
+
         {{- if .Values.auth.enabled }}
         - name: auth-volume
           secret:
@@ -76,8 +82,24 @@ spec:
               - key: passwd
                 path: passwd
         {{- end }}
+
         {{- if .Values.tls.enabled }}
         - name: tls-secret
           secret:
             secretName: {{ .Values.tls.certSecret }}
         {{- end }}
+
+  {{- if .Values.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - {{ .Values.persistence.accessMode | default "ReadWriteOnce" }}
+        resources:
+          requests:
+            storage: {{ .Values.persistence.size | default "1Gi" }}
+        {{- if .Values.persistence.storageClass }}
+        storageClassName: {{ .Values.persistence.storageClass }}
+        {{- end }}
+  {{- end }}
