@@ -6,6 +6,7 @@ metadata:
     app.kubernetes.io/name: {{ include "mosquitto.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
 spec:
+  clusterIP: None
   type: {{ .Values.service.type }}
   ports:
     - name: mqtt

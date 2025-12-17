@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
 spec:
   serviceName: {{ include "mosquitto.fullname" . }}
-  replicas: {{ .Values.replicaCount | default 1 }}
+  replicas: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ include "mosquitto.name" . }}
@@ -37,10 +37,8 @@ spec:
               mountPath: /mosquitto/config/mosquitto.conf
               subPath: mosquitto.conf
 
-            {{- if .Values.persistence.enabled }}
             - name: data
               mountPath: /mosquitto/data
-            {{- end }}
 
             {{- if .Values.auth.enabled }}
             - name: auth-volume
@@ -78,9 +76,6 @@ spec:
         - name: auth-volume
           secret:
             secretName: {{ include "mosquitto.fullname" . }}-auth
-            items:
-              - key: passwd
-                path: passwd
         {{- end }}
 
         {{- if .Values.tls.enabled }}
@@ -89,17 +84,12 @@ spec:
             secretName: {{ .Values.tls.certSecret }}
         {{- end }}
 
-  {{- if .Values.persistence.enabled }}
   volumeClaimTemplates:
     - metadata:
         name: data
       spec:
         accessModes:
-          - {{ .Values.persistence.accessMode | default "ReadWriteOnce" }}
+          - ReadWriteOnce
         resources:
           requests:
-            storage: {{ .Values.persistence.size | default "1Gi" }}
-        {{- if .Values.persistence.storageClass }}
-        storageClassName: {{ .Values.persistence.storageClass }}
-        {{- end }}
-  {{- end }}
+            storage: {{ .Values.diskSize }}
