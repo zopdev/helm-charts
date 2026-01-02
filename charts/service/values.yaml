@@ -12,6 +12,12 @@ extraAnnotations:
 Containers:
   privileged: false
 
+securityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+
 imagePullSecrets:
   # - gcr-secrets
   # - acr-secrets
