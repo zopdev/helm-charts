@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: blackbox-exporter
+spec:
+  selector:
+    app: blackbox-exporter
+  ports:
+    - port: {{ .Values.blackbox.servicePort }}
+      targetPort: {{ .Values.blackbox.servicePort }}
+
