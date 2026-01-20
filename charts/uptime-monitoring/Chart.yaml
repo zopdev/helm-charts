@@ -1,6 +1,6 @@
 apiVersion: v2
 name: uptime-monitoring
-description: HTTPS uptime & TLS monitoring
+description: HTTPS uptime and TLS monitoring
 type: application
 version: 0.1.0
 appVersion: "1.0"
