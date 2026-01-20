@@ -10,5 +10,4 @@ prometheus:
   scrapeInterval: 30s
   servicePort: 9090
 
-targets:
-  - https://zop.dev
+targets: []

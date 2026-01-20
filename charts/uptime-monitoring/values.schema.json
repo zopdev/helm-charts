@@ -1,5 +1,5 @@
 {
-  "$schema": "http://json-schema.org/schema#",
+  "$schema": "https://json-schema.org/draft-07/schema#",
   "type": "object",
   "additionalProperties": false,
   "properties": {
@@ -9,15 +9,16 @@
       "properties": {
         "image": {
           "type": "string",
-          "description": "Docker image for Blackbox Exporter",
-          "default": "prom/blackbox-exporter:v0.25.0"
+          "description": "Blackbox Exporter container image",
+          "default": "prom/blackbox-exporter:v0.25.0",
+          "pattern": "^[^:]+:[^:]+$"
         },
         "servicePort": {
           "type": "integer",
-          "minimum": 1,
-          "maximum": 65535,
           "description": "Service port for Blackbox Exporter",
-          "default": 9115
+          "default": 9115,
+          "minimum": 1,
+          "maximum": 65535
         }
       },
       "required": ["image", "servicePort"]
@@ -29,21 +30,22 @@
       "properties": {
         "image": {
           "type": "string",
-          "description": "Docker image for Prometheus",
-          "default": "prom/prometheus:v2.49.0"
+          "description": "Prometheus container image",
+          "default": "prom/prometheus:v2.49.0",
+          "pattern": "^[^:]+:[^:]+$"
         },
         "scrapeInterval": {
           "type": "string",
-          "pattern": "^[0-9]+(s|m|h)$",
-          "description": "Prometheus scrape interval (e.g. 15s, 30s, 1m)",
-          "default": "30s"
+          "description": "Prometheus scrape interval (e.g. 30s, 1m)",
+          "default": "30s",
+          "pattern": "^[0-9]+(s|m|h)$"
         },
         "servicePort": {
           "type": "integer",
-          "minimum": 1,
-          "maximum": 65535,
           "description": "Service port for Prometheus",
-          "default": 9090
+          "default": 9090,
+          "minimum": 1,
+          "maximum": 65535
         }
       },
       "required": ["image", "scrapeInterval", "servicePort"]
@@ -51,15 +53,14 @@
 
     "targets": {
       "type": "array",
-      "description": "List of HTTP/HTTPS targets monitored by Blackbox Exporter",
-      "minItems": 1,
+      "description": "List of HTTP/HTTPS targets for Blackbox monitoring",
+      "default": [],
       "items": {
         "type": "string",
-        "format": "uri",
         "pattern": "^https?://"
-      },
-      "default": ["https://zop.dev"]
+      }
     }
   },
+
   "required": ["blackbox", "prometheus", "targets"]
 }
