@@ -1,4 +1,4 @@
-# Monitoring platform uptime using metric
+# Monitoring platform uptime using metric probe_success
 # Monitor days to SSL certificate expiry using (probe_ssl_earliest_cert_expiry - time()) / 86400
 
 blackbox:
