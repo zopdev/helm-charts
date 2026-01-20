@@ -75,29 +75,138 @@ This annotation ensures that the chart is automatically reflected in the zop.dev
   Application-specific credentials (ID and password) are automatically managed via templated files (e.g., `<release-name>-login.yaml`). Users do not need to provide these values manually.
 
 ### For Datasource Charts
-- **Minimal Configuration:**  
-  Datasource charts are optimized to require only the essential inputs, minimizing the configuration overhead for users.
+
+* Datasource charts should require **minimal configuration**.
+* Only essential inputs should be exposed to the user.
 
 ---
 
-## 5. Testing Requirements
+## 5. Contributing a New Chart
 
-### Before Submitting a Pull Request
-- **Lint Your Chart:**  
-  Run `helm lint` on your chart to catch any issues.
-- **Dry Run Installation:**  
-  Test chart installation with:
+If you are contributing a **new chart** to this repository, follow the steps below to ensure consistency and successful deployment.
+
+---
+
+### Step 1: Chart Structure
+
+Create a new folder for your chart inside the `charts/` directory and follow the structure used in existing charts.
+
+Your chart directory **must include**:
+
+```
+charts/
+└── <chart_name>/
+    ├── Chart.yaml
+    ├── values.yaml
+    ├── values.schema.json
+    └── templates/
+```
+
+**File descriptions:**
+
+* `Chart.yaml` – Metadata such as name, version, description, and annotations
+* `values.yaml` – Default configuration values
+* `values.schema.json` – JSON schema for validating configuration fields
+* `templates/` – Kubernetes manifest templates written using Helm syntax
+
+Refer to existing charts such as **mysql** or **redis** to maintain consistency in structure, naming, and formatting.
+
+#### Required Annotation in `Chart.yaml`
+
+For **application charts**:
+
+```yaml
+annotations:
+  type: application
+```
+
+For **datasource charts**:
+
+```yaml
+annotations:
+  type: datasource
+```
+
+---
+
+### Step 2: Test the Chart Locally
+
+Install the chart in a local or test Kubernetes cluster:
+
+```bash
+helm install <release-name> ./charts/<chart_name>
+```
+
+After installation, verify:
+
+* All Kubernetes resources are created successfully
+* The application or datasource functions as expected
+
+---
+
+### Step 3: Lint the Chart
+
+Run Helm linting to validate syntax and best practices:
+
+```bash
+helm lint ./charts/<chart_name>
+```
+
+Fix all warnings and errors before proceeding.
+
+---
+
+### Step 4: Package the Chart
+
+Once verified, package the chart:
+
+```bash
+helm package ./charts/<chart_name> --version "<version>"
+```
+
+This generates a `.tgz` archive for the chart.
+
+---
+
+### Step 5: Move the Package to `docs/`
+
+Move the generated package to the `docs/` directory:
+
+```bash
+mv <chart_name>-<version>.tgz docs/
+```
+
+---
+
+### Step 6: Update the Helm Repository Index
+
+From inside the `docs/` directory, update the Helm repository index:
+
+```bash
+cd docs
+helm repo index . --url https://helm.zop.dev
+```
+
+This ensures the new chart version becomes available in the Helm repository once changes are merged into `main`.
+
+---
+
+## 6. Testing Requirements
+
+Before submitting a pull request:
+
+* Run `helm lint` successfully
+* Perform a `--dry-run` installation:
+
   ```bash
-  helm install --dry-run --debug mychart ./path/to/your/chart
+  helm install --dry-run --debug mychart ./charts/<chart_name>
   ```
-- **Functionality Testing:**  
-  Ensure that all default configurations work as expected.
-- **Uninstallation Testing:**  
-  Verify that the chart can be uninstalled cleanly without errors.
+* Validate default configurations
+* Ensure clean uninstallation without errors
 
 ---
 
-## 6. Submitting Changes
+## 7. Submitting Changes
 
 ### Pull Request Guidelines
 - **Title & Description:**  
@@ -132,7 +241,7 @@ This annotation ensures that the chart is automatically reflected in the zop.dev
 
 ---
 
-## 7. Issue Tracking
+## 8. Issue Tracking
 
 ### Reporting Issues
 - **Use GitHub Issues:**  
@@ -144,7 +253,7 @@ This annotation ensures that the chart is automatically reflected in the zop.dev
 
 ---
 
-## 8. Important Contribution Policies
+## 9. Important Contribution Policies
 
 - **Timely Reviews:**  
   No PR should remain open for more than 2 weeks without feedback.
@@ -155,7 +264,7 @@ This annotation ensures that the chart is automatically reflected in the zop.dev
 
 ---
 
-## 9. Getting Help
+## 10. Getting Help
 
 If you need assistance:
 - **Consult Documentation:** Review the existing documentation in the repository.
