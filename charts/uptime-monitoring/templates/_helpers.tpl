@@ -9,5 +9,4 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 
 {{- define "prometheus.selectorLabels" -}}
 app.kubernetes.io/name: prometheus
-app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
