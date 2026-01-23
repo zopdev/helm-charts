@@ -1,6 +1,6 @@
-diskSize: "10Gi"
+disk_size: "10Gi" 
 
-version: "8.0"
+version: "2.0.18"
 
 resources:
   limits:
@@ -12,14 +12,12 @@ resources:
 
 auth:
   enabled: true
-  users:
+  users:         
     - username: "admin"
 
 tls:
   enabled: false
-  certSecret: "mosquitto-tls-secret"
+  cert_secret: "mosquitto-tls-secret" 
 
-service:
-  type: "ClusterIP"
-  port: 1883
-  tlsPort: 8883
+service:           
+  type: ClusterIP

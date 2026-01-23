@@ -6,15 +6,14 @@ metadata:
     app.kubernetes.io/name: {{ include "mosquitto.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
 spec:
-  clusterIP: None
   type: {{ .Values.service.type }}
   ports:
     - name: mqtt
-      port: 1883
+      port: 1883       
       targetPort: mqtt
     {{- if .Values.tls.enabled }}
     - name: mqtts
-      port: 8883
+      port: 8883   
       targetPort: mqtts
     {{- end }}
   selector:

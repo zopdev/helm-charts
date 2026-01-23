@@ -7,9 +7,9 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
 data:
   MQTT_HOST: "{{ include "mosquitto.fullname" . }}"
-  MQTT_PORT: "{{ .Values.service.port }}"
+  MQTT_PORT: "1883"  
   {{- if .Values.tls.enabled }}
-  MQTT_TLS_PORT: "{{ .Values.service.tlsPort }}"
+  MQTT_TLS_PORT: "8883"  
   MQTT_TLS_ENABLED: "true"
   {{- else }}
   MQTT_TLS_ENABLED: "false"

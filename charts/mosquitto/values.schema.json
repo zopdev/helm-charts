@@ -6,43 +6,9 @@
       "type": "string",
       "mutable": true
     },
-    "diskSize": {
+    "disk_size": {
       "type": "string",
       "mutable": true
-    },
-    "image": {
-      "type": "object",
-      "properties": {
-        "repository": {
-          "type": "string",
-          "mutable": true
-        },
-        "tag": {
-          "type": "string",
-          "mutable": true
-        },
-        "pullPolicy": {
-          "type": "string",
-          "mutable": true
-        }
-      }
-    },
-    "persistence": {
-      "type": "object",
-      "properties": {
-        "enabled": {
-          "type": "boolean",
-          "mutable": true
-        },
-        "size": {
-          "type": "string",
-          "mutable": true
-        },
-        "storageClass": {
-          "type": "string",
-          "mutable": true
-        }
-      }
     },
     "auth": {
       "type": "object",
@@ -59,10 +25,6 @@
               "username": {
                 "type": "string",
                 "mutable": true
-              },
-              "password": {
-                "type": "string",
-                "mutable": true
               }
             }
           }
@@ -76,7 +38,7 @@
           "type": "boolean",
           "mutable": true
         },
-        "certSecret": {
+        "cert_secret": {
           "type": "string",
           "mutable": true
         }
@@ -87,14 +49,6 @@
       "properties": {
         "type": {
           "type": "string",
-          "mutable": true
-        },
-        "port": {
-          "type": "integer",
-          "mutable": true
-        },
-        "tlsPort": {
-          "type": "integer",
           "mutable": true
         }
       }

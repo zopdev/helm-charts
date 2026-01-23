@@ -159,5 +159,7 @@ This project is licensed under the [LICENSE](../../LICENSE). Please review it fo
 - **MQTT_HOST** : Hostname or service name for the Mosquitto MQTT broker.
 - **MQTT_PORT** : Port number to connect to Mosquitto MQTT. Defaults to 1883.
 - **MQTT_TLS_PORT** : Port number for secure MQTT connections. Defaults to 8883.
+- **MQTT_USERNAME** : Admin username (retrieved from Secret).
+- **MQTT_PASSWORD** : Admin password (retrieved from Secret).
 
 ---
