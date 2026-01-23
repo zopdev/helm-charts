@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "blackbox": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "image": {
+          "type": "string",
+          "description": "Blackbox Exporter container image",
+          "default": "prom/blackbox-exporter:v0.25.0",
+          "pattern": "^[^:]+:[^:]+$"
+        },
+        "servicePort": {
+          "type": "integer",
+          "description": "Service port for Blackbox Exporter",
+          "default": 9115,
+          "minimum": 1,
+          "maximum": 65535
+        }
+      },
+      "required": ["image", "servicePort"]
+    },
+
+    "prometheus": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "image": {
+          "type": "string",
+          "description": "Prometheus container image",
+          "default": "prom/prometheus:v2.49.0",
+          "pattern": "^[^:]+:[^:]+$"
+        },
+        "scrapeInterval": {
+          "type": "string",
+          "description": "Prometheus scrape interval (e.g. 30s, 1m)",
+          "default": "30s",
+          "pattern": "^[0-9]+(s|m|h)$"
+        },
+        "servicePort": {
+          "type": "integer",
+          "description": "Service port for Prometheus",
+          "default": 9090,
+          "minimum": 1,
+          "maximum": 65535
+        }
+      },
+      "required": ["image", "scrapeInterval", "servicePort"]
+    },
+
+    "targets": {
+      "type": "array",
+      "description": "List of HTTP/HTTPS targets for Blackbox monitoring",
+      "default": [],
+      "items": {
+        "type": "string",
+        "pattern": "^https?://"
+      }
+    }
+  },
+
+  "required": ["blackbox", "prometheus", "targets"]
+}

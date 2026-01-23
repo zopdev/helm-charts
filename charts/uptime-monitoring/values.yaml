@@ -1,0 +1,13 @@
+# Monitoring platform uptime using metric probe_success
+# Monitor days to SSL certificate expiry using (probe_ssl_earliest_cert_expiry - time()) / 86400
+
+blackbox:
+  image: prom/blackbox-exporter:v0.25.0
+  servicePort: 9115
+
+prometheus:
+  image: prom/prometheus:v2.49.0
+  scrapeInterval: 30s
+  servicePort: 9090
+
+targets: []
