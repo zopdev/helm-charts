@@ -2357,6 +2357,20 @@ entries:
     urls:
     - https://helm.zop.dev/surrealdb-v0.0.1.tgz
     version: v0.0.1
+  uptime-monitoring:
+  - apiVersion: v1
+    appVersion: "1.0"
+    created: "2026-01-28T13:33:02.537582+05:30"
+    description: HTTPS uptime and TLS monitoring
+    digest: 00ab35eb86ad249c196029e804798aa870ee399d0c15299cc502697f8d3b4791
+    icon: https://zop.dev/logo.png
+    maintainers:
+    - name: ZopDev
+      url: zop.dev
+    name: uptime-monitoring
+    urls:
+    - https://helm.zop.dev/uptime-monitoring-v1.0.0.tgz
+    version: v1.0.0
   wordpress:
   - annotations:
       type: application

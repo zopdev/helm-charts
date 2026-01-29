@@ -25,9 +25,13 @@ spec:
         app: {{ .Values.name }}
     spec:
       securityContext:
-        {{- if and (hasKey .Values.volumeMounts "pvc") (not (empty .Values.volumeMounts.pvc)) }}
-        fsGroup: 1000
-        {{- end }}
+        runAsNonRoot: true
+        runAsUser: {{ .Values.securityContext.runAsUser | default 1000 }}
+        runAsGroup: {{ .Values.securityContext.runAsGroup | default 1000 }}
+        fsGroup: {{ .Values.securityContext.fsGroup | default 1000 }}
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
       {{- if .Values.imagePullSecrets}}
       imagePullSecrets:
         {{- range $v := .Values.imagePullSecrets }}
@@ -105,14 +109,15 @@ spec:
           command: {{  tpl (toJson .Values.command) . }}
           {{- end}}
           securityContext:
-            {{- with .Values.Containers }}
-            {{- if .privileged | default false }}
-            privileged: true
-            {{- end }}
-            {{- end }}
-            {{- if and (hasKey .Values.volumeMounts "pvc") (not (empty .Values.volumeMounts.pvc)) }}
-            runAsUser: 1000
-            runAsGroup: 1000
+            {{- if .Values.Containers.privileged }}
+            allowPrivilegeEscalation: true
+            readOnlyRootFilesystem: true
+            {{- else }}
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
             {{- end }}
           ports:
             - name: http-port
