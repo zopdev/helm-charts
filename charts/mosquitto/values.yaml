@@ -1,0 +1,23 @@
+disk_size: "10Gi" 
+
+version: "2.0.18"
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 50m
+    memory: 64Mi
+
+auth:
+  enabled: true
+  users:         
+    - username: "admin"
+
+tls:
+  enabled: false
+  cert_secret: "mosquitto-tls-secret" 
+
+service:           
+  type: ClusterIP
