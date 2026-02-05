@@ -57,7 +57,7 @@ metadata:
 spec:
   containers:
     - name: postgres-init-role
-      image: docker.io/bitnami/postgresql:{{ $.Values.version }}
+      image: docker.io/bitnamilegacy/postgresql:{{ $.Values.version }}
       command: ["/bin/bash"]
       args:
         - "-c"
