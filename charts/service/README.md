@@ -94,15 +94,45 @@ _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command doc
 | `volumeMounts.secrets` | list | List of Secrets to mount | `[]` |
 | `volumeMounts.pvc` | list | List of PVCs to mount | `[]` |
 
-### Alerting Configuration
+### Security Context Configuration
+
+Security hardening is opt-in. When `securityContext` is not set, the chart preserves legacy behavior (no pod-level security context unless PVC volumes are used). When enabled, it applies pod-level and container-level hardening following Kubernetes security best practices.
 
 | Parameter | Type | Description | Default |
 |-----------|------|-------------|---------|
-| `alerts.standard.infra.unavailableReplicasThreshold` | integer | Alert if available replicas is less than desired | `0` |
+| `securityContext.runAsNonRoot` | boolean | Enforce non-root execution | not set |
+| `securityContext.runAsUser` | integer | UID for the pod | not set |
+| `securityContext.runAsGroup` | integer | GID for the pod | not set |
+| `securityContext.fsGroup` | integer | fsGroup for volume ownership | not set |
+| `securityContext.fsGroupChangePolicy` | string | Policy for fsGroup ownership changes | not set |
+| `securityContext.seccompProfile` | string | Seccomp profile type (e.g. `RuntimeDefault`) | not set |
+| `securityContext.readOnlyRootFilesystem` | boolean | Make container filesystem read-only | not set |
+
+When `securityContext` is enabled, the container also gets `allowPrivilegeEscalation: false` and `capabilities.drop: [ALL]` (unless `Containers.privileged` is true).
+
+### Alerting Configuration
+
+The chart includes built-in infrastructure alerts using Prometheus rules. Alerts use rollout-aware expressions (via `changes()` on `kube_deployment_status_replicas_updated`) to avoid false positives during node upgrades, rolling updates, and scaling events.
+
+| Parameter | Type | Description | Default |
+|-----------|------|-------------|---------|
+| `alerts.standard.infra.unavailableReplicasThreshold` | integer | Alert if available replicas is less than desired (severity: warning) | `0` |
 | `alerts.standard.infra.podRestartThreshold` | integer | Alert if pod restarts exceed threshold | `0` |
 | `alerts.standard.infra.hpaNearingMaxPodThreshold` | integer | Alert if replica count exceeds threshold percentage | `80` |
 | `alerts.standard.infra.serviceMemoryUtilizationThreshold` | integer | Alert if memory utilization exceeds threshold | `90` |
 | `alerts.standard.infra.serviceCpuUtilizationThreshold` | integer | Alert if CPU utilization exceeds threshold | `90` |
+
+#### Alert Severity and Behavior
+
+| Alert | Severity | `for` Duration | Behavior |
+|-------|----------|---------------|----------|
+| `_pod_below_minimum_replicas` | warning | 10m | Only fires when replicas are below minimum **and** no rollout is in progress |
+| `_unavailable_replicas` | warning | 10m | Only fires when replicas are unavailable **and** no rollout is in progress |
+| `_deployment_has_zero_replicas` | critical | 5m | Fires on complete outage (zero replicas) |
+| `_pod_restarts` | critical | instant | Fires when pod restarts exceed threshold in the configured time window |
+| `_hpa_nearing_max_pod_count` | warning | instant | Fires when replica count nears HPA max |
+
+Set any threshold to `-1` to disable the corresponding alert.
 
 ### Custom Alerts
 
@@ -134,6 +164,16 @@ extraAnnotations:
 
 Containers:
   privileged: false
+
+# Opt-in: uncomment to enable pod and container security hardening
+# securityContext:
+#   runAsNonRoot: true
+#   runAsUser: 1000
+#   runAsGroup: 1000
+#   fsGroup: 1000
+#   fsGroupChangePolicy: OnRootMismatch
+#   seccompProfile: RuntimeDefault
+#   readOnlyRootFilesystem: true
 
 imagePullSecrets:
 # - gcr-secrets
@@ -285,7 +325,9 @@ datastores:
 - Environment variable management
 - Volume mounting support
 - Prometheus metrics integration
+- Rollout-aware alerting rules (suppresses false alerts during node upgrades and rolling updates)
 - Custom alerting rules
+- Opt-in pod and container security hardening (runAsNonRoot, seccomp, read-only filesystem, drop capabilities)
 - Horizontal Pod Autoscaling
 - Pod Disruption Budget
 - Service monitoring

@@ -25,13 +25,29 @@ spec:
         app: {{ .Values.name }}
     spec:
       securityContext:
-        runAsNonRoot: true
-        runAsUser: {{ .Values.securityContext.runAsUser | default 1000 }}
-        runAsGroup: {{ .Values.securityContext.runAsGroup | default 1000 }}
-        fsGroup: {{ .Values.securityContext.fsGroup | default 1000 }}
-        fsGroupChangePolicy: OnRootMismatch
+        {{- if .Values.securityContext }}
+        runAsNonRoot: {{ .Values.securityContext.runAsNonRoot | default false }}
+        {{- if .Values.securityContext.runAsUser }}
+        runAsUser: {{ .Values.securityContext.runAsUser }}
+        {{- end }}
+        {{- if .Values.securityContext.runAsGroup }}
+        runAsGroup: {{ .Values.securityContext.runAsGroup }}
+        {{- end }}
+        {{- if .Values.securityContext.fsGroup }}
+        fsGroup: {{ .Values.securityContext.fsGroup }}
+        {{- end }}
+        {{- if .Values.securityContext.fsGroupChangePolicy }}
+        fsGroupChangePolicy: {{ .Values.securityContext.fsGroupChangePolicy }}
+        {{- end }}
+        {{- if .Values.securityContext.seccompProfile }}
         seccompProfile:
-          type: RuntimeDefault
+          type: {{ .Values.securityContext.seccompProfile }}
+        {{- end }}
+        {{- else }}
+        {{- if and (hasKey .Values.volumeMounts "pvc") (not (empty .Values.volumeMounts.pvc)) }}
+        fsGroup: 1000
+        {{- end }}
+        {{- end }}
       {{- if .Values.imagePullSecrets}}
       imagePullSecrets:
         {{- range $v := .Values.imagePullSecrets }}
@@ -109,15 +125,28 @@ spec:
           command: {{  tpl (toJson .Values.command) . }}
           {{- end}}
           securityContext:
+            {{- if .Values.securityContext }}
             {{- if .Values.Containers.privileged }}
             allowPrivilegeEscalation: true
-            readOnlyRootFilesystem: true
             {{- else }}
             allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
             capabilities:
               drop:
                 - ALL
+            {{- end }}
+            {{- if hasKey .Values.securityContext "readOnlyRootFilesystem" }}
+            readOnlyRootFilesystem: {{ .Values.securityContext.readOnlyRootFilesystem }}
+            {{- end }}
+            {{- else }}
+            {{- with .Values.Containers }}
+            {{- if .privileged | default false }}
+            privileged: true
+            {{- end }}
+            {{- end }}
+            {{- if and (hasKey .Values.volumeMounts "pvc") (not (empty .Values.volumeMounts.pvc)) }}
+            runAsUser: 1000
+            runAsGroup: 1000
+            {{- end }}
             {{- end }}
           ports:
             - name: http-port
