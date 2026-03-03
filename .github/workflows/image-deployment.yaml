@@ -1,0 +1,47 @@
+name: Image Deployment
+
+on:
+  push:
+    tags:
+      - '*-image-v*'
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract image name and version from tag
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          IMAGE_NAME=${TAG%-image-v*}
+          IMAGE_VERSION=v${TAG##*-image-v}
+          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
+          echo "IMAGE_VERSION=$IMAGE_VERSION" >> $GITHUB_ENV
+
+      - name: Verify Dockerfile exists
+        run: |
+          if [ ! -f "images/${{ env.IMAGE_NAME }}/Dockerfile" ]; then
+            echo "Error: images/${{ env.IMAGE_NAME }}/Dockerfile not found"
+            exit 1
+          fi
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
+        with:
+          username: "v4vikash"
+          password: ${{ secrets.DOCKER_HUB_PAT }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          push: true
+          context: images/
+          file: images/${{ env.IMAGE_NAME }}/Dockerfile
+          tags: zopdev/${{ env.IMAGE_NAME }}:${{ env.IMAGE_VERSION }}, zopdev/${{ env.IMAGE_NAME }}:latest
