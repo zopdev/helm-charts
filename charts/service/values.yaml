@@ -12,10 +12,14 @@ extraAnnotations:
 Containers:
   privileged: false
 
-securityContext:
-  runAsUser: 1000
-  runAsGroup: 1000
-  fsGroup: 1000
+# securityContext:                              # Opt-in: uncomment to enable pod and container security hardening
+#   runAsNonRoot: true                           # Enforce non-root execution
+#   runAsUser: 1000                              # UID for the pod
+#   runAsGroup: 1000                             # GID for the pod
+#   fsGroup: 1000                                # fsGroup for volume ownership
+#   fsGroupChangePolicy: OnRootMismatch          # Only change ownership when needed
+#   seccompProfile: RuntimeDefault               # Seccomp profile type
+#   readOnlyRootFilesystem: true                 # Make container filesystem read-only
 
 imagePullSecrets:
   # - gcr-secrets

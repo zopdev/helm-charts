@@ -14,11 +14,11 @@ spec:
         # Alert if the number of pods goes down minimum over a period of time.
         - alert: {{ snakecase .Values.name }}_pod_below_minimum_replicas
           annotations:
-            description: "Replicas of {{ .Values.name }} are falling short than the minimum required count in {{ .Release.Namespace }} namespace for longer than 3 minutes."
-          expr: sum(kube_horizontalpodautoscaler_spec_min_replicas{namespace="{{ .Release.Namespace }}", horizontalpodautoscaler="{{ .Values.name }}"}) - sum(kube_deployment_status_replicas_available{namespace="{{ .Release.Namespace }}", deployment="{{ .Values.name }}"}) > 0
-          for: 3m
+            description: "Replicas of {{ .Values.name }} are falling short than the minimum required count in {{ .Release.Namespace }} namespace for longer than 10 minutes."
+          expr: (sum(kube_horizontalpodautoscaler_spec_min_replicas{namespace="{{ .Release.Namespace }}", horizontalpodautoscaler="{{ .Values.name }}"}) - sum(kube_deployment_status_replicas_available{namespace="{{ .Release.Namespace }}", deployment="{{ .Values.name }}"}) > 0) and (changes(kube_deployment_status_replicas_updated{namespace="{{ .Release.Namespace }}", deployment="{{ .Values.name }}"}[10m]) == 0)
+          for: 10m
           labels:
-            severity: critical
+            severity: warning
             servicealert: "true"
             service: {{ .Values.name }}
             namespace: {{ .Release.Namespace }}
@@ -38,11 +38,11 @@ spec:
         {{- if ne (int .Values.alerts.standard.infra.unavailableReplicasThreshold) -1 }}
         - alert: {{ snakecase .Values.name }}_unavailable_replicas
           annotations:
-            description: "One or more replicas of {{ .Values.name }} are currently unavailable in the {{ .Release.Namespace }} namespace."
-          expr: sum(kube_deployment_status_replicas_unavailable{deployment="{{ .Values.name }}",namespace="{{ .Release.Namespace }}"}) > {{ .Values.alerts.standard.infra.unavailableReplicasThreshold }}
-          for: 3m
+            description: "One or more replicas of {{ .Values.name }} are currently unavailable in the {{ .Release.Namespace }} namespace for longer than 10 minutes with no rollout progress."
+          expr: (sum(kube_deployment_status_replicas_unavailable{deployment="{{ .Values.name }}",namespace="{{ .Release.Namespace }}"}) > {{ .Values.alerts.standard.infra.unavailableReplicasThreshold }}) and (changes(kube_deployment_status_replicas_updated{namespace="{{ .Release.Namespace }}", deployment="{{ .Values.name }}"}[10m]) == 0)
+          for: 10m
           labels:
-            severity: critical
+            severity: warning
             servicealert: "true"
             service: {{ .Values.name }}
             namespace: {{ .Release.Namespace }}
