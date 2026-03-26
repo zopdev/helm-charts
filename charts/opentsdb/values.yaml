@@ -25,8 +25,7 @@ zookeeper:
   diskSize: "10Gi"
   resources:
     requests:
-      cpu: "100m"
-      memory: "500Mi"
+      memory: 512Mi
+      cpu: 250m
     limits:
-      cpu: "500m"
-      memory: "1000Mi"
+      memory: 1Gi
