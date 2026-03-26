@@ -2,7 +2,11 @@
   "$schema": "https://json-schema.org/draft-07/schema#",
   "type": "object",
   "properties": {
-  
+    "version": {
+      "type": "string",
+      "default": "v0.0.1",
+      "mutable": true
+    },
     "resources": {
       "type": "object",
       "properties": {
@@ -12,13 +16,13 @@
             "cpu": {
               "type": "string",
               "pattern": "^[0-9]+m$",
-              "default": "100m",
+              "default": "500m",
               "mutable": true
             },
             "memory": {
               "type": "string",
-              "pattern": "^[0-9]+M$",
-              "default": "256M",
+              "pattern": "^[0-9]+Mi$",
+              "default": "1000Mi",
               "mutable": true
             }
           }
@@ -34,8 +38,8 @@
             },
             "memory": {
               "type": "string",
-              "pattern": "^[0-9]+Gi$",
-              "default": "1Gi",
+              "pattern": "^[0-9]+Mi$",
+              "default": "2000Mi",
               "mutable": true
             }
           }
@@ -48,10 +52,6 @@
       "default": "10Gi",
       "mutable": true,
       "editDisabled": true
-    },
-    "version": {
-      "default": "2.2",
-      "mutable": true
     },
     "services": {
       "type": "array",

@@ -66,18 +66,20 @@ See [Helm Uninstall Documentation](https://helm.sh/docs/helm/helm_uninstall/) fo
 
 Below is a summary of configurable parameters for the OpenTSDB Helm chart:
 
-| **Input**               | **Type**  | **Description**                                                    | **Default**                       |
-|--------------------------|-----------|--------------------------------------------------------------------|-----------------------------------|
-| `replicaCount`           | `integer` | Number of replicas for the OpenTSDB StatefulSet.                   | `1`                               |
-| `image.opentsdb`         | `string`  | Docker image and tag for the OpenTSDB container.                   | `petergrace/opentsdb-docker:latest` |
-| `image.pullPolicy`       | `string`  | Image pull policy for the OpenTSDB container.                      | `IfNotPresent`                   |
-| `resources.requests.cpu` | `string`  | Minimum CPU resources required by the OpenTSDB container.          | `"100m"`                          |
-| `resources.requests.memory` | `string` | Minimum memory resources required by the OpenTSDB container.       | `"256M"`                          |
-| `resources.limits.cpu`   | `string`  | Maximum CPU resources the OpenTSDB container can use.              | `"1000m"`                         |
-| `resources.limits.memory`| `string`  | Maximum memory resources the OpenTSDB container can use.           | `"1Gi"`                           |
-| `diskSize`               | `string`  | Size of the persistent volume for OpenTSDB data storage.           | `"10Gi"`                          |
-| `updateStrategy.type`    | `string`  | Update strategy for the OpenTSDB StatefulSet.                      | `RollingUpdate`                   |
-| `opentsdb_port`          | `integer` | Port on which OpenTSDB listens for incoming connections.           | `4242`                            |
+| **Input**                      | **Type**  | **Description**                                                         | **Default**    |
+|--------------------------------|-----------|-------------------------------------------------------------------------|----------------|
+| `version`                      | `string`  | Docker image tag for the OpenTSDB container.                            | `"v0.0.1"`     |
+| `resources.requests.cpu`       | `string`  | Minimum CPU resources required by the OpenTSDB container.               | `"500m"`       |
+| `resources.requests.memory`    | `string`  | Minimum memory resources required by the OpenTSDB container.            | `"1000Mi"`     |
+| `resources.limits.cpu`         | `string`  | Maximum CPU resources the OpenTSDB container can use.                   | `"1000m"`      |
+| `resources.limits.memory`      | `string`  | Maximum memory resources the OpenTSDB container can use.                | `"2000Mi"`     |
+| `diskSize`                     | `string`  | Size of the persistent volume for OpenTSDB data storage.                | `"10Gi"`       |
+| `zookeeper.replicaCount`       | `integer` | Number of replicas for the Zookeeper StatefulSet.                       | `1`            |
+| `zookeeper.diskSize`           | `string`  | Size of the persistent volume for Zookeeper data storage.               | `"10Gi"`       |
+| `zookeeper.resources.requests.cpu`    | `string` | Minimum CPU resources required by the Zookeeper container.       | `"100m"`       |
+| `zookeeper.resources.requests.memory` | `string` | Minimum memory resources required by the Zookeeper container.    | `"500Mi"`      |
+| `zookeeper.resources.limits.cpu`      | `string` | Maximum CPU resources the Zookeeper container can use.           | `"500m"`       |
+| `zookeeper.resources.limits.memory`   | `string` | Maximum memory resources the Zookeeper container can use.        | `"1000Mi"`     |
 
 You can override these values in a `values.yaml` file or via the command line during installation.
 
@@ -86,18 +88,28 @@ You can override these values in a `values.yaml` file or via the command line du
 ### Example `values.yaml` File
 
 ```yaml
-version: 2.2
+version: "v0.0.1"
 
-# Resource configuration
 resources:
   requests:
-    cpu: "100m"
-    memory: "256M"
+    cpu: "500m"
+    memory: "1000Mi"
   limits:
     cpu: "1000m"
-    memory: "1Gi"
+    memory: "2000Mi"
 
 diskSize: "10Gi"
+
+zookeeper:
+  replicaCount: 1
+  diskSize: "10Gi"
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "500Mi"
+    limits:
+      cpu: "500m"
+      memory: "1000Mi"
 ```
 
 Apply the configuration file during installation:
@@ -114,6 +126,7 @@ helm install my-opentsdb zopdev/opentsdb -f values.yaml
 - **Custom Resource Allocation:** Define resource requests and limits for CPU and memory to suit workload requirements.
 - **Persistent Storage:** Ensure data persistence using configurable persistent volumes.
 - **Rolling Updates:** Apply changes to the StatefulSet with zero downtime using the `RollingUpdate` strategy.
+- **Bundled Zookeeper:** Includes the ZopDev Zookeeper chart as a dependency — no external Zookeeper setup required.
 
 ---
 
@@ -121,19 +134,10 @@ helm install my-opentsdb zopdev/opentsdb -f values.yaml
 
 ### Persistent Volume Configuration
 
-Customize the persistent volume size and storage class for OpenTSDB data:
+Customize the persistent volume size for OpenTSDB data:
 
 ```yaml
 diskSize: "50Gi"
-storageClass: "high-performance"
-```
-
-### Network Configuration
-
-Specify the OpenTSDB port and integrate with other services:
-
-```yaml
-opentsdb_port: 8080
 ```
 
 ---

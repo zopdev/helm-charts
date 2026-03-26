@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-opentsdb-configmap
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "opentsdb.labels" . | nindent 4 }}
+data:
+  OPENTSDB_HOST: {{ include "opentsdb.fullname" . }}
+  OPENTSDB_PORT: "4242"

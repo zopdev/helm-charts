@@ -2,10 +2,14 @@ apiVersion: v2
 appVersion: "1.0"
 description: Helm chart for deploying opentsdb
 name: opentsdb
-version: 0.0.3
+version: v0.0.4
 icon: "https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20241122/42ea9c53-055c-4441-8438-95d639dfc2f4-2086220.png"
 maintainers:
   - name: ZopDev
     url: zop.dev
 annotations:
   type: datasource
+dependencies:
+  - name: zookeeper
+    version: "v0.0.2"
+    repository: "https://helm.zop.dev"

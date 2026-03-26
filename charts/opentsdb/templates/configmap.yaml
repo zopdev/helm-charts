@@ -1,8 +1,63 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: "{{ .Release.Name }}-opentsdb-configmap"
-  namespace: {{ .Release.Namespace | quote }}
+  name: {{ include "opentsdb.fullname" . }}-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "opentsdb.labels" . | nindent 4 }}
 data:
-  OPENTSDB_HOST: {{ $.Release.Name }}-opentsdb
-  OPENTSDB_PORT: "4242"
+  opentsdb.conf: |
+    tsd.network.port = 4242
+    tsd.http.staticroot = /usr/local/share/opentsdb/static/
+    tsd.http.cachedir = /tmp/opentsdb
+    tsd.core.plugin_path = /opentsdb-plugins
+    tsd.core.auto_create_metrics = true
+    tsd.storage.hbase.zk_quorum = {{ include "opentsdb.zkQuorum" . }}
+    tsd.storage.hbase.zk_basedir = /hbase
+    tsd.storage.enable = true
+
+  hbase-site.xml: |
+    <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+    <configuration>
+      <property>
+        <name>hbase.rootdir</name>
+        <value>file:///data/hbase</value>
+      </property>
+      <property>
+        <name>hbase.zookeeper.dns.interface</name>
+        <value>default</value>
+      </property>
+      <property>
+        <name>hbase.regionserver.dns.interface</name>
+        <value>default</value>
+      </property>
+      <property>
+        <name>hbase.master.dns.interface</name>
+        <value>default</value>
+      </property>
+      <property>
+        <name>hbase.zookeeper.quorum</name>
+        <value>{{ include "opentsdb.zkQuorum" . }}</value>
+      </property>
+      <property>
+        <name>hbase.zookeeper.property.clientPort</name>
+        <value>2181</value>
+      </property>
+      <property>
+        <name>hbase.cluster.distributed</name>
+        <value>true</value>
+      </property>
+      <property>
+        <name>zookeeper.znode.parent</name>
+        <value>/hbase</value>
+      </property>
+      <!-- WAL Cleanup - fixes "WALs outstanding" warnings -->
+      <property>
+        <name>hbase.master.logcleaner.ttl</name>
+        <value>300000</value>
+      </property>
+      <property>
+        <name>hbase.master.cleaner.interval</name>
+        <value>300000</value>
+      </property>
+    </configuration>
