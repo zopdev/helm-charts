@@ -1,16 +1,31 @@
-# values.yaml for OpenTSDB Helm chart
-version: 2.2
+replicaCount: 1
 
-# Resource configuration
+version: "v0.0.1"
+
+imagePullSecrets: []
+
+service:
+  type: ClusterIP
+  port: 4242
+
 resources:
   requests:
-    cpu: "100m"
-    memory: "256M"
+    memory: "1000Mi"
+    cpu: "500m"
   limits:
+    memory: "2000Mi"
     cpu: "1000m"
-    memory: "1Gi"
 
 diskSize: "10Gi"
 
-# Update strategy for the StatefulSet
+terminationGracePeriodSeconds: 90
 
+zookeeper:
+  replicaCount: 1
+  diskSize: "10Gi"
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 250m
+    limits:
+      memory: 1Gi
