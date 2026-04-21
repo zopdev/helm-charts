@@ -15,7 +15,7 @@ spec:
         - alert: {{ snakecase .Values.name }}_pod_below_minimum_replicas
           annotations:
             description: "Replicas of {{ .Values.name }} are falling short than the minimum required count in {{ .Release.Namespace }} namespace for longer than 10 minutes."
-          expr: (sum(kube_horizontalpodautoscaler_spec_min_replicas{namespace="{{ .Release.Namespace }}", horizontalpodautoscaler="{{ .Values.name }}"}) - sum(kube_deployment_status_replicas_available{namespace="{{ .Release.Namespace }}", deployment="{{ .Values.name }}"}) > 0) and (changes(kube_deployment_status_replicas_updated{namespace="{{ .Release.Namespace }}", deployment="{{ .Values.name }}"}[10m]) == 0)
+          expr: (sum(kube_horizontalpodautoscaler_spec_min_replicas{namespace="{{ .Release.Namespace }}", horizontalpodautoscaler=~"{{ .Values.name }}|keda-hpa-{{ .Values.name }}"}) - sum(kube_deployment_status_replicas_available{namespace="{{ .Release.Namespace }}", deployment="{{ .Values.name }}"}) > 0) and (changes(kube_deployment_status_replicas_updated{namespace="{{ .Release.Namespace }}", deployment="{{ .Values.name }}"}[10m]) == 0)
           for: 10m
           labels:
             severity: warning
@@ -62,7 +62,7 @@ spec:
         - alert: {{ snakecase .Values.name }}_hpa_nearing_max_pod_count
           annotations:
             description: "HPA of {{ .Values.name }} has been running at {{ .Values.alerts.standard.infra.hpaNearingMaxPodThreshold }} percent of max replicas."
-          expr: (sum(kube_horizontalpodautoscaler_status_current_replicas{namespace="{{ .Release.Namespace }}", horizontalpodautoscaler="{{ .Values.name }}"}) / sum(kube_horizontalpodautoscaler_spec_max_replicas{namespace="{{ .Release.Namespace }}", horizontalpodautoscaler="{{ .Values.name }}"})) * 100 >= {{ .Values.alerts.standard.infra.hpaNearingMaxPodThreshold }}
+          expr: (sum(kube_horizontalpodautoscaler_status_current_replicas{namespace="{{ .Release.Namespace }}", horizontalpodautoscaler=~"{{ .Values.name }}|keda-hpa-{{ .Values.name }}"}) / sum(kube_horizontalpodautoscaler_spec_max_replicas{namespace="{{ .Release.Namespace }}", horizontalpodautoscaler=~"{{ .Values.name }}|keda-hpa-{{ .Values.name }}"})) * 100 >= {{ .Values.alerts.standard.infra.hpaNearingMaxPodThreshold }}
           labels:
             severity: warning
             servicealert: "true"
