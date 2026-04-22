@@ -110,6 +110,7 @@ volumeMounts:
 #      pvcName: zopdev-pvc
 
 alerts:
+  enabled: true                                         # Set to false to skip creating the PrometheusRule for this service
   standard:
     infra:
       unavailableReplicasThreshold: 0                   # Alert if the available replicas is lesser than number of desired replicas
