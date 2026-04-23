@@ -16,7 +16,8 @@ spec:
       name: {{ template "superset.fullname" . }}-init-db
     spec:
       securityContext:
-        runAsUser: 0
+        runAsNonRoot: true
+        runAsUser: 1000
       initContainers:
         - name: wait-for-postgres
           image: apache/superset:dockerize
