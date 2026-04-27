@@ -1,0 +1,37 @@
+{{- if and .Values.keda .Values.keda.enabled }}
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: {{ .Values.name }}
+spec:
+  scaleTargetRef:
+    name: {{ .Values.name }}
+  minReplicaCount: {{ .Values.minReplicas | default 2 }}
+  maxReplicaCount: {{ .Values.maxReplicas | default 4 }}
+  {{- if .Values.keda.pollingInterval }}
+  pollingInterval: {{ .Values.keda.pollingInterval }}
+  {{- end }}
+  {{- if .Values.keda.cooldownPeriod }}
+  cooldownPeriod: {{ .Values.keda.cooldownPeriod }}
+  {{- end }}
+  {{- if not (kindIs "invalid" .Values.keda.idleReplicaCount) }}
+  idleReplicaCount: {{ .Values.keda.idleReplicaCount }}
+  {{- end }}
+  {{- if .Values.keda.fallback }}
+  fallback:
+    failureThreshold: {{ .Values.keda.fallback.failureThreshold }}
+    replicas: {{ .Values.keda.fallback.replicas }}
+  {{- end }}
+  triggers:
+  {{- range .Values.keda.triggers }}
+    - type: {{ .type }}
+      metadata:
+        {{- toYaml .metadata | nindent 8 }}
+      {{- if .authenticationRef }}
+      authenticationRef:
+        name: {{ .authenticationRef.name }}
+      {{- end }}
+  {{- end }}
+---
+{{- end }}

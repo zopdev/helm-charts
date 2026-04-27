@@ -1,0 +1,18 @@
+{{- if and .Values.keda .Values.keda.enabled .Values.keda.authentication }}
+{{- range .Values.keda.authentication }}
+---
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: {{ .name }}
+spec:
+  {{- if .secretTargetRef }}
+  secretTargetRef:
+    {{- toYaml .secretTargetRef | nindent 4 }}
+  {{- end }}
+  {{- if .env }}
+  env:
+    {{- toYaml .env | nindent 4 }}
+  {{- end }}
+{{- end }}
+{{- end }}

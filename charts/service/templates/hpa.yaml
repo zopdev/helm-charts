@@ -1,4 +1,4 @@
-{{- if (.Values.hpa_enable)   -}}
+{{- if and (.Values.hpa_enable) (not (and .Values.keda .Values.keda.enabled))  -}}
 ---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler

@@ -31,6 +31,9 @@ httpPort: 8000
 
 injectIstio: false
 
+# Kubernetes Service type. Valid values: ClusterIP, NodePort, LoadBalancer. Defaults to NodePort if not set.
+serviceType: NodePort
+
 ports: # Provide the ports on which container runs its services
 # grpc: 9100
 
@@ -54,6 +57,55 @@ maxMemory: "512M"
 minReplicas: 2
 maxReplicas: 4
 minAvailable: 1
+
+# KEDA Autoscaler Configuration
+# When keda.enabled is true, a KEDA ScaledObject is created instead of the native HPA.
+# Requires KEDA operator to be installed in the cluster.
+keda:
+  enabled: false
+  # pollingInterval: 30
+  # cooldownPeriod: 300
+  # idleReplicaCount:            # Set to 0 to scale down to zero replicas when there is no traffic
+  # fallback:
+  #   failureThreshold: 3
+  #   replicas: 2
+  triggers: []
+  #
+  # Scale based on HTTP traffic (scale to zero when no traffic):
+  # - type: prometheus
+  #   metadata:
+  #     serverAddress: http://prometheus:9090
+  #     metricName: http_requests_per_second
+  #     query: sum(rate(istio_requests_total{destination_service_name="my-service"}[2m]))
+  #     threshold: "10"
+  # With idleReplicaCount: 0, KEDA will scale to 0 replicas when the query returns 0.
+  #
+  # Scale based on CPU/Memory:
+  # - type: cpu
+  #   metadata:
+  #     type: Utilization
+  #     value: "80"
+  # - type: memory
+  #   metadata:
+  #     type: Utilization
+  #     value: "80"
+  #
+  # Scale based on Kafka consumer lag:
+  # - type: kafka
+  #   metadata:
+  #     bootstrapServers: kafka:9092
+  #     consumerGroup: my-group
+  #     topic: my-topic
+  #     lagThreshold: "50"
+  #   authenticationRef:
+  #     name: kafka-trigger-auth
+  #
+  # authentication: []
+  # - name: kafka-trigger-auth
+  #   secretTargetRef:
+  #     - parameter: sasl_password
+  #       name: kafka-secret
+  #       key: password
 
 # Whether application is a CLI service
 cliService: false
