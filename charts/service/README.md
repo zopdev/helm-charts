@@ -116,6 +116,7 @@ The chart includes built-in infrastructure alerts using Prometheus rules. Alerts
 
 | Parameter | Type | Description | Default |
 |-----------|------|-------------|---------|
+| `alerts.enabled` | boolean | Create the PrometheusRule for this service (set to `false` to skip) | `true` |
 | `alerts.standard.infra.unavailableReplicasThreshold` | integer | Alert if available replicas is less than desired (severity: warning) | `0` |
 | `alerts.standard.infra.podRestartThreshold` | integer | Alert if pod restarts exceed threshold | `0` |
 | `alerts.standard.infra.hpaNearingMaxPodThreshold` | integer | Alert if replica count exceeds threshold percentage | `80` |
@@ -263,6 +264,7 @@ volumeMounts:
 #      pvcName: zopdev-pvc
 
 alerts:
+  enabled: true                                         # Set to false to skip creating the PrometheusRule for this service
   standard:
     infra:
       unavailableReplicasThreshold: 0                   # Alert if the available replicas is lesser than number of desired replicas
