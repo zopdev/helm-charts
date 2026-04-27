@@ -27,5 +27,5 @@ spec:
     {{- end }}
   selector:
     app: {{ .Values.name }}
-  type: NodePort
+  type: {{ .Values.serviceType | default "NodePort" }}
 ---

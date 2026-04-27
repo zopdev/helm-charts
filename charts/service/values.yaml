@@ -31,6 +31,9 @@ httpPort: 8000
 
 injectIstio: false
 
+# Kubernetes Service type. Valid values: ClusterIP, NodePort, LoadBalancer. Defaults to NodePort if not set.
+serviceType: NodePort
+
 ports: # Provide the ports on which container runs its services
 # grpc: 9100
 
