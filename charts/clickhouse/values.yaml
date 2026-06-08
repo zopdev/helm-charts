@@ -1,0 +1,25 @@
+# Size of the persistent volume claim (PVC) backing /var/lib/clickhouse.
+diskSize: "10Gi"
+
+# Resource configuration
+resources:
+  requests:
+    cpu: "500m"
+    memory: "512M"
+  limits:
+    cpu: "2000m"
+    memory: "2048M"
+
+# ClickHouse server image tag (clickhouse/clickhouse-server:<version>).
+version: "25.3"
+
+# Extra ClickHouse server configuration. Provided as a full XML document and
+# layered on top of the defaults at /etc/clickhouse-server/config.d/custom.xml.
+customConfig: ""
+
+# Databases and users to provision on startup. Each entry creates a database,
+# a user with read/write access to it, and a connection ConfigMap + Secret the
+# application can mount. Leave empty to deploy ClickHouse without app databases.
+services: []
+#  - name: orders
+#    database: analytics

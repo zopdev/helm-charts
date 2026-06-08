@@ -1,0 +1,15 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ .Release.Name }}-clickhouse
+  labels:
+    app: {{ .Release.Name }}-clickhouse
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-clickhouse
+  endpoints:
+    - port: metrics-port
+      interval: 30s
+      path: /metrics
