@@ -158,7 +158,7 @@ A short-lived init `Pod` (`clickhouse-init-<release>-<name>`) applies the SQL vi
 The chart enables ClickHouse's built-in Prometheus endpoint (no sidecar exporter required) and ships:
 
 - a `ServiceMonitor` scraping the `metrics-port` (`/metrics`, 30s interval), and
-- a `PrometheusRule` with alerts for instance down, recent restart, read-only replicas, rejected inserts, and excessive connections.
+- a `PrometheusRule` with alerts for instance down, recent restart, rejected inserts, and excessive connections.
 
 ---
 
