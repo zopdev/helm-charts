@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}-clickhouse
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/part-of: clickhouse
+    app: {{ .Release.Name }}-clickhouse
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/part-of: clickhouse
+      app: {{ .Release.Name }}-clickhouse
+  serviceName: "{{ .Release.Name }}-clickhouse-headless"
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/part-of: clickhouse
+        app: {{ .Release.Name }}-clickhouse
+    spec:
+      securityContext:
+        # The clickhouse-server image runs as uid/gid 101; fsGroup lets it own
+        # the freshly provisioned data volume.
+        fsGroup: 101
+      containers:
+        - name: clickhouse
+          image: clickhouse/clickhouse-server:{{ .Values.version }}
+          resources:
+            requests:
+              memory: {{ .Values.resources.requests.memory }}
+              cpu: {{ .Values.resources.requests.cpu }}
+            limits:
+              memory: {{ .Values.resources.limits.memory }}
+              cpu: {{ .Values.resources.limits.cpu }}
+          env:
+            - name: CLICKHOUSE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-clickhouse-default-secret
+                  key: default-password
+            # Lets the default user manage databases, users and grants via SQL,
+            # which the per-service init job relies on.
+            - name: CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT
+              value: "1"
+          ports:
+            - containerPort: 8123
+              name: http
+            - containerPort: 9000
+              name: native
+            - containerPort: 9009
+              name: interserver
+            - containerPort: 9363
+              name: metrics
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: 8123
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: 8123
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          volumeMounts:
+            - name: {{ .Release.Name }}-clickhouse-persistent-storage
+              mountPath: /var/lib/clickhouse
+            - name: prometheus-config
+              mountPath: /etc/clickhouse-server/config.d/prometheus.xml
+              subPath: prometheus.xml
+{{- if .Values.customConfig }}
+            - name: custom-config
+              mountPath: /etc/clickhouse-server/config.d/custom.xml
+              subPath: custom.xml
+{{- end }}
+      volumes:
+        - name: prometheus-config
+          configMap:
+            name: {{ .Release.Name }}-clickhouse-prometheus
+{{- if .Values.customConfig }}
+        - name: custom-config
+          configMap:
+            name: {{ .Release.Name }}-clickhouse-custom-config
+{{- end }}
+  volumeClaimTemplates:
+    - metadata:
+        name: {{ .Release.Name }}-clickhouse-persistent-storage
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: {{ .Values.diskSize }}

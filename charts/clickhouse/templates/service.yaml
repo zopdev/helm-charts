@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-clickhouse
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Release.Name }}-clickhouse
+spec:
+  ports:
+    - port: 8123
+      targetPort: 8123
+      protocol: TCP
+      name: http
+    - port: 9000
+      targetPort: 9000
+      protocol: TCP
+      name: native
+    - port: 9009
+      targetPort: 9009
+      protocol: TCP
+      name: interserver
+    - port: 9363
+      targetPort: 9363
+      name: metrics-port
+  selector:
+    app: {{ .Release.Name }}-clickhouse
+  type: ClusterIP
