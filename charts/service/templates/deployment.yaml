@@ -272,6 +272,14 @@ spec:
                 name: {{ $k.datastore }}-kafka-configmap
             {{- end }}
             {{- end }}
+            {{- if and .Values.datastores .Values.datastores.clickhouse }}
+            {{- range $i, $k := .Values.datastores.clickhouse }}
+            - configMapRef:
+                name: {{ $k.datastore }}-{{ replace "_" "-" $k.database }}-{{ $.Release.Name}}-clickhouse-configmap
+            - secretRef:
+                name: {{ $k.datastore }}-{{ replace "_" "-" $k.database }}-{{ $.Release.Name}}-clickhouse-database-secret
+            {{- end }}
+            {{- end }}
           volumeMounts:
           {{- if .Values.volumeMounts }}
           {{- range $k,$v := .Values.volumeMounts.configmaps }}

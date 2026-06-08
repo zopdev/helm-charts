@@ -216,3 +216,4 @@ datastores:
   scylladb:
   kafka: 
   solrcloud:
+  clickhouse:
