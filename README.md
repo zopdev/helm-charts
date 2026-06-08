@@ -117,6 +117,10 @@ This repository provides Helm charts for a wide variety of datastores. Each char
 
 ### Search and Analytics
 
+- **[ClickHouse](./charts/clickhouse):** A fast, open-source column-oriented database for real-time analytics (OLAP).
+  - URL: `https://helm.zop.dev/clickhouse`
+  - Example: Deploy ClickHouse for high-performance analytical queries over large datasets.
+
 - **[Solr](./charts/solr):** An open-source search platform for enterprise-scale applications.
   - URL: `https://helm.zop.dev/solr`
   - Example: Deploy Solr for full-text search and analytics.
