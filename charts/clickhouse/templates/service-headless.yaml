@@ -1,11 +1,15 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Release.Name }}-clickhouse
+  name: {{ .Release.Name }}-clickhouse-headless
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ .Release.Name }}-clickhouse
 spec:
+  # Headless service backing the StatefulSet — gives each pod a stable DNS
+  # name and is required for correct per-pod network identity.
+  clusterIP: None
+  publishNotReadyAddresses: true
   ports:
     - port: 8123
       targetPort: 8123
@@ -19,9 +23,5 @@ spec:
       targetPort: 9009
       protocol: TCP
       name: interserver
-    - port: 9363
-      targetPort: 9363
-      name: metrics-port
   selector:
     app: {{ .Release.Name }}-clickhouse
-  type: ClusterIP

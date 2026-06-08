@@ -31,8 +31,8 @@ spec:
           mountPath: /etc/config
   volumes:
     - name: secret-volume
-      configMap:
-        name: {{ $.Release.Name }}-{{ .name }}-init-script
+      secret:
+        secretName: {{ $.Release.Name }}-{{ .name }}-init-script
   restartPolicy: OnFailure
 ---
 {{- end }}

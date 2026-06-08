@@ -12,7 +12,7 @@ spec:
     matchLabels:
       app.kubernetes.io/part-of: clickhouse
       app: {{ .Release.Name }}-clickhouse
-  serviceName: "{{ .Release.Name }}-clickhouse"
+  serviceName: "{{ .Release.Name }}-clickhouse-headless"
   updateStrategy:
     type: RollingUpdate
   template:
@@ -80,11 +80,11 @@ spec:
       volumes:
         - name: prometheus-config
           configMap:
-            name: {{ include "clickhouse.fullname" . }}-prometheus
+            name: {{ .Release.Name }}-clickhouse-prometheus
 {{- if .Values.customConfig }}
         - name: custom-config
           configMap:
-            name: {{ include "clickhouse.fullname" . }}-custom-config
+            name: {{ .Release.Name }}-clickhouse-custom-config
 {{- end }}
   volumeClaimTemplates:
     - metadata:

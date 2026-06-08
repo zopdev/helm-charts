@@ -49,11 +49,12 @@ data:
   DB_USER: {{ $username | b64enc }}
 ---
 apiVersion: v1
-kind: ConfigMap
+kind: Secret
 metadata:
   name: {{ $.Release.Name }}-{{ $service.name }}-init-script
   namespace: {{ $.Release.Namespace }}
-data:
+type: Opaque
+stringData:
   db-init.sql: |
     CREATE DATABASE IF NOT EXISTS `{{ $service.database }}`;
 
