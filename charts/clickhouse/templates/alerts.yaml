@@ -1,0 +1,61 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+  generation: 1
+  labels:
+    app: kube-prometheus-stack
+    heritage: Helm
+    release: prometheus
+spec:
+  groups:
+    - name: {{ .Release.Namespace }}.{{ .Release.Name }}-clickhouse.rules
+      rules:
+        - alert: ClickHouseDown
+          expr: up{namespace="{{ .Release.Namespace }}", service="{{ .Release.Name }}-clickhouse"} == 0
+          for: 0m
+          labels:
+            severity: critical
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Release.Name }}-clickhouse
+          annotations:
+            summary: 'All ClickHouse instances of {{ .Release.Name }} are down'
+            description: 'ClickHouse instance of {{ .Release.Name }} is down'
+
+        - alert: ClickHouseRestarted
+          expr: ClickHouseAsyncMetrics_Uptime{namespace="{{ .Release.Namespace }}", service="{{ .Release.Name }}-clickhouse"} < 60
+          for: 0m
+          labels:
+            severity: info
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Release.Name }}-clickhouse
+          annotations:
+            summary: 'ClickHouse instance {{ .Release.Name }} restarted'
+            description: 'ClickHouse instance {{ .Release.Name }} restarted < 1 minute ago'
+
+        - alert: ClickHouseRejectedInserts
+          expr: increase(ClickHouseProfileEvents_RejectedInserts{namespace="{{ .Release.Namespace }}", service="{{ .Release.Name }}-clickhouse"}[1m]) > 0
+          for: 2m
+          labels:
+            severity: warning
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Release.Name }}-clickhouse
+          annotations:
+            summary: 'ClickHouse instance {{ .Release.Name }} is rejecting inserts'
+            description: 'ClickHouse instance {{ .Release.Name }} is rejecting inserts (too many parts) — ingestion may be outpacing merges'
+
+        - alert: ClickHouseTooManyConnections
+          expr: ClickHouseMetrics_TCPConnection{namespace="{{ .Release.Namespace }}", service="{{ .Release.Name }}-clickhouse"} > 500
+          for: 2m
+          labels:
+            severity: warning
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Release.Name }}-clickhouse
+          annotations:
+            summary: 'ClickHouse instance {{ .Release.Name }} has too many connections'
+            description: 'ClickHouse instance {{ .Release.Name }} has more than 500 active native connections'
