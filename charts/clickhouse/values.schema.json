@@ -14,6 +14,7 @@
       "mutable": true
     },
     "version": {
+      "type": "string",
       "default": "25.3",
       "mutable": true
     },

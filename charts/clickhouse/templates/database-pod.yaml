@@ -32,7 +32,7 @@ spec:
   volumes:
     - name: secret-volume
       secret:
-        secretName: {{ $.Release.Name }}-{{ .name }}-init-script
+        secretName: {{ $.Release.Name }}-{{ $service.name }}-init-script
   restartPolicy: OnFailure
 ---
 {{- end }}
