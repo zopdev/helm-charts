@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-clickhouse-prometheus
+  namespace: {{ .Release.Namespace }}
+data:
+  # Enables ClickHouse's built-in Prometheus exporter on port 9363 at /metrics.
+  # Mounted into /etc/clickhouse-server/config.d so the server picks it up.
+  prometheus.xml: |-
+    <clickhouse>
+      <prometheus>
+        <endpoint>/metrics</endpoint>
+        <port>9363</port>
+        <metrics>true</metrics>
+        <events>true</events>
+        <asynchronous_metrics>true</asynchronous_metrics>
+        <status_info>true</status_info>
+      </prometheus>
+    </clickhouse>

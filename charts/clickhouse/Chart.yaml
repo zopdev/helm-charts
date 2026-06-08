@@ -1,0 +1,11 @@
+apiVersion: v2
+appVersion: "1.0"
+description: Helm chart for deploying clickhouse datastore
+name: clickhouse
+version: 0.0.1
+icon: "https://storage.googleapis.com/zopdev-blog-resources/1/files/originals/20260608/f641a725-da8d-450a-b57b-c959551a07bc-clickhouse.png"
+maintainers:
+  - name: ZopDev
+    url: zop.dev
+annotations:
+  type: datasource

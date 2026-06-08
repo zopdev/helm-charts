@@ -1,0 +1,10 @@
+{{- if .Values.customConfig }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-clickhouse-custom-config
+  namespace: {{ .Release.Namespace }}
+data:
+  custom.xml: |-
+    {{- .Values.customConfig | nindent 4 }}
+{{- end }}

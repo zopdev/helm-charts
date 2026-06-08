@@ -108,6 +108,7 @@ Below is a list of available charts along with their links:
 | **ChromaDB**         | [helm.zop.dev/chromadb](https://helm.zop.dev/chromadb)                 |             |
 | **Cassandra**        | [helm.zop.dev/cassandra](https://helm.zop.dev/cassandra)               |             |
 | **CockroachDB**      | [helm.zop.dev/cockroachdb](https://helm.zop.dev/cockroachdb)           |             |
+| **ClickHouse**       | [helm.zop.dev/clickhouse](https://helm.zop.dev/clickhouse)             | ✅           |
 | **Kafka**            | [helm.zop.dev/kafka](https://helm.zop.dev/kafka)                       | ✅           |
 | **RedisDistributed** | [helm.zop.dev/redisdistributed](https://helm.zop.dev/redisdistributed) | ✅           |
 | **SolrCloud**        | [helm.zop.dev/solrcloud](https://helm.zop.dev/solrcloud)               |             |
