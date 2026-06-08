@@ -5,8 +5,7 @@
     "diskSize": {
       "type": "string",
       "default": "10Gi",
-      "mutable": true,
-      "editDisabled": true
+      "mutable": true
     },
     "customConfig": {
       "type": "string",
