@@ -5,38 +5,38 @@
 {{- $generatedUsername := printf "%s_%s" $trimmedName $randomSuffix }}
 {{- $generatedPassword := printf "%s%s%s" (randAlpha 4) (randNumeric 4) (randAlpha 4 | upper) }}
 
-{{/* Define Secret Name */}}
+{{/* Resource names */}}
+{{- $configMapName := printf "%s-%s-%s-clickhouse-configmap" $.Release.Name (replace "_" "-" $service.database) $service.name }}
 {{- $secretName := printf "%s-%s-%s-clickhouse-database-secret" $.Release.Name (replace "_" "-" $service.database) $service.name }}
 
-{{/* Retrieve existing secret (if any) so credentials survive upgrades */}}
+{{/* Preserve generated credentials across upgrades: the username lives in the
+     ConfigMap, the password in the Secret. */}}
+{{- $existingConfigMap := lookup "v1" "ConfigMap" $.Release.Namespace $configMapName }}
 {{- $existingSecret := lookup "v1" "Secret" $.Release.Namespace $secretName }}
 
 {{- $username := $generatedUsername }}
 {{- $password := $generatedPassword }}
 
-{{- if $existingSecret }}
-  {{- with $existingSecret.data }}
-    {{- if hasKey . "DB_USER" }}
-      {{- $username = index . "DB_USER" | b64dec }}
-    {{- end }}
-    {{- if hasKey . "DB_PASSWORD" }}
-      {{- $password = index . "DB_PASSWORD" | b64dec }}
-    {{- end }}
-  {{- end }}
+{{- if and $existingConfigMap (hasKey $existingConfigMap.data "CH_USER") }}
+  {{- $username = index $existingConfigMap.data "CH_USER" }}
+{{- end }}
+{{- if and $existingSecret (hasKey $existingSecret.data "CH_PASSWORD") }}
+  {{- $password = index $existingSecret.data "CH_PASSWORD" | b64dec }}
 {{- end }}
 
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ $.Release.Name }}-{{ replace "_" "-" $service.database }}-{{ $service.name }}-clickhouse-configmap
+  name: {{ $configMapName }}
   namespace: {{ $.Release.Namespace }}
 data:
-  DB_DIALECT: "clickhouse"
-  DB_USER: "{{ $username }}"
-  DB_PORT: "9000"
-  DB_NAME: "{{ $service.database }}"
-  DB_HOST: "{{ $.Release.Name }}-clickhouse"
+  # ClickHouse connection config consumed by the service (CH_HOST:CH_PORT form
+  # the GoFr Hosts value). Native TCP port 9000.
+  CH_HOST: "{{ $.Release.Name }}-clickhouse"
+  CH_PORT: "9000"
+  CH_USER: "{{ $username }}"
+  CH_DATABASE: "{{ $service.database }}"
 ---
 apiVersion: v1
 kind: Secret
@@ -45,8 +45,7 @@ metadata:
   namespace: {{ $.Release.Namespace }}
 type: Opaque
 data:
-  DB_PASSWORD: {{ $password | b64enc }}
-  DB_USER: {{ $username | b64enc }}
+  CH_PASSWORD: {{ $password | b64enc }}
 ---
 apiVersion: v1
 kind: Secret
