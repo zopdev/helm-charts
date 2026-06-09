@@ -17,11 +17,11 @@
 {{- $username := $generatedUsername }}
 {{- $password := $generatedPassword }}
 
-{{- if and $existingConfigMap (hasKey $existingConfigMap.data "USERNAME") }}
-  {{- $username = index $existingConfigMap.data "USERNAME" }}
+{{- if and $existingConfigMap (hasKey $existingConfigMap.data "CH_USER") }}
+  {{- $username = index $existingConfigMap.data "CH_USER" }}
 {{- end }}
-{{- if and $existingSecret (hasKey $existingSecret.data "PASSWORD") }}
-  {{- $password = index $existingSecret.data "PASSWORD" | b64dec }}
+{{- if and $existingSecret (hasKey $existingSecret.data "CH_PASSWORD") }}
+  {{- $password = index $existingSecret.data "CH_PASSWORD" | b64dec }}
 {{- end }}
 
 ---
@@ -31,11 +31,12 @@ metadata:
   name: {{ $configMapName }}
   namespace: {{ $.Release.Namespace }}
 data:
-  # GoFr ClickHouse connection config keys (https://gofr.dev/docs/datasources/clickhouse).
-  # HOSTS is host:port (GoFr accepts a comma-separated list); native TCP port 9000.
-  HOSTS: "{{ $.Release.Name }}-clickhouse:9000"
-  USERNAME: "{{ $username }}"
-  DATABASE: "{{ $service.database }}"
+  # ClickHouse connection config consumed by the service (CH_HOST:CH_PORT form
+  # the GoFr Hosts value). Native TCP port 9000.
+  CH_HOST: "{{ $.Release.Name }}-clickhouse"
+  CH_PORT: "9000"
+  CH_USER: "{{ $username }}"
+  CH_DATABASE: "{{ $service.database }}"
 ---
 apiVersion: v1
 kind: Secret
@@ -44,7 +45,7 @@ metadata:
   namespace: {{ $.Release.Namespace }}
 type: Opaque
 data:
-  PASSWORD: {{ $password | b64enc }}
+  CH_PASSWORD: {{ $password | b64enc }}
 ---
 apiVersion: v1
 kind: Secret

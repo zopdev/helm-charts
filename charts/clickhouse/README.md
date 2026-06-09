@@ -182,12 +182,14 @@ This project is licensed under the [LICENSE](../../LICENSE). Please review it fo
 
 ## Connection Config
 
-The connection `ConfigMap`/`Secret` expose the keys GoFr's ClickHouse datasource
-reads ([gofr.dev/docs/datasources/clickhouse](https://gofr.dev/docs/datasources/clickhouse)):
+The connection `ConfigMap`/`Secret` expose `CH_*` keys (the consumer combines
+`CH_HOST:CH_PORT` into GoFr's ClickHouse `Hosts`, see
+[gofr.dev/docs/datasources/clickhouse](https://gofr.dev/docs/datasources/clickhouse)):
 
-- **HOSTS** : ClickHouse server as `host:port` (GoFr accepts a comma-separated list). Set to `<release>-clickhouse:9000` — the native TCP port. (HTTP clients use `8123`.)
-- **USERNAME** : Username used to connect to the ClickHouse database.
-- **DATABASE** : The name of the specific database to connect to.
-- **PASSWORD** : The password for `USERNAME`, stored securely in a Kubernetes secret.
+- **CH_HOST** : Hostname/service name of the ClickHouse server (`<release>-clickhouse`).
+- **CH_PORT** : Native TCP port. Defaults to `9000`. (HTTP clients use `8123`.)
+- **CH_USER** : Username used to connect to the ClickHouse database.
+- **CH_DATABASE** : The name of the specific database to connect to.
+- **CH_PASSWORD** : The password for `CH_USER`, stored securely in a Kubernetes secret.
 
 ---
