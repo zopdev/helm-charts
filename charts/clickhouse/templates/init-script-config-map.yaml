@@ -16,11 +16,17 @@
 
 {{- if $existingSecret }}
   {{- with $existingSecret.data }}
+    {{/* prefer the current keys; fall back to the legacy DB_* keys so an
+         upgrade from a chart version that used them preserves credentials */}}
     {{- if hasKey . "USERNAME" }}
       {{- $username = index . "USERNAME" | b64dec }}
+    {{- else if hasKey . "DB_USER" }}
+      {{- $username = index . "DB_USER" | b64dec }}
     {{- end }}
     {{- if hasKey . "PASSWORD" }}
       {{- $password = index . "PASSWORD" | b64dec }}
+    {{- else if hasKey . "DB_PASSWORD" }}
+      {{- $password = index . "DB_PASSWORD" | b64dec }}
     {{- end }}
   {{- end }}
 {{- end }}
