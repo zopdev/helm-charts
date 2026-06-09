@@ -182,11 +182,12 @@ This project is licensed under the [LICENSE](../../LICENSE). Please review it fo
 
 ## Connection Config
 
-- **DB_DIALECT** : Specifies the database dialect. In this context always set to `clickhouse`.
-- **DB_USER** : Username used to connect to the ClickHouse database.
-- **DB_PORT** : The native protocol port used to connect to the ClickHouse server. Defaults to `9000`. (HTTP clients use `8123`.)
-- **DB_NAME** : The name of the specific database to connect to.
-- **DB_HOST** : The hostname or service name of the ClickHouse server.
-- **DB_PASSWORD** : The password for `DB_USER`, stored securely in a Kubernetes secret.
+The connection `ConfigMap`/`Secret` expose the keys GoFr's ClickHouse datasource
+reads ([gofr.dev/docs/datasources/clickhouse](https://gofr.dev/docs/datasources/clickhouse)):
+
+- **HOSTS** : ClickHouse server as `host:port` (GoFr accepts a comma-separated list). Set to `<release>-clickhouse:9000` — the native TCP port. (HTTP clients use `8123`.)
+- **USERNAME** : Username used to connect to the ClickHouse database.
+- **DATABASE** : The name of the specific database to connect to.
+- **PASSWORD** : The password for `USERNAME`, stored securely in a Kubernetes secret.
 
 ---

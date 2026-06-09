@@ -16,11 +16,11 @@
 
 {{- if $existingSecret }}
   {{- with $existingSecret.data }}
-    {{- if hasKey . "DB_USER" }}
-      {{- $username = index . "DB_USER" | b64dec }}
+    {{- if hasKey . "USERNAME" }}
+      {{- $username = index . "USERNAME" | b64dec }}
     {{- end }}
-    {{- if hasKey . "DB_PASSWORD" }}
-      {{- $password = index . "DB_PASSWORD" | b64dec }}
+    {{- if hasKey . "PASSWORD" }}
+      {{- $password = index . "PASSWORD" | b64dec }}
     {{- end }}
   {{- end }}
 {{- end }}
@@ -32,11 +32,11 @@ metadata:
   name: {{ $.Release.Name }}-{{ replace "_" "-" $service.database }}-{{ $service.name }}-clickhouse-configmap
   namespace: {{ $.Release.Namespace }}
 data:
-  DB_DIALECT: "clickhouse"
-  DB_USER: "{{ $username }}"
-  DB_PORT: "9000"
-  DB_NAME: "{{ $service.database }}"
-  DB_HOST: "{{ $.Release.Name }}-clickhouse"
+  # GoFr ClickHouse connection config keys (https://gofr.dev/docs/datasources/clickhouse).
+  # HOSTS is host:port (GoFr accepts a comma-separated list); native TCP port 9000.
+  HOSTS: "{{ $.Release.Name }}-clickhouse:9000"
+  USERNAME: "{{ $username }}"
+  DATABASE: "{{ $service.database }}"
 ---
 apiVersion: v1
 kind: Secret
@@ -45,8 +45,8 @@ metadata:
   namespace: {{ $.Release.Namespace }}
 type: Opaque
 data:
-  DB_PASSWORD: {{ $password | b64enc }}
-  DB_USER: {{ $username | b64enc }}
+  PASSWORD: {{ $password | b64enc }}
+  USERNAME: {{ $username | b64enc }}
 ---
 apiVersion: v1
 kind: Secret
