@@ -5,37 +5,30 @@
 {{- $generatedUsername := printf "%s_%s" $trimmedName $randomSuffix }}
 {{- $generatedPassword := printf "%s%s%s" (randAlpha 4) (randNumeric 4) (randAlpha 4 | upper) }}
 
-{{/* Define Secret Name */}}
+{{/* Resource names */}}
+{{- $configMapName := printf "%s-%s-%s-clickhouse-configmap" $.Release.Name (replace "_" "-" $service.database) $service.name }}
 {{- $secretName := printf "%s-%s-%s-clickhouse-database-secret" $.Release.Name (replace "_" "-" $service.database) $service.name }}
 
-{{/* Retrieve existing secret (if any) so credentials survive upgrades */}}
+{{/* Preserve generated credentials across upgrades: the username lives in the
+     ConfigMap, the password in the Secret. */}}
+{{- $existingConfigMap := lookup "v1" "ConfigMap" $.Release.Namespace $configMapName }}
 {{- $existingSecret := lookup "v1" "Secret" $.Release.Namespace $secretName }}
 
 {{- $username := $generatedUsername }}
 {{- $password := $generatedPassword }}
 
-{{- if $existingSecret }}
-  {{- with $existingSecret.data }}
-    {{/* prefer the current keys; fall back to the legacy DB_* keys so an
-         upgrade from a chart version that used them preserves credentials */}}
-    {{- if hasKey . "USERNAME" }}
-      {{- $username = index . "USERNAME" | b64dec }}
-    {{- else if hasKey . "DB_USER" }}
-      {{- $username = index . "DB_USER" | b64dec }}
-    {{- end }}
-    {{- if hasKey . "PASSWORD" }}
-      {{- $password = index . "PASSWORD" | b64dec }}
-    {{- else if hasKey . "DB_PASSWORD" }}
-      {{- $password = index . "DB_PASSWORD" | b64dec }}
-    {{- end }}
-  {{- end }}
+{{- if and $existingConfigMap (hasKey $existingConfigMap.data "USERNAME") }}
+  {{- $username = index $existingConfigMap.data "USERNAME" }}
+{{- end }}
+{{- if and $existingSecret (hasKey $existingSecret.data "PASSWORD") }}
+  {{- $password = index $existingSecret.data "PASSWORD" | b64dec }}
 {{- end }}
 
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ $.Release.Name }}-{{ replace "_" "-" $service.database }}-{{ $service.name }}-clickhouse-configmap
+  name: {{ $configMapName }}
   namespace: {{ $.Release.Namespace }}
 data:
   # GoFr ClickHouse connection config keys (https://gofr.dev/docs/datasources/clickhouse).
@@ -52,7 +45,6 @@ metadata:
 type: Opaque
 data:
   PASSWORD: {{ $password | b64enc }}
-  USERNAME: {{ $username | b64enc }}
 ---
 apiVersion: v1
 kind: Secret
