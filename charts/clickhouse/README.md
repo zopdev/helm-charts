@@ -107,13 +107,26 @@ helm install my-clickhouse zopdev/clickhouse -f values.yaml
 
 ### Example: Providing Custom ClickHouse Configuration
 
-To override or add to the default ClickHouse server configuration, provide your own XML using the `customConfig` value. This is mounted as `/etc/clickhouse-server/config.d/custom.xml` and layered on top of the defaults.
+To override or add to the default ClickHouse configuration, provide your own XML using the `customConfig` value. The same document is mounted into **both** ClickHouse config trees:
+
+- `/etc/clickhouse-server/config.d/custom.xml` — for **server-level** settings (e.g. `max_connections`, `max_server_memory_usage_to_ram_ratio`).
+- `/etc/clickhouse-server/users.d/custom.xml` — for **profile / user** settings, which ClickHouse only loads from the users config tree (e.g. `max_memory_usage`, `max_bytes_before_external_group_by`, `max_bytes_before_external_sort`).
+
+ClickHouse reads the relevant sections from each tree and ignores the rest, so you can place server settings and a `<profiles>` block in one document:
 
 ```yaml
 customConfig: |
   <clickhouse>
     <max_connections>2048</max_connections>
     <max_concurrent_queries>200</max_concurrent_queries>
+    <max_server_memory_usage_to_ram_ratio>0.9</max_server_memory_usage_to_ram_ratio>
+    <profiles>
+      <default>
+        <max_memory_usage>1500000000</max_memory_usage>
+        <max_bytes_before_external_group_by>750000000</max_bytes_before_external_group_by>
+        <max_bytes_before_external_sort>750000000</max_bytes_before_external_sort>
+      </default>
+    </profiles>
   </clickhouse>
 ```
 
