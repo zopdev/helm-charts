@@ -73,8 +73,18 @@ spec:
               mountPath: /etc/clickhouse-server/config.d/prometheus.xml
               subPath: prometheus.xml
 {{- if .Values.customConfig }}
+            # Server-level settings (e.g. max_server_memory_usage_to_ram_ratio)
+            # are read from config.d; ClickHouse ignores any <profiles>/<users>
+            # blocks here.
             - name: custom-config
               mountPath: /etc/clickhouse-server/config.d/custom.xml
+              subPath: custom.xml
+            # The same file is also mounted into users.d so that profile/user
+            # settings (max_memory_usage, max_bytes_before_external_group_by,
+            # max_bytes_before_external_sort, etc.) actually take effect —
+            # ClickHouse loads profiles only from the users config tree.
+            - name: custom-config
+              mountPath: /etc/clickhouse-server/users.d/custom.xml
               subPath: custom.xml
 {{- end }}
       volumes:
