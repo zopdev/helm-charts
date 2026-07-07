@@ -1,0 +1,377 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Service Helm Chart Values",
+  "description": "Configuration values for the Service Helm chart",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of the service"
+    },
+    "image": {
+      "type": "string",
+      "description": "Docker container image with tag",
+      "mutable": true
+    },
+    "httpPort": {
+      "type": "integer",
+      "description": "Port on which container runs its services",
+      "default": 8000,
+      "mutable": true
+    },
+    "metricsPort": {
+      "type": "integer",
+      "description": "Port on which the container exposes metrics. A metrics port is only added when set to a non-zero value.",
+      "mutable": true
+    },
+    "ports": {
+      "type": ["object", "null"],
+      "description": "Additional ports on which the container runs its services, keyed by port name",
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "mutable": true
+    },
+    "nginx": {
+      "type": ["object", "null"],
+      "description": "Ingress (nginx) configuration",
+      "properties": {
+        "host": {
+          "type": ["string", "null"],
+          "description": "Hostname for the ingress",
+          "mutable": true
+        },
+        "annotations": {
+          "type": ["object", "null"],
+          "description": "Annotations to add to the ingress",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "mutable": true
+        },
+        "tlsHost": {
+          "type": ["string", "null"],
+          "description": "Hostname to use for TLS",
+          "mutable": true
+        },
+        "tlsSecretName": {
+          "type": ["string", "null"],
+          "description": "Name of the secret holding the TLS certificate",
+          "mutable": true
+        }
+      }
+    },
+    "envFrom": {
+      "type": "object",
+      "description": "Reference environment variables from secrets and configmaps",
+      "properties": {
+        "secrets": {
+          "type": ["array", "null"],
+          "description": "List of secrets to source environment variables from",
+          "items": {
+            "type": "string"
+          },
+          "mutable": true
+        },
+        "configmaps": {
+          "type": ["array", "null"],
+          "description": "List of configmaps to source environment variables from",
+          "items": {
+            "type": "string"
+          },
+          "mutable": true
+        }
+      }
+    },
+    "minCPU": {
+      "type": "string",
+      "description": "CPU request for the container",
+      "pattern": "^[0-9]+m?$",
+      "default": "100m",
+      "mutable": true
+    },
+    "minMemory": {
+      "type": "string",
+      "description": "Memory request for the container",
+      "pattern": "^[0-9]+[KMGTPEZYkmgtpezy]i?$",
+      "default": "128M",
+      "mutable": true
+    },
+    "maxCPU": {
+      "type": "string",
+      "description": "CPU limit for the container",
+      "pattern": "^[0-9]*m?$",
+      "default": "500m",
+      "mutable": true
+    },
+    "maxMemory": {
+      "type": "string",
+      "description": "Memory limit for the container",
+      "pattern": "^([0-9]+[KMGTPEZYkmgtpezy]i?)?$",
+      "default": "512M",
+      "mutable": true
+    },
+    "minReplicas": {
+      "type": "integer",
+      "description": "Minimum number of replicas for autoscaling",
+      "minimum": 0,
+      "default": 2,
+      "mutable": true
+    },
+    "maxReplicas": {
+      "type": "integer",
+      "description": "Maximum number of replicas for autoscaling",
+      "minimum": 1,
+      "default": 4,
+      "mutable": true
+    },
+    "hpa_enable": {
+      "type": "boolean",
+      "description": "Enable the native HorizontalPodAutoscaler. Ignored when keda.enabled is true.",
+      "default": false,
+      "mutable": true
+    },
+    "hpaCPU": {
+      "type": ["string", "null"],
+      "description": "Target average CPU utilization percentage for the HPA. When empty, it is derived from minCPU and maxCPU.",
+      "mutable": true
+    },
+    "hpaMemory": {
+      "type": ["string", "null"],
+      "description": "Target average memory utilization percentage for the HPA. When empty, it is derived from minMemory and maxMemory.",
+      "mutable": true
+    },
+    "heartbeatURL": {
+      "type": "string",
+      "description": "Heartbeat URL used for readiness and liveness probes",
+      "default": "",
+      "mutable": true
+    },
+    "readinessProbe": {
+      "type": "object",
+      "description": "Readiness probe configuration",
+      "properties": {
+        "enable": {
+          "type": "boolean",
+          "description": "Enable the readiness probe",
+          "default": false,
+          "mutable": true
+        },
+        "initialDelaySeconds": {
+          "type": "integer",
+          "description": "Delay before the first probe",
+          "mutable": true
+        },
+        "timeoutSeconds": {
+          "type": "integer",
+          "description": "Timeout for each probe",
+          "mutable": true
+        },
+        "periodSeconds": {
+          "type": "integer",
+          "description": "How often to perform the probe",
+          "mutable": true
+        },
+        "failureThreshold": {
+          "type": "integer",
+          "description": "Number of failures before marking unready",
+          "mutable": true
+        }
+      }
+    },
+    "livenessProbe": {
+      "type": "object",
+      "description": "Liveness probe configuration",
+      "properties": {
+        "enable": {
+          "type": "boolean",
+          "description": "Enable the liveness probe",
+          "default": false,
+          "mutable": true
+        },
+        "initialDelaySeconds": {
+          "type": "integer",
+          "description": "Delay before the first probe",
+          "mutable": true
+        },
+        "timeoutSeconds": {
+          "type": "integer",
+          "description": "Timeout for each probe",
+          "mutable": true
+        },
+        "periodSeconds": {
+          "type": "integer",
+          "description": "How often to perform the probe",
+          "mutable": true
+        },
+        "failureThreshold": {
+          "type": "integer",
+          "description": "Number of failures before restarting the container",
+          "mutable": true
+        }
+      }
+    },
+    "env": {
+      "type": ["object", "null"],
+      "description": "Environment variables passed as a map",
+      "additionalProperties": {
+        "type": ["string", "number", "boolean"]
+      },
+      "mutable": true
+    },
+    "envList": {
+      "type": ["array", "null"],
+      "description": "Environment variables as a list",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "value": {
+            "type": ["string", "number", "boolean"]
+          }
+        },
+        "required": ["name"]
+      },
+      "mutable": true
+    },
+    "appSecrets": {
+      "type": ["boolean", "string"],
+      "description": "Enable application secrets provisioning via the secrets store CSI driver",
+      "default": false,
+      "mutable": true
+    },
+    "command": {
+      "type": ["array", "null"],
+      "description": "Command to run in the container",
+      "items": {
+        "type": "string"
+      },
+      "mutable": true
+    },
+    "alerts": {
+      "type": "object",
+      "description": "Alerting configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Set to false to skip creating the PrometheusRule for this service",
+          "default": true,
+          "mutable": true
+        },
+        "standard": {
+          "type": "object",
+          "description": "Standard alerts",
+          "properties": {
+            "infra": {
+              "type": "object",
+              "description": "Infrastructure level alert thresholds",
+              "properties": {
+                "unavailableReplicasThreshold": {
+                  "type": "integer",
+                  "description": "Alert if the available replicas is lesser than number of desired replicas",
+                  "default": 0,
+                  "mutable": true
+                },
+                "podRestartThreshold": {
+                  "type": "integer",
+                  "description": "Alert if the pod restarts goes beyond threshold over the time window",
+                  "default": 0,
+                  "mutable": true
+                },
+                "podRestartTimeWindow": {
+                  "type": "string",
+                  "description": "Time window for pod restart alert",
+                  "default": "5m",
+                  "mutable": true
+                },
+                "hpaNearingMaxPodThreshold": {
+                  "type": "integer",
+                  "description": "Alert if replica count crosses the threshold percentage of max pod count",
+                  "default": 80,
+                  "mutable": true
+                },
+                "serviceMemoryUtilizationThreshold": {
+                  "type": "integer",
+                  "description": "Alert if service memory exceeds threshold",
+                  "default": 90,
+                  "mutable": true
+                },
+                "serviceCpuUtilizationThreshold": {
+                  "type": "integer",
+                  "description": "Alert if service cpu exceeds threshold",
+                  "default": 90,
+                  "mutable": true
+                },
+                "serviceCpuUtilizationTimeWindow": {
+                  "type": "string",
+                  "description": "Time window for service cpu utilization",
+                  "default": "5m",
+                  "mutable": true
+                },
+                "healthCheckFailureThreshold": {
+                  "type": "integer",
+                  "description": "Alert if application health-check failures goes beyond threshold in the time window",
+                  "default": 50,
+                  "mutable": true
+                },
+                "healthCheckFailureTimeWindow": {
+                  "type": "string",
+                  "description": "Time window for health-check failure alert",
+                  "default": "5m",
+                  "mutable": true
+                }
+              }
+            }
+          }
+        },
+        "custom": {
+          "type": ["array", "null"],
+          "description": "Custom alert definitions",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "alertRule": {
+                "type": "string"
+              },
+              "sumByLabel": {
+                "type": "string"
+              },
+              "percentile": {
+                "type": "number"
+              },
+              "labelValue": {
+                "type": "string"
+              },
+              "queryOperator": {
+                "type": "string"
+              },
+              "timeWindow": {
+                "type": "string"
+              },
+              "threshold": {
+                "type": "number"
+              },
+              "labels": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": ["name", "alertRule", "threshold"]
+          },
+          "mutable": true
+        }
+      }
+    }
+  },
+  "required": ["name", "image"]
+}
