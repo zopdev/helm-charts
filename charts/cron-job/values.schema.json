@@ -33,11 +33,16 @@
       "mutable": true
     },
     "command": {
-      "type": ["array", "null"],
-      "description": "Command to run in the container",
+      "type": ["array", "string", "null"],
+      "description": "Command to run in the container. Provide as a list of args. A string is only allowed as the empty unset default (\"\"); a non-empty string renders an invalid manifest because the template emits command via toJson and K8s command is []string.",
       "items": {
         "type": "string"
       },
+      "not": {
+        "type": "string",
+        "minLength": 1
+      },
+      "default": "",
       "mutable": true
     },
     "httpPort": {

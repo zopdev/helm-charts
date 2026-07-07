@@ -13,7 +13,7 @@ imagePullSecrets:
 schedule: "0 */1 * * *"
 suspend: false
 concurrencyPolicy: "Replace"
-command: []
+command: ""
 
 # Port on which container runs its service
 httpPort: 8000
