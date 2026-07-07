@@ -33,12 +33,11 @@
       "mutable": true
     },
     "command": {
-      "type": ["array", "string", "null"],
+      "type": ["array", "null"],
       "description": "Command to run in the container",
       "items": {
         "type": "string"
       },
-      "default": "",
       "mutable": true
     },
     "httpPort": {
