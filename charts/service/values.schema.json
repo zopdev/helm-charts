@@ -10,7 +10,6 @@
     },
     "image": {
       "type": "string",
-      "category": "runtime",
       "description": "Docker container image with tag",
       "mutable": true
     },
