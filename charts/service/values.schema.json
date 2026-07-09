@@ -43,7 +43,7 @@
         "host": {
           "type": ["string", "null"],
           "description": "Hostname for the ingress",
-          "mutable": true
+          "mutable": false
         },
         "annotations": {
           "type": ["object", "null"],
@@ -51,17 +51,17 @@
           "additionalProperties": {
             "type": "string"
           },
-          "mutable": true
+          "mutable": false
         },
         "tlsHost": {
           "type": ["string", "null"],
           "description": "Hostname to use for TLS",
-          "mutable": true
+          "mutable": false
         },
         "tlsSecretName": {
           "type": ["string", "null"],
           "description": "Name of the secret holding the TLS certificate",
-          "mutable": true
+          "mutable": false
         }
       }
     },
@@ -269,7 +269,7 @@
       "items": {
         "type": "string"
       },
-      "mutable": true
+      "mutable": false
     },
     "alerts": {
       "type": "object",
@@ -390,7 +390,7 @@
             },
             "required": ["name", "alertRule", "threshold"]
           },
-          "mutable": true
+          "mutable": false
         }
       }
     }
