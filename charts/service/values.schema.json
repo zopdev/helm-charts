@@ -15,17 +15,20 @@
     },
     "httpPort": {
       "type": "integer",
+      "category": "runtime",
       "description": "Port on which container runs its services",
       "default": 8000,
       "mutable": true
     },
     "metricsPort": {
       "type": "integer",
+      "category": "runtime",
       "description": "Port on which the container exposes metrics. A metrics port is only added when set to a non-zero value.",
       "mutable": true
     },
     "ports": {
       "type": ["object", "null"],
+      "category": "runtime",
       "description": "Additional ports on which the container runs its services, keyed by port name",
       "additionalProperties": {
         "type": "integer"
@@ -34,12 +37,13 @@
     },
     "nginx": {
       "type": ["object", "null"],
+      "category": "advanced",
       "description": "Ingress (nginx) configuration",
       "properties": {
         "host": {
           "type": ["string", "null"],
           "description": "Hostname for the ingress",
-          "mutable": true
+          "mutable": false
         },
         "annotations": {
           "type": ["object", "null"],
@@ -47,22 +51,23 @@
           "additionalProperties": {
             "type": "string"
           },
-          "mutable": true
+          "mutable": false
         },
         "tlsHost": {
           "type": ["string", "null"],
           "description": "Hostname to use for TLS",
-          "mutable": true
+          "mutable": false
         },
         "tlsSecretName": {
           "type": ["string", "null"],
           "description": "Name of the secret holding the TLS certificate",
-          "mutable": true
+          "mutable": false
         }
       }
     },
     "envFrom": {
       "type": "object",
+      "category": "environment",
       "description": "Reference environment variables from secrets and configmaps",
       "properties": {
         "secrets": {
@@ -85,6 +90,7 @@
     },
     "minCPU": {
       "type": "string",
+      "category": "compute",
       "description": "CPU request for the container",
       "pattern": "^[0-9]+m?$",
       "default": "100m",
@@ -92,6 +98,7 @@
     },
     "minMemory": {
       "type": "string",
+      "category": "compute",
       "description": "Memory request for the container",
       "pattern": "^[0-9]+[KMGTPEZYkmgtpezy]i?$",
       "default": "128M",
@@ -99,6 +106,7 @@
     },
     "maxCPU": {
       "type": "string",
+      "category": "compute",
       "description": "CPU limit for the container",
       "pattern": "^[0-9]*m?$",
       "default": "500m",
@@ -106,6 +114,7 @@
     },
     "maxMemory": {
       "type": "string",
+      "category": "compute",
       "description": "Memory limit for the container",
       "pattern": "^([0-9]+[KMGTPEZYkmgtpezy]i?)?$",
       "default": "512M",
@@ -113,6 +122,7 @@
     },
     "minReplicas": {
       "type": "integer",
+      "category": "compute",
       "description": "Minimum number of replicas for autoscaling",
       "minimum": 0,
       "default": 2,
@@ -120,6 +130,7 @@
     },
     "maxReplicas": {
       "type": "integer",
+      "category": "compute",
       "description": "Maximum number of replicas for autoscaling",
       "minimum": 1,
       "default": 4,
@@ -127,28 +138,33 @@
     },
     "hpa_enable": {
       "type": "boolean",
+      "category": "compute",
       "description": "Enable the native HorizontalPodAutoscaler. Ignored when keda.enabled is true.",
       "default": false,
       "mutable": true
     },
     "hpaCPU": {
       "type": ["string", "null"],
+      "category": "compute",
       "description": "Target average CPU utilization percentage for the HPA. When empty, it is derived from minCPU and maxCPU.",
       "mutable": true
     },
     "hpaMemory": {
       "type": ["string", "null"],
+      "category": "compute",
       "description": "Target average memory utilization percentage for the HPA. When empty, it is derived from minMemory and maxMemory.",
       "mutable": true
     },
     "heartbeatURL": {
       "type": "string",
+      "category": "runtime",
       "description": "Heartbeat URL used for readiness and liveness probes",
       "default": "",
       "mutable": true
     },
     "readinessProbe": {
       "type": "object",
+      "category": "runtime",
       "description": "Readiness probe configuration",
       "properties": {
         "enable": {
@@ -181,6 +197,7 @@
     },
     "livenessProbe": {
       "type": "object",
+      "category": "runtime",
       "description": "Liveness probe configuration",
       "properties": {
         "enable": {
@@ -213,6 +230,7 @@
     },
     "env": {
       "type": ["object", "null"],
+      "category": "environment",
       "description": "Environment variables passed as a map",
       "additionalProperties": {
         "type": ["string", "number", "boolean"]
@@ -221,6 +239,7 @@
     },
     "envList": {
       "type": ["array", "null"],
+      "category": "environment",
       "description": "Environment variables as a list",
       "items": {
         "type": "object",
@@ -238,20 +257,23 @@
     },
     "appSecrets": {
       "type": ["boolean", "string"],
+      "category": "environment",
       "description": "Enable application secrets provisioning via the secrets store CSI driver",
       "default": false,
       "mutable": true
     },
     "command": {
       "type": ["array", "null"],
+      "category": "advanced",
       "description": "Command to run in the container",
       "items": {
         "type": "string"
       },
-      "mutable": true
+      "mutable": false
     },
     "alerts": {
       "type": "object",
+      "category": "advanced",
       "description": "Alerting configuration",
       "properties": {
         "enabled": {
@@ -368,7 +390,7 @@
             },
             "required": ["name", "alertRule", "threshold"]
           },
-          "mutable": true
+          "mutable": false
         }
       }
     }

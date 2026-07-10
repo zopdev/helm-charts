@@ -15,18 +15,21 @@
     },
     "schedule": {
       "type": "string",
+      "category": "runtime",
       "description": "Cron schedule expression",
       "default": "0 */1 * * *",
       "mutable": true
     },
     "suspend": {
       "type": "boolean",
+      "category": "runtime",
       "description": "Suspend the cron job",
       "default": false,
       "mutable": true
     },
     "concurrencyPolicy": {
       "type": "string",
+      "category": "runtime",
       "description": "How to treat concurrent executions of the job",
       "enum": ["Allow", "Forbid", "Replace"],
       "default": "Replace",
@@ -34,6 +37,7 @@
     },
     "command": {
       "type": ["array", "string", "null"],
+      "category": "advanced",
       "description": "Command to run in the container. Provide as a list of args. A string is only allowed as the empty unset default (\"\"); a non-empty string renders an invalid manifest because the template emits command via toJson and K8s command is []string.",
       "items": {
         "type": "string"
@@ -43,22 +47,25 @@
         "minLength": 1
       },
       "default": "",
-      "mutable": true
+      "mutable": false
     },
     "httpPort": {
       "type": "integer",
+      "category": "runtime",
       "description": "Port on which container runs its service",
       "default": 8000,
       "mutable": true
     },
     "metricsPort": {
       "type": "integer",
+      "category": "runtime",
       "description": "Port on which the container exposes metrics",
       "default": 2121,
       "mutable": true
     },
     "minCPU": {
       "type": "string",
+      "category": "compute",
       "description": "CPU request for the container",
       "pattern": "^[0-9]+m?$",
       "default": "100m",
@@ -66,6 +73,7 @@
     },
     "minMemory": {
       "type": "string",
+      "category": "compute",
       "description": "Memory request for the container",
       "pattern": "^[0-9]+[KMGTPEZYkmgtpezy]i?$",
       "default": "128M",
@@ -73,6 +81,7 @@
     },
     "maxCPU": {
       "type": "string",
+      "category": "compute",
       "description": "CPU limit for the container",
       "pattern": "^[0-9]*m?$",
       "default": "500m",
@@ -80,6 +89,7 @@
     },
     "maxMemory": {
       "type": "string",
+      "category": "compute",
       "description": "Memory limit for the container",
       "pattern": "^([0-9]+[KMGTPEZYkmgtpezy]i?)?$",
       "default": "512M",
@@ -87,6 +97,7 @@
     },
     "envFrom": {
       "type": "object",
+      "category": "environment",
       "description": "Reference environment variables from secrets and configmaps",
       "properties": {
         "secrets": {
@@ -109,6 +120,7 @@
     },
     "env": {
       "type": ["object", "null"],
+      "category": "environment",
       "description": "Environment variables passed as a map",
       "additionalProperties": {
         "type": ["string", "number", "boolean"]
@@ -117,6 +129,7 @@
     },
     "envList": {
       "type": ["array", "null"],
+      "category": "environment",
       "description": "Environment variables as a list",
       "items": {
         "type": "object",
@@ -134,12 +147,14 @@
     },
     "appSecrets": {
       "type": ["boolean", "string"],
+      "category": "environment",
       "description": "Enable application secrets provisioning via the secrets store CSI driver",
       "default": false,
       "mutable": true
     },
     "alerts": {
       "type": "object",
+      "category": "advanced",
       "description": "Alerting configuration",
       "properties": {
         "standard": {
