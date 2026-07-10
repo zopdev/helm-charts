@@ -4,6 +4,7 @@
   "additionalProperties": false,
   "properties": {
     "blackbox": {
+      "category": "runtime",
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -25,6 +26,7 @@
     },
 
     "prometheus": {
+      "category": "advanced",
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -52,6 +54,7 @@
     },
 
     "targets": {
+      "category": "advanced",
       "type": "array",
       "description": "List of HTTP/HTTPS targets for Blackbox monitoring",
       "default": [],

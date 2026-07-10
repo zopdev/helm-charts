@@ -3,10 +3,12 @@
   "type": "object",
   "properties": {
     "version": {
+      "category": "runtime",
       "type": "string",
       "default": "6.2.13"
     },
     "services": {
+      "category": "runtime",
       "type": "array",
       "items": {
         "type": "object",
@@ -19,6 +21,7 @@
       }
     },
     "master": {
+      "category": "compute",
       "type": "object",
       "properties": {
         "resources": {
@@ -75,6 +78,7 @@
       "required": ["resources", "persistence"]
     },
     "slave": {
+      "category": "compute",
       "type": "object",
       "properties": {
         "enable": {

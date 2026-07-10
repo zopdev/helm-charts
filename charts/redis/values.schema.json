@@ -3,6 +3,7 @@
   "type": "object",
   "properties": {
     "services": {
+      "category": "runtime",
         "type": "array",
         "items": {
           "type": "object",
@@ -15,6 +16,7 @@
         }
       },
     "diskSize": {
+      "category": "compute",
       "type": "string",
       "pattern": "^[0-9]+Gi$",
       "default": "10Gi",
@@ -22,9 +24,11 @@
       "editDisabled": true
     },
     "version": {
+      "category": "runtime",
       "type": "string"
     },
     "resources": {
+      "category": "compute",
       "type": "object",
       "properties": {
         "requests": {

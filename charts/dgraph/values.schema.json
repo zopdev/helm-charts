@@ -3,6 +3,7 @@
   "type": "object",
   "properties": {
     "services": {
+      "category": "runtime",
         "type": "array",
         "items": {
           "type": "object",
@@ -15,6 +16,7 @@
         }
       },
     "zero": {
+      "category": "compute",
       "type": "object",
       "properties": {
         "resources": {
@@ -48,6 +50,7 @@
       "required": ["resources", "diskSize"]
     },
     "alpha": {
+      "category": "compute",
       "type": "object",
       "properties": {
         "resources": {

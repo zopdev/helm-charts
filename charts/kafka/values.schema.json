@@ -3,11 +3,13 @@
   "type": "object",
   "properties": {
     "version": {
+      "category": "runtime",
       "type": "string",
       "default": "7.8.0",
       "mutable": true
     },
     "zookeeper": {
+      "category": "advanced",
       "type": "object",
       "properties": {
         "enabled": {
@@ -21,6 +23,7 @@
       }
     },
     "resources": {
+      "category": "compute",
       "type": "object",
       "properties": {
         "requests": {
@@ -60,6 +63,7 @@
       }
     },
     "diskSize": {
+      "category": "compute",
       "type": "string",
       "pattern": "^[0-9]+Gi$",
       "default": "10Gi",
@@ -67,6 +71,7 @@
       "editDisabled": true
     },
     "services": {
+      "category": "runtime",
         "type": "array",
         "items": {
           "type": "object",
