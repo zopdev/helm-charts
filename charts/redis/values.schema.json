@@ -3,6 +3,7 @@
   "type": "object",
   "properties": {
     "services": {
+      "category": "runtime",
         "type": "array",
         "items": {
           "type": "object",
@@ -15,6 +16,7 @@
         }
       },
     "diskSize": {
+      "category": "compute",
       "type": "string",
       "pattern": "^[0-9]+Gi$",
       "default": "10Gi",
@@ -22,24 +24,26 @@
       "editDisabled": true
     },
     "version": {
+      "category": "runtime",
       "type": "string"
     },
     "resources": {
+      "category": "compute",
       "type": "object",
       "properties": {
         "requests": {
           "type": "object",
           "properties": {
-            "cpu": { "type": "string" , "pattern": "^[0-9]+m$", "default": "500m",  "mutable": "true"},
-            "memory": { "type": "string" , "pattern": "^[0-9]+M$", "default": "256M",  "mutable": "true"}
+            "cpu": { "type": "string" , "pattern": "^[0-9]+m$", "default": "500m",  "mutable": true},
+            "memory": { "type": "string" , "pattern": "^[0-9]+M$", "default": "256M",  "mutable": true}
           },
           "required": ["cpu", "memory"]
         },
         "limits": {
           "type": "object",
           "properties": {
-            "cpu": { "type": "string" , "pattern": "^[0-9]+m$", "default": "1500m", "mutable": "true"},
-            "memory": { "type": "string", "pattern": "^[0-9]+Gi$", "default": "1024M", "mutable": "true"}
+            "cpu": { "type": "string" , "pattern": "^[0-9]+m$", "default": "1500m", "mutable": true},
+            "memory": { "type": "string", "pattern": "^[0-9]+Gi$", "default": "1024M", "mutable": true}
           },
           "required": ["cpu", "memory"]
         }

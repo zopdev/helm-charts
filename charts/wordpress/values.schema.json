@@ -3,6 +3,7 @@
   "type": "object",
   "properties": {
     "mysql": {
+      "category": "advanced",
       "type": "object",
       "properties": {
         "services": {
@@ -19,6 +20,7 @@
       }
     },
     "service": {
+      "category": "compute",
       "type": "object",
       "properties": {
         "name": { "type": "string", "enum": ["wordpress"] },

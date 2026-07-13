@@ -3,6 +3,7 @@
   "type": "object",
   "properties": {
     "resources": {
+      "category": "compute",
       "type": "object",
       "properties": {
         "requests": {
@@ -22,6 +23,7 @@
       }
     },
     "supersetNode": {
+      "category": "environment",
       "type": "object",
       "properties": {
         "connections": {
@@ -49,6 +51,7 @@
       }
     },
     "init": {
+      "category": "advanced",
       "type": "object",
       "properties": {
         "createAdmin": { "type": "boolean", "enum": [true] },
@@ -66,6 +69,7 @@
       }
     },
     "postgres": {
+      "category": "advanced",
       "type": "object",
       "properties": {
         "enabled": { "type": "boolean", "enum": [true] },
@@ -84,6 +88,7 @@
       }
     },
     "redis": {
+      "category": "advanced",
       "type": "object",
       "properties": {
         "enabled": { "type": "boolean", "enum": [true] }

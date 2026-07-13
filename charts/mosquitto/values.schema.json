@@ -3,14 +3,17 @@
   "type": "object",
   "properties": {
     "version": {
+      "category": "runtime",
       "type": "string",
       "mutable": true
     },
     "disk_size": {
+      "category": "compute",
       "type": "string",
       "mutable": true
     },
     "auth": {
+      "category": "environment",
       "type": "object",
       "properties": {
         "enabled": {
@@ -32,6 +35,7 @@
       }
     },
     "tls": {
+      "category": "advanced",
       "type": "object",
       "properties": {
         "enabled": {
@@ -45,6 +49,7 @@
       }
     },
     "service": {
+      "category": "runtime",
       "type": "object",
       "properties": {
         "type": {
@@ -54,6 +59,7 @@
       }
     },
     "resources": {
+      "category": "compute",
       "type": "object",
       "properties": {
         "limits": {

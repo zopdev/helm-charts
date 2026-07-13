@@ -5,12 +5,14 @@
   "description": "Configuration values for MariaDB Helm chart",
   "properties": {
     "version": {
+      "category": "runtime",
       "type": "string",
       "description": "MariaDB version to deploy",
       "default": "10.3.22-debian-10-r27",
       "mutable": true
     },
     "replication": {
+      "category": "compute",
       "type": "object",
       "description": "Replication configuration",
       "properties": {
@@ -23,6 +25,7 @@
       }
     },
     "master": {
+      "category": "compute",
       "type": "object",
       "description": "Master node configuration",
       "properties": {
@@ -89,6 +92,7 @@
       }
     },
     "slave": {
+      "category": "compute",
       "type": "object",
       "description": "Slave node configuration",
       "properties": {

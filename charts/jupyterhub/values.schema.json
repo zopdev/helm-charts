@@ -3,6 +3,7 @@
   "type": "object",
   "properties": {
     "hub": {
+      "category": "advanced",
       "type": "object",
       "properties": {
         "config": {
@@ -21,6 +22,7 @@
       }
     },
     "proxy": {
+      "category": "advanced",
       "type": "object",
       "properties": {
         "https": {
@@ -47,6 +49,7 @@
       }
     },
     "singleuser": {
+      "category": "runtime",
       "type": "object",
       "properties": {
         "networkTools": {
@@ -128,6 +131,7 @@
       }
     },
     "scheduling": {
+      "category": "compute",
       "type": "object",
       "properties": {
         "userScheduler": {
@@ -141,6 +145,7 @@
       }
     },
     "prePuller": {
+      "category": "advanced",
       "type": "object",
       "properties": {
         "hook": {
@@ -159,6 +164,7 @@
       }
     },
     "cull": {
+      "category": "advanced",
       "type": "object",
       "properties": {
         "enabled": { "type": "boolean", "enum": [true] },

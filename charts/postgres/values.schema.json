@@ -3,11 +3,13 @@
   "type": "object",
   "properties": {
     "version": {
+      "category": "runtime",
       "type": "string",
       "default": "17.4.0",
       "mutable": true
     },
     "replication": {
+      "category": "compute",
       "type": "object",
       "properties": {
         "enabled": {
@@ -24,12 +26,14 @@
       "required": ["enabled", "count"]
     },
     "diskSize": {
+      "category": "compute",
       "type": "string",
       "default": "10Gi",
       "mutable": true,
       "editDisabled": true
     },
     "resources": {
+      "category": "compute",
       "type": "object",
       "properties": {
         "requests": {
@@ -68,6 +72,7 @@
       "required": ["requests", "limits"]
     },
     "services": {
+      "category": "runtime",
       "type": "array",
       "items": {
         "type": "object",

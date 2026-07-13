@@ -3,21 +3,25 @@
   "type": "object",
   "properties": {
     "diskSize": {
+      "category": "compute",
       "type": "string",
       "default": "10Gi",
       "mutable": true,
       "editDisabled": true
     },
     "customMyCnf": {
+      "category": "advanced",
       "type": "string",
       "default": "",
       "mutable": true
     },
     "version": {
+      "category": "runtime",
       "default": "8.0",
       "mutable": true
     },
     "resources": {
+      "category": "compute",
       "type": "object",
       "properties": {
         "requests": {
@@ -53,6 +57,7 @@
       }
     },
     "services": {
+      "category": "runtime",
       "type": "array",
       "items": {
         "type": "object",
