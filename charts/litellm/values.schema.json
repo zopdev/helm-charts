@@ -1,0 +1,207 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "image": {
+      "category": "runtime",
+      "type": "object",
+      "properties": {
+        "repository": {
+          "type": "string",
+          "default": "ghcr.io/berriai/litellm-database"
+        },
+        "tag": {
+          "type": "string",
+          "default": "main-stable",
+          "mutable": true
+        },
+        "pullPolicy": {
+          "type": "string",
+          "default": "IfNotPresent",
+          "mutable": true
+        }
+      },
+      "required": ["repository", "tag"]
+    },
+    "service": {
+      "category": "runtime",
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "default": "ClusterIP"
+        },
+        "port": {
+          "type": "integer",
+          "default": 4000
+        }
+      },
+      "required": ["type", "port"]
+    },
+    "storeModelInDB": {
+      "category": "runtime",
+      "type": "boolean",
+      "default": true,
+      "mutable": true
+    },
+    "logLevel": {
+      "category": "runtime",
+      "type": "string",
+      "default": "INFO",
+      "mutable": true
+    },
+    "masterkey": {
+      "category": "runtime",
+      "type": "object",
+      "properties": {
+        "existingSecret": {
+          "type": "string",
+          "default": "",
+          "mutable": true
+        },
+        "secretKey": {
+          "type": "string",
+          "default": "PROXY_MASTER_KEY"
+        }
+      },
+      "required": ["secretKey"]
+    },
+    "metrics": {
+      "category": "runtime",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "mutable": true
+        },
+        "scrapeInterval": {
+          "type": "string",
+          "default": "30s",
+          "mutable": true
+        }
+      },
+      "required": ["enabled"]
+    },
+    "proxy_config": {
+      "category": "runtime",
+      "type": "object",
+      "mutable": true,
+      "properties": {
+        "model_list": {
+          "type": "array",
+          "mutable": true,
+          "items": {
+            "type": "object",
+            "properties": {
+              "model_name": {
+                "type": "string"
+              },
+              "litellm_params": {
+                "type": "object"
+              }
+            },
+            "required": ["model_name", "litellm_params"]
+          }
+        },
+        "general_settings": {
+          "type": "object"
+        }
+      },
+      "required": ["model_list"]
+    },
+    "resources": {
+      "category": "compute",
+      "type": "object",
+      "properties": {
+        "requests": {
+          "type": "object",
+          "properties": {
+            "cpu": {
+              "type": "string",
+              "default": "250m",
+              "mutable": true
+            },
+            "memory": {
+              "type": "string",
+              "default": "512Mi",
+              "mutable": true
+            }
+          },
+          "required": ["cpu", "memory"]
+        },
+        "limits": {
+          "type": "object",
+          "properties": {
+            "cpu": {
+              "type": "string",
+              "default": "1",
+              "mutable": true
+            },
+            "memory": {
+              "type": "string",
+              "default": "1Gi",
+              "mutable": true
+            }
+          },
+          "required": ["cpu", "memory"]
+        }
+      },
+      "required": ["requests", "limits"]
+    },
+    "autoscaling": {
+      "category": "compute",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false,
+          "mutable": true
+        },
+        "minReplicas": {
+          "type": "integer",
+          "default": 1,
+          "mutable": true
+        },
+        "maxReplicas": {
+          "type": "integer",
+          "default": 3,
+          "mutable": true
+        },
+        "targetCPUUtilizationPercentage": {
+          "type": "integer",
+          "default": 80,
+          "mutable": true
+        }
+      },
+      "required": ["enabled"]
+    },
+    "postgres": {
+      "category": "runtime",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "services": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "database": {
+                "type": "string"
+              }
+            },
+            "required": ["name", "database"]
+          }
+        }
+      },
+      "required": ["enabled", "services"]
+    }
+  },
+  "required": ["image", "service", "proxy_config", "resources", "postgres"]
+}

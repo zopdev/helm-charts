@@ -1,0 +1,19 @@
+{{- if .Values.metrics.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "litellm.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "litellm.name" . }}
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      {{- include "litellm.selectorLabels" . | nindent 6 }}
+  endpoints:
+    # LiteLLM serves Prometheus metrics on its own proxy port, not a separate 2121 port.
+    - port: http
+      path: /metrics
+      interval: {{ .Values.metrics.scrapeInterval }}
+{{- end }}

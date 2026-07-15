@@ -1,0 +1,17 @@
+apiVersion: v2
+appVersion: "1.90.1"
+description: Helm chart for deploying the LiteLLM proxy
+name: litellm
+version: 0.0.1
+type: application
+icon: "https://raw.githubusercontent.com/BerriAI/litellm/main/docs/my-website/img/favicon.png"
+maintainers:
+  - name: ZopDev
+    url: zop.dev
+dependencies:
+  - name: postgres
+    version: 0.0.12
+    repository: https://helm.zop.dev
+    condition: postgres.enabled
+annotations:
+  type: application
