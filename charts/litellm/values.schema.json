@@ -1,0 +1,264 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "LiteLLM Helm Chart Values",
+  "description": "Configuration values for the LiteLLM proxy Helm chart",
+  "properties": {
+    "image": {
+      "type": "object",
+      "category": "runtime",
+      "description": "LiteLLM proxy container image (must be the -database variant for in-boot migrations)",
+      "properties": {
+        "repository": {
+          "type": "string",
+          "description": "Image repository",
+          "default": "ghcr.io/berriai/litellm-database"
+        },
+        "tag": {
+          "type": "string",
+          "description": "Image tag; falls back to .Chart.AppVersion when empty",
+          "default": "main-v1.83.14-stable",
+          "mutable": true
+        },
+        "pullPolicy": {
+          "type": "string",
+          "description": "Image pull policy",
+          "default": "IfNotPresent",
+          "mutable": true
+        }
+      },
+      "required": ["repository", "tag"]
+    },
+    "service": {
+      "type": "object",
+      "category": "runtime",
+      "description": "Kubernetes Service exposing the proxy",
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Service type",
+          "default": "ClusterIP"
+        },
+        "port": {
+          "type": "integer",
+          "description": "Proxy port (also serves /metrics)",
+          "default": 4000
+        }
+      },
+      "required": ["type", "port"]
+    },
+    "storeModelInDB": {
+      "type": "boolean",
+      "category": "runtime",
+      "description": "Persist models added through the admin UI / API into Postgres so they survive restarts",
+      "default": true,
+      "mutable": true
+    },
+    "logLevel": {
+      "type": "string",
+      "category": "runtime",
+      "description": "LITELLM_LOG level",
+      "default": "INFO",
+      "mutable": true
+    },
+    "metrics": {
+      "type": "object",
+      "category": "runtime",
+      "description": "Prometheus ServiceMonitor scraping LiteLLM's /metrics on the proxy port",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Render the ServiceMonitor",
+          "default": true,
+          "mutable": true
+        },
+        "scrapeInterval": {
+          "type": "string",
+          "description": "ServiceMonitor scrape interval",
+          "default": "30s",
+          "mutable": true
+        }
+      },
+      "required": ["enabled"]
+    },
+    "proxy_config": {
+      "type": "object",
+      "category": "runtime",
+      "description": "Rendered verbatim to /etc/litellm/config.yaml; at least one model is required to boot",
+      "mutable": true,
+      "properties": {
+        "model_list": {
+          "type": "array",
+          "description": "Models exposed by the proxy",
+          "mutable": true,
+          "items": {
+            "type": "object",
+            "properties": {
+              "model_name": {
+                "type": "string"
+              },
+              "litellm_params": {
+                "type": "object"
+              }
+            },
+            "required": ["model_name", "litellm_params"]
+          }
+        },
+        "general_settings": {
+          "type": "object",
+          "description": "LiteLLM general settings (e.g. master_key)"
+        }
+      },
+      "required": ["model_list"]
+    },
+    "masterkey": {
+      "type": "object",
+      "category": "environment",
+      "description": "Proxy master key (PROXY_MASTER_KEY). Auto-generated and preserved across upgrades unless existingSecret is set",
+      "properties": {
+        "existingSecret": {
+          "type": "string",
+          "description": "Use a pre-created master-key secret instead of auto-generating one",
+          "default": "",
+          "mutable": true
+        },
+        "secretKey": {
+          "type": "string",
+          "description": "Key within the master-key secret",
+          "default": "PROXY_MASTER_KEY"
+        }
+      },
+      "required": ["secretKey"]
+    },
+    "extraEnvFrom": {
+      "type": ["array", "null"],
+      "category": "environment",
+      "description": "Existing secrets (by secretName) mounted via envFrom, e.g. holding provider API keys",
+      "items": {
+        "type": "object",
+        "properties": {
+          "secretName": {
+            "type": "string"
+          }
+        },
+        "required": ["secretName"]
+      },
+      "mutable": true
+    },
+    "extraEnv": {
+      "type": ["object", "null"],
+      "category": "environment",
+      "description": "Extra plain environment variables (avoid putting secrets here)",
+      "additionalProperties": {
+        "type": ["string", "number", "boolean"]
+      },
+      "mutable": true
+    },
+    "resources": {
+      "type": "object",
+      "category": "compute",
+      "description": "CPU/memory requests and limits for the proxy container",
+      "properties": {
+        "requests": {
+          "type": "object",
+          "properties": {
+            "cpu": {
+              "type": "string",
+              "description": "CPU request",
+              "default": "250m",
+              "mutable": true
+            },
+            "memory": {
+              "type": "string",
+              "description": "Memory request",
+              "default": "512Mi",
+              "mutable": true
+            }
+          },
+          "required": ["cpu", "memory"]
+        },
+        "limits": {
+          "type": "object",
+          "properties": {
+            "cpu": {
+              "type": "string",
+              "description": "CPU limit",
+              "default": "1",
+              "mutable": true
+            },
+            "memory": {
+              "type": "string",
+              "description": "Memory limit",
+              "default": "1Gi",
+              "mutable": true
+            }
+          },
+          "required": ["cpu", "memory"]
+        }
+      },
+      "required": ["requests", "limits"]
+    },
+    "autoscaling": {
+      "type": "object",
+      "category": "compute",
+      "description": "HorizontalPodAutoscaler configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable the HorizontalPodAutoscaler",
+          "default": false,
+          "mutable": true
+        },
+        "minReplicas": {
+          "type": "integer",
+          "description": "Minimum number of replicas",
+          "default": 1,
+          "mutable": true
+        },
+        "maxReplicas": {
+          "type": "integer",
+          "description": "Maximum number of replicas",
+          "default": 3,
+          "mutable": true
+        },
+        "targetCPUUtilizationPercentage": {
+          "type": "integer",
+          "description": "Target average CPU utilization percentage",
+          "default": 80,
+          "mutable": true
+        }
+      },
+      "required": ["enabled"]
+    },
+    "postgres": {
+      "type": "object",
+      "category": "advanced",
+      "description": "zopdev/postgres subchart providing the backing database",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Deploy the postgres subchart",
+          "default": true
+        },
+        "services": {
+          "type": "array",
+          "description": "Databases to create (name/database)",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "database": {
+                "type": "string"
+              }
+            },
+            "required": ["name", "database"]
+          }
+        }
+      },
+      "required": ["enabled", "services"]
+    }
+  },
+  "required": ["image", "service", "proxy_config", "resources", "postgres"]
+}

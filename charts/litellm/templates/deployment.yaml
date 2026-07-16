@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "litellm.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "litellm.labels" . | nindent 4 }}
+spec:
+{{- if not .Values.autoscaling.enabled }}
+  replicas: 1
+{{- end }}
+  selector:
+    matchLabels:
+      {{- include "litellm.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+      labels:
+        {{- include "litellm.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - --config
+            - /etc/litellm/config.yaml
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          envFrom:
+            {{- if .Values.postgres.enabled }}
+            # DATABASE_URL (+ DB_USER/DB_PASSWORD) from the postgres subchart secret.
+            - secretRef:
+                name: {{ include "litellm.postgresSecretName" . }}
+            {{- end }}
+            {{- range .Values.extraEnvFrom }}
+            # When postgres.enabled=false, supply DATABASE_URL via one of these secrets.
+            - secretRef:
+                name: {{ .secretName }}
+            {{- end }}
+          env:
+            - name: HOST
+              value: "0.0.0.0"
+            - name: PORT
+              value: {{ .Values.service.port | quote }}
+            - name: STORE_MODEL_IN_DB
+              value: {{ .Values.storeModelInDB | quote }}
+            - name: LITELLM_LOG
+              value: {{ .Values.logLevel | quote }}
+            - name: PROXY_MASTER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "litellm.masterkeySecretName" . }}
+                  key: {{ .Values.masterkey.secretKey }}
+            {{- range $key, $value := .Values.extraEnv }}
+            - name: {{ $key | quote }}
+              value: {{ $value | quote }}
+            {{- end }}
+          volumeMounts:
+            - name: litellm-config
+              mountPath: /etc/litellm/config.yaml
+              subPath: config.yaml
+          livenessProbe:
+            httpGet:
+              path: /health/liveliness
+              port: http
+            periodSeconds: 15
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /health/readiness
+              port: http
+            periodSeconds: 10
+            failureThreshold: 3
+          startupProbe:
+            httpGet:
+              path: /health/readiness
+              port: http
+            periodSeconds: 10
+            failureThreshold: 30
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: litellm-config
+          configMap:
+            name: {{ include "litellm.fullname" . }}-config

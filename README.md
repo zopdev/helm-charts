@@ -119,6 +119,7 @@ Below is a list of available charts along with their links:
 | **Name**       | **Link**                                                   |
 |----------------|------------------------------------------------------------|
 | **JupyterHub** | [helm.zop.dev/jupyterhub](https://helm.zop.dev/jupyterhub) |
+| **LiteLLM**    | [helm.zop.dev/litellm](https://helm.zop.dev/litellm)       |
 | **Outline**    | [helm.zop.dev/outline](https://helm.zop.dev/outline)       |
 | **Superset**   | [helm.zop.dev/superset](https://helm.zop.dev/superset)     |
 | **WordPress**  | [helm.zop.dev/wordpress](https://helm.zop.dev/wordpress)   |

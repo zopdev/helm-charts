@@ -1,0 +1,71 @@
+# PostgreSQL backing store (zopdev/postgres subchart). LiteLLM persists keys,
+# spend and (with storeModelInDB) UI/API-added models here. The subchart emits a
+# per-database secret carrying DATABASE_URL, which the proxy consumes via envFrom.
+postgres:
+  enabled: true
+  services:
+    - name: litellm
+      database: litellm
+
+image:
+  repository: ghcr.io/berriai/litellm-database
+  # litellm-database bundles Prisma and runs the DB migrations on container start.
+  # Pinned to an immutable stable tag for reproducibility (main-stable is a moving
+  # tag). Falls back to .Chart.AppVersion when set to "".
+  tag: main-v1.83.14-stable
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 4000
+
+# Persist models added through the Admin UI / API into Postgres so they survive
+# pod restarts (otherwise they are in-memory only).
+storeModelInDB: true
+
+logLevel: INFO
+
+masterkey:
+  # If set, this pre-created secret is used as-is for the proxy master key.
+  # Otherwise a secret is auto-generated and preserved across upgrades.
+  existingSecret: ""
+  secretKey: PROXY_MASTER_KEY
+
+metrics:
+  # Renders a ServiceMonitor scraping LiteLLM's own /metrics on the proxy port.
+  enabled: true
+  scrapeInterval: 30s
+
+# Existing secrets that hold provider API keys (e.g. OPENAI_API_KEY). Each is
+# mounted via envFrom so keys referenced as os.environ/<VAR> in proxy_config resolve.
+extraEnvFrom: []
+#  - secretName: litellm-provider-keys
+
+# Extra plain environment variables (avoid putting secrets here).
+extraEnv: {}
+
+# Rendered verbatim to /etc/litellm/config.yaml. At least one model is required
+# for the proxy to boot. To add a real provider, append to model_list, set
+# api_key: os.environ/<VAR>, and expose <VAR> via extraEnvFrom.
+proxy_config:
+  model_list:
+    - model_name: placeholder
+      litellm_params:
+        model: openai/gpt-3.5-turbo
+        api_key: os.environ/OPENAI_API_KEY
+  general_settings:
+    master_key: os.environ/PROXY_MASTER_KEY
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
