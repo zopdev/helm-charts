@@ -122,7 +122,7 @@ Kubernetes; delete them manually if you want a clean slate.
 | **Input**                    | **Type**  | **Description**                                                       | **Default**                          |
 |------------------------------|-----------|-----------------------------------------------------------------------|--------------------------------------|
 | `image.repository`           | `string`  | LiteLLM image (must be the `-database` variant for migrations).       | `ghcr.io/berriai/litellm-database`   |
-| `image.tag`                  | `string`  | Image tag; falls back to `.Chart.AppVersion` when empty.              | `main-stable`                        |
+| `image.tag`                  | `string`  | Image tag; falls back to `.Chart.AppVersion` when empty.              | `main-v1.83.14-stable`               |
 | `service.type`               | `string`  | Kubernetes Service type.                                              | `ClusterIP`                          |
 | `service.port`               | `integer` | Proxy port (also serves `/metrics`).                                  | `4000`                               |
 | `storeModelInDB`             | `boolean` | Persist UI/API-added models to Postgres.                              | `true`                               |
@@ -136,14 +136,14 @@ Kubernetes; delete them manually if you want a clean slate.
 | `proxy_config.model_list`    | `array`   | Models exposed by the proxy (≥1 required to boot).                    | one `placeholder` model              |
 | `resources`                  | `object`  | CPU/memory requests and limits.                                       | `250m`/`512Mi` … `1`/`1Gi`           |
 | `autoscaling.enabled`        | `boolean` | Enable a HorizontalPodAutoscaler.                                     | `false`                              |
-| `postgres.enabled`           | `boolean` | Deploy the postgres subchart.                                         | `true`                               |
+| `postgres.enabled`           | `boolean` | Deploy the postgres subchart. When `false`, supply `DATABASE_URL` yourself via `extraEnvFrom`. | `true`              |
 | `postgres.services`          | `array`   | Databases to create (`name`/`database`).                              | `[{name: litellm, database: litellm}]` |
 
 ### Example `my-values.yaml`
 
 ```yaml
 image:
-  tag: main-stable
+  tag: main-v1.83.14-stable
 
 storeModelInDB: true
 
@@ -176,6 +176,14 @@ postgres:
   rate-limit/spend coordination; the chart runs a single proxy replica.
 - **Master key:** auto-generated and preserved across upgrades via `lookup`. Set
   `masterkey.existingSecret` to manage it yourself.
+- **GitOps (ArgoCD/Flux):** the `lookup`-based master-key preservation needs cluster read
+  access during rendering, which server-side GitOps rendering may lack — it can rotate the
+  key on each sync. For GitOps, pre-create the secret and set `masterkey.existingSecret`.
+- **Bring your own database:** set `postgres.enabled=false` to skip the subchart, and provide
+  a `DATABASE_URL` (Prisma-compatible `postgres://…`) through a secret listed in `extraEnvFrom`.
+- **Exposure:** the default `service.type: ClusterIP` keeps the proxy internal. Switching to
+  `LoadBalancer`/`NodePort` exposes the admin UI and key-management API publicly — front it
+  with auth/ingress before doing so.
 
 ---
 

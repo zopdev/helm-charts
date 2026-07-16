@@ -31,10 +31,13 @@ spec:
               containerPort: {{ .Values.service.port }}
               protocol: TCP
           envFrom:
+            {{- if .Values.postgres.enabled }}
             # DATABASE_URL (+ DB_USER/DB_PASSWORD) from the postgres subchart secret.
             - secretRef:
                 name: {{ include "litellm.postgresSecretName" . }}
+            {{- end }}
             {{- range .Values.extraEnvFrom }}
+            # When postgres.enabled=false, supply DATABASE_URL via one of these secrets.
             - secretRef:
                 name: {{ .secretName }}
             {{- end }}

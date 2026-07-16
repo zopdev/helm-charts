@@ -10,7 +10,9 @@ postgres:
 image:
   repository: ghcr.io/berriai/litellm-database
   # litellm-database bundles Prisma and runs the DB migrations on container start.
-  tag: main-stable
+  # Pinned to an immutable stable tag for reproducibility (main-stable is a moving
+  # tag). Falls back to .Chart.AppVersion when set to "".
+  tag: main-v1.83.14-stable
   pullPolicy: IfNotPresent
 
 service:

@@ -17,7 +17,7 @@
         "tag": {
           "type": "string",
           "description": "Image tag; falls back to .Chart.AppVersion when empty",
-          "default": "main-stable",
+          "default": "main-v1.83.14-stable",
           "mutable": true
         },
         "pullPolicy": {
