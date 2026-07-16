@@ -4,7 +4,7 @@ description: Helm chart for deploying the LiteLLM proxy
 name: litellm
 version: 0.0.1
 type: application
-icon: "https://raw.githubusercontent.com/BerriAI/litellm/main/docs/my-website/img/favicon.png"
+icon: "https://storage.googleapis.com/zopdev-blog-resources/1/files/originals/20260716/litellm-logo-square.png"
 maintainers:
   - name: ZopDev
     url: zop.dev
