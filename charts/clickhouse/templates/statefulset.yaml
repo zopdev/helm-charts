@@ -3,6 +3,10 @@ kind: StatefulSet
 metadata:
   name: {{ .Release.Name }}-clickhouse
   namespace: {{ .Release.Namespace }}
+  annotations:
+    # Restart the pod when the mounted config changes. subPath mounts never
+    # receive live ConfigMap updates, so a restart is required to pick them up.
+    configmap.reloader.stakater.com/reload: "{{ .Release.Name }}-clickhouse-custom-config,{{ .Release.Name }}-clickhouse-prometheus"
   labels:
     app.kubernetes.io/part-of: clickhouse
     app: {{ .Release.Name }}-clickhouse
