@@ -135,10 +135,13 @@ customConfig: |
 
 `customConfig` (and the bundled Prometheus config) is mounted using `subPath`. Kubernetes never live-updates `subPath` mounts, so a `helm upgrade` that changes `customConfig` updates the ConfigMap but the **running pod keeps the old file until it restarts**.
 
-The StatefulSet is annotated for [Stakater Reloader](https://github.com/stakater/Reloader):
+The StatefulSet is annotated for [Stakater Reloader](https://github.com/stakater/Reloader). The `-clickhouse-prometheus` ConfigMap is always watched; `-clickhouse-custom-config` is added to the list only when `customConfig` is set (it isn't created otherwise):
 
 ```yaml
-configmap.reloader.stakater.com/reload: "<release>-clickhouse-custom-config,<release>-clickhouse-prometheus"
+# customConfig set:
+configmap.reloader.stakater.com/reload: "<release>-clickhouse-prometheus,<release>-clickhouse-custom-config"
+# customConfig unset:
+configmap.reloader.stakater.com/reload: "<release>-clickhouse-prometheus"
 ```
 
 If the Reloader controller is running in the cluster, it detects the ConfigMap change and triggers a rolling restart automatically. **If Reloader is not installed, the annotation is a no-op** — the config change silently won't take effect until you restart the pod yourself:
