@@ -6,6 +6,7 @@ The ClickHouse Helm chart provides an easy way to deploy and manage a [ClickHous
 
 - Kubernetes 1.19+
 - Helm 3+
+- [Stakater Reloader](https://github.com/stakater/Reloader) (optional, recommended) — required only for the pod to restart automatically when `customConfig` changes. See [Config changes and automatic restarts](#config-changes-and-automatic-restarts).
 
 ## Add Helm Repository
 
@@ -128,6 +129,25 @@ customConfig: |
       </default>
     </profiles>
   </clickhouse>
+```
+
+### Config changes and automatic restarts
+
+`customConfig` (and the bundled Prometheus config) is mounted using `subPath`. Kubernetes never live-updates `subPath` mounts, so a `helm upgrade` that changes `customConfig` updates the ConfigMap but the **running pod keeps the old file until it restarts**.
+
+The StatefulSet is annotated for [Stakater Reloader](https://github.com/stakater/Reloader). The `-clickhouse-prometheus` ConfigMap is always watched; `-clickhouse-custom-config` is added to the list only when `customConfig` is set (it isn't created otherwise):
+
+```yaml
+# customConfig set:
+configmap.reloader.stakater.com/reload: "<release>-clickhouse-prometheus,<release>-clickhouse-custom-config"
+# customConfig unset:
+configmap.reloader.stakater.com/reload: "<release>-clickhouse-prometheus"
+```
+
+If the Reloader controller is running in the cluster, it detects the ConfigMap change and triggers a rolling restart automatically. **If Reloader is not installed, the annotation is a no-op** — the config change silently won't take effect until you restart the pod yourself:
+
+```bash
+kubectl rollout restart statefulset/<release>-clickhouse
 ```
 
 ---
