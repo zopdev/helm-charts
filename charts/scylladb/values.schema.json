@@ -8,18 +8,6 @@
       "default": "scylladb/scylla:latest",
       "mutable": true
     },
-    "services": {
-      "category": "runtime",
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "name": { "type": "string" },
-          "database": { "type": "string" }
-        },
-        "required": ["name", "database"]
-      }
-    },
     "resources": {
       "category": "compute",
       "type": "object",
