@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "image": {
+      "category": "runtime",
+      "type": "string",
+      "default": "scylladb/scylla:latest",
+      "mutable": true
+    },
+    "resources": {
+      "category": "compute",
+      "type": "object",
+      "properties": {
+        "requests": {
+          "type": "object",
+          "properties": {
+            "cpu": { "type": "string", "default": "500m", "mutable": true },
+            "memory": { "type": "string", "default": "1Gi", "mutable": true }
+          },
+          "required": ["cpu", "memory"]
+        },
+        "limits": {
+          "type": "object",
+          "properties": {
+            "cpu": { "type": "string", "default": "1000m", "mutable": true },
+            "memory": { "type": "string", "default": "2Gi", "mutable": true }
+          },
+          "required": ["cpu", "memory"]
+        }
+      },
+      "required": ["requests", "limits"]
+    },
+    "diskSize": {
+      "category": "compute",
+      "type": "string",
+      "pattern": "^[0-9]+Gi$",
+      "default": "10Gi",
+      "mutable": true,
+      "editDisabled": true
+    }
+  },
+  "required": ["image", "diskSize", "resources"]
+}
