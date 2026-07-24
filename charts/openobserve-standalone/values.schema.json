@@ -38,14 +38,6 @@
         "enabled": { "type": "boolean", "enum": [true] },
         "size": { "type": "string", "default": "10Gi", "mutable": true, "editDisabled": true }
       }
-    },
-    "config": {
-      "category": "advanced",
-      "type": "object",
-      "properties": {
-        "ZO_LOCAL_MODE_STORAGE": { "type": "string", "enum": ["disk"] },
-        "ZO_S3_BUCKET_NAME": { "type": "string", "enum": ["o2-dev-bucket"] }
-      }
     }
   }
 }
