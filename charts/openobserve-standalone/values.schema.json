@@ -7,7 +7,7 @@
       "type": "object",
       "properties": {
         "repository": { "type": "string", "enum": ["o2cr.ai/openobserve/openobserve"] },
-        "tag": { "type": "string", "default": "v0.15.1", "mutable": true },
+        "tag": { "type": "string", "enum": ["v0.15.1"] },
         "pullPolicy": { "type": "string", "enum": ["IfNotPresent"] }
       }
     },
@@ -37,14 +37,6 @@
       "properties": {
         "enabled": { "type": "boolean", "enum": [true] },
         "size": { "type": "string", "default": "10Gi", "mutable": true, "editDisabled": true }
-      }
-    },
-    "auth": {
-      "category": "environment",
-      "type": "object",
-      "properties": {
-        "ZO_ROOT_USER_EMAIL": { "type": "string", "default": "root@example.com", "mutable": true },
-        "ZO_ROOT_USER_PASSWORD": { "type": "string", "default": "Complexpass#123", "mutable": true }
       }
     },
     "config": {
