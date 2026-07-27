@@ -12,7 +12,7 @@ spec:
     - name: {{ .Release.Namespace }}.{{ .Release.Name }}-redis.rules
       rules:
         - alert: RedisMissingMaster
-          expr: (count(redis_instance_info{role="master"}) or vector(0)) < 1
+          expr: (count(redis_instance_info{role="master", namespace="{{ .Release.Namespace }}"}) or vector(0)) < 1
           for: 0m
           labels:
             severity: critical
@@ -24,7 +24,7 @@ spec:
             description: 'Redis instance {{ .Release.Name }} has no node marked as master'
 
         - alert: RedisTooManyMasters
-          expr: count(redis_instance_info{role="master"}) > 1
+          expr: count(redis_instance_info{role="master", namespace="{{ .Release.Namespace }}"}) > 1
           for: 0m
           labels:
             severity: critical
@@ -36,7 +36,7 @@ spec:
             description: 'Redis instance {{ .Release.Name }} has more than one master node'
 
         - alert: RedisDisconnectedSlaves
-          expr: count without (instance, job) (redis_connected_slaves) - sum without (instance, job) (redis_connected_slaves) - 1 > 0
+          expr: count without (instance, job) (redis_connected_slaves{namespace="{{ .Release.Namespace }}"}) - sum without (instance, job) (redis_connected_slaves{namespace="{{ .Release.Namespace }}"}) - 1 > 0
           for: 0m
           labels:
             severity: critical
@@ -48,7 +48,7 @@ spec:
             description: 'Redis instance {{ .Release.Name }} is not replicating to all slaves'
 
         - alert: RedisReplicationBroken
-          expr: delta(redis_connected_slaves[1m]) < 0
+          expr: delta(redis_connected_slaves{namespace="{{ .Release.Namespace }}"}[1m]) < 0
           for: 0m
           labels:
             severity: critical
@@ -60,7 +60,7 @@ spec:
             description: 'Redis instance {{ .Release.Name }} lost a slave'
 
         - alert: RedisClusterFlapping
-          expr: changes(redis_connected_slaves[1m]) > 1
+          expr: changes(redis_connected_slaves{namespace="{{ .Release.Namespace }}"}[1m]) > 1
           for: 2m
           labels:
             severity: critical
@@ -72,7 +72,7 @@ spec:
             description: 'Redis instance {{ .Release.Name }} is experiencing frequent replica connection changes'
 
         - alert: RedisRejectedConnections
-          expr: increase(redis_rejected_connections_total[1m]) > 0
+          expr: increase(redis_rejected_connections_total{namespace="{{ .Release.Namespace }}"}[1m]) > 0
           for: 0m
           labels:
             severity: critical
