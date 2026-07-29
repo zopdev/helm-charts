@@ -2,8 +2,38 @@
   "$schema": "https://json-schema.org/draft-07/schema#",
   "type": "object",
   "properties": {
+    "singleuser": {
+      "type": "object",
+      "properties": {
+        "image": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "mutable": true,
+              "description": "Notebook image users get, e.g. quay.io/jupyterhub/k8s-singleuser-sample or a datascience image"
+            },
+            "tag": {
+              "type": "string",
+              "mutable": true,
+              "description": "Tag of the notebook image"
+            }
+          }
+        },
+        "storage": {
+          "type": "object",
+          "properties": {
+            "capacity": {
+              "type": "string",
+              "mutable": true,
+              "description": "Persistent home directory size per user, e.g. 10Gi"
+            }
+          }
+        }
+      },
+      "category": "runtime"
+    },
     "hub": {
-      "category": "advanced",
       "type": "object",
       "properties": {
         "config": {
@@ -12,26 +42,40 @@
             "JupyterHub": {
               "type": "object",
               "properties": {
-                "admin_access": {
-                  "type": "boolean",
-                  "mutable": true
-                },
                 "authenticator_class": {
                   "type": "string",
-                  "mutable": true
+                  "mutable": true,
+                  "description": "How users log in. The default \"dummy\" accepts ANY username/password \u2014 change this before exposing JupyterHub"
+                },
+                "admin_access": {
+                  "type": "boolean",
+                  "mutable": true,
+                  "description": "Allow admins to access other users' notebook servers"
                 }
               }
             }
           }
-        },
-        "baseUrl": {
-          "type": "string",
-          "mutable": true
         }
-      }
+      },
+      "category": "environment"
+    },
+    "cull": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "mutable": true,
+          "description": "Shut down idle notebook servers to free compute"
+        },
+        "timeout": {
+          "type": "integer",
+          "mutable": true,
+          "description": "Seconds a notebook may sit idle before it is culled"
+        }
+      },
+      "category": "compute"
     },
     "proxy": {
-      "category": "advanced",
       "type": "object",
       "properties": {
         "https": {
@@ -39,258 +83,18 @@
           "properties": {
             "enabled": {
               "type": "boolean",
-              "mutable": true
-            },
-            "type": {
-              "type": "string"
-            },
-            "letsencrypt": {
-              "type": "object",
-              "properties": {
-                "acmeServer": {
-                  "type": "string"
-                }
-              }
-            },
-            "secret": {
-              "type": "object",
-              "properties": {
-                "key": {
-                  "type": "string"
-                },
-                "crt": {
-                  "type": "string"
-                }
-              }
+              "mutable": true,
+              "description": "Terminate HTTPS at the proxy"
             },
             "hosts": {
               "type": "array",
-              "mutable": true
+              "mutable": true,
+              "description": "Hostnames to serve HTTPS for, e.g. [\"jupyter.example.com\"]"
             }
           }
         }
-      }
-    },
-    "singleuser": {
-      "category": "runtime",
-      "type": "object",
-      "properties": {
-        "networkTools": {
-          "type": "object",
-          "properties": {
-            "image": {
-              "type": "object",
-              "properties": {
-                "name": {
-                  "type": "string"
-                },
-                "tag": {
-                  "type": "string"
-                }
-              }
-            }
-          }
-        },
-        "cloudMetadata": {
-          "type": "object",
-          "properties": {
-            "blockWithIptables": {
-              "type": "boolean"
-            },
-            "ip": {
-              "type": "string"
-            }
-          }
-        },
-        "networkPolicy": {
-          "type": "object",
-          "properties": {
-            "enabled": {
-              "type": "boolean"
-            },
-            "egressAllowRules": {
-              "type": "object",
-              "properties": {
-                "cloudMetadataServer": {
-                  "type": "boolean"
-                },
-                "dnsPortsCloudMetadataServer": {
-                  "type": "boolean"
-                },
-                "dnsPortsKubeSystemNamespace": {
-                  "type": "boolean"
-                },
-                "dnsPortsPrivateIPs": {
-                  "type": "boolean"
-                },
-                "nonPrivateIPs": {
-                  "type": "boolean"
-                },
-                "privateIPs": {
-                  "type": "boolean"
-                }
-              }
-            },
-            "interNamespaceAccessLabels": {
-              "type": "string"
-            }
-          }
-        },
-        "events": {
-          "type": "boolean"
-        },
-        "extraLabels": {
-          "type": "object",
-          "properties": {
-            "hub.jupyter.org/network-access-hub": {
-              "type": "string"
-            }
-          }
-        },
-        "allowPrivilegeEscalation": {
-          "type": "boolean"
-        },
-        "uid": {
-          "type": "integer"
-        },
-        "fsGid": {
-          "type": "integer"
-        },
-        "storage": {
-          "type": "object",
-          "properties": {
-            "type": {
-              "type": "string",
-              "mutable": true
-            },
-            "static": {
-              "type": "object",
-              "properties": {
-                "subPath": {
-                  "type": "string"
-                }
-              }
-            },
-            "capacity": {
-              "type": "string",
-              "mutable": true
-            },
-            "homeMountPath": {
-              "type": "string"
-            },
-            "dynamic": {
-              "type": "object",
-              "properties": {
-                "volumeNameTemplate": {
-                  "type": "string"
-                },
-                "storageAccessModes": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "image": {
-          "type": "object",
-          "properties": {
-            "name": {
-              "type": "string",
-              "mutable": true
-            },
-            "tag": {
-              "type": "string",
-              "mutable": true
-            }
-          }
-        },
-        "cmd": {
-          "type": "string"
-        }
-      }
-    },
-    "scheduling": {
-      "category": "compute",
-      "type": "object",
-      "properties": {
-        "userScheduler": {
-          "type": "object",
-          "properties": {
-            "enabled": {
-              "type": "boolean",
-              "mutable": true
-            },
-            "replicas": {
-              "type": "integer",
-              "mutable": true
-            },
-            "logLevel": {
-              "type": "integer"
-            }
-          }
-        }
-      }
-    },
-    "prePuller": {
-      "category": "advanced",
-      "type": "object",
-      "properties": {
-        "hook": {
-          "type": "object",
-          "properties": {
-            "enabled": {
-              "type": "boolean"
-            },
-            "pullOnlyOnChanges": {
-              "type": "boolean"
-            }
-          }
-        },
-        "continuous": {
-          "type": "object",
-          "properties": {
-            "enabled": {
-              "type": "boolean"
-            }
-          }
-        }
-      }
-    },
-    "cull": {
-      "category": "advanced",
-      "type": "object",
-      "properties": {
-        "enabled": {
-          "type": "boolean",
-          "mutable": true
-        },
-        "users": {
-          "type": "boolean"
-        },
-        "adminUsers": {
-          "type": "boolean"
-        },
-        "removeNamedServers": {
-          "type": "boolean"
-        },
-        "timeout": {
-          "type": "integer",
-          "mutable": true
-        },
-        "every": {
-          "type": "integer",
-          "mutable": true
-        },
-        "concurrency": {
-          "type": "integer"
-        },
-        "maxAge": {
-          "type": "integer"
-        }
-      }
+      },
+      "category": "environment"
     }
   }
 }
