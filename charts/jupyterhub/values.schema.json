@@ -57,7 +57,7 @@
           }
         }
       },
-      "category": "environment"
+      "category": "advanced"
     },
     "cull": {
       "type": "object",
@@ -73,7 +73,7 @@
           "description": "Seconds a notebook may sit idle before it is culled"
         }
       },
-      "category": "compute"
+      "category": "runtime"
     },
     "proxy": {
       "type": "object",
@@ -94,7 +94,7 @@
           }
         }
       },
-      "category": "environment"
+      "category": "advanced"
     }
   }
 }
