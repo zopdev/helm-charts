@@ -10,11 +10,13 @@
           "properties": {
             "name": {
               "type": "string",
+              "default": "quay.io/jupyterhub/k8s-singleuser-sample",
               "mutable": true,
               "description": "Notebook image users get, e.g. quay.io/jupyterhub/k8s-singleuser-sample or a datascience image"
             },
             "tag": {
               "type": "string",
+              "default": "4.1.1-0.dev.git.6957.h0e735928",
               "mutable": true,
               "description": "Tag of the notebook image"
             }
@@ -25,6 +27,7 @@
           "properties": {
             "capacity": {
               "type": "string",
+              "default": "10Gi",
               "mutable": true,
               "description": "Persistent home directory size per user, e.g. 10Gi"
             }
@@ -44,11 +47,13 @@
               "properties": {
                 "authenticator_class": {
                   "type": "string",
+                  "default": "dummy",
                   "mutable": true,
                   "description": "How users log in. The default \"dummy\" accepts ANY username/password \u2014 change this before exposing JupyterHub"
                 },
                 "admin_access": {
                   "type": "boolean",
+                  "default": true,
                   "mutable": true,
                   "description": "Allow admins to access other users' notebook servers"
                 }
@@ -64,11 +69,13 @@
       "properties": {
         "enabled": {
           "type": "boolean",
+          "default": true,
           "mutable": true,
           "description": "Shut down idle notebook servers to free compute"
         },
         "timeout": {
           "type": "integer",
+          "default": 3600,
           "mutable": true,
           "description": "Seconds a notebook may sit idle before it is culled"
         }
@@ -83,11 +90,13 @@
           "properties": {
             "enabled": {
               "type": "boolean",
+              "default": false,
               "mutable": true,
               "description": "Terminate HTTPS at the proxy"
             },
             "hosts": {
               "type": "array",
+              "default": [],
               "mutable": true,
               "description": "Hostnames to serve HTTPS for, e.g. [\"jupyter.example.com\"]"
             }
