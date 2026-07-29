@@ -8,6 +8,18 @@
 {{- end }}
 
 
+{{- /*
+  The hub Secret's name. Declared once because the bug it fixes was two places
+  disagreeing about it: the password helpers looked the Secret up as
+  `jupyterhub.hub.fullname` ("<release>-jupyterhubhub") while the Secret is
+  actually created as "jupyterhub-secrets". The lookup therefore always missed
+  and every `helm upgrade` regenerated the proxy auth token, the cookie secret,
+  the CryptKeeper keys and the service API tokens.
+*/ -}}
+{{- define "jupyterhub.hub-secret.fullname" -}}
+    jupyterhub-secrets
+{{- end }}
+
 {{- define "jupyterhub.hub.fullname" -}}
     {{- include "jupyterhub.fullname.dash" . }}hub
 {{- end }}

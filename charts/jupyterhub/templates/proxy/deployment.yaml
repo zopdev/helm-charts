@@ -30,6 +30,7 @@ spec:
         # the k8s Secret template. This will cause this annotation to change to
         # match the k8s Secret during the first upgrade following an auth_token
         # was generated.
+        checksum/auth-token: {{ include "jupyterhub.hub.config.ConfigurableHTTPProxy.auth_token" . | sha256sum | trunc 4 | quote }}
     spec:
       terminationGracePeriodSeconds: 60
       {{- include "jupyterhub.coreAffinity" . | nindent 6 }}
@@ -84,7 +85,7 @@ spec:
                   # NOTE: References the chart managed k8s Secret even if
                   #       hub.existingSecret is specified to avoid using the
                   #       lookup function on the user managed k8s Secret.
-                  name: jupyterhub-secrets
+                  name: {{ include "jupyterhub.hub-secret.fullname" . }}
                   key: hub.config.ConfigurableHTTPProxy.auth_token
           ports:
             {{- if or $manualHTTPS $manualHTTPSwithsecret }}
