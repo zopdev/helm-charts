@@ -12,13 +12,22 @@
             "JupyterHub": {
               "type": "object",
               "properties": {
-                "admin_access": { "type": "boolean", "enum": [true] },
-                "authenticator_class": { "type": "string", "enum": ["dummy"] }
+                "admin_access": {
+                  "type": "boolean",
+                  "mutable": true
+                },
+                "authenticator_class": {
+                  "type": "string",
+                  "mutable": true
+                }
               }
             }
           }
         },
-        "baseUrl": { "type": "string", "enum": ["/"] }
+        "baseUrl": {
+          "type": "string",
+          "mutable": true
+        }
       }
     },
     "proxy": {
@@ -28,22 +37,36 @@
         "https": {
           "type": "object",
           "properties": {
-            "enabled": { "type": "boolean", "enum": [false] },
-            "type": { "type": "string", "enum": ["letsencrypt"] },
+            "enabled": {
+              "type": "boolean",
+              "mutable": true
+            },
+            "type": {
+              "type": "string"
+            },
             "letsencrypt": {
               "type": "object",
               "properties": {
-                "acmeServer": { "type": "string", "enum": ["https://acme-v02.api.letsencrypt.org/directory"] }
+                "acmeServer": {
+                  "type": "string"
+                }
               }
             },
             "secret": {
               "type": "object",
               "properties": {
-                "key": { "type": "string", "enum": ["tls.key"] },
-                "crt": { "type": "string", "enum": ["tls.crt"] }
+                "key": {
+                  "type": "string"
+                },
+                "crt": {
+                  "type": "string"
+                }
               }
             },
-            "hosts": { "type": "array", "enum": [[]] }
+            "hosts": {
+              "type": "array",
+              "mutable": true
+            }
           }
         }
       }
@@ -58,8 +81,12 @@
             "image": {
               "type": "object",
               "properties": {
-                "name": { "type": "string", "enum": ["quay.io/jupyterhub/k8s-network-tools"] },
-                "tag": { "type": "string", "enum": ["4.1.1-0.dev.git.6949.h138f95a8"] }
+                "name": {
+                  "type": "string"
+                },
+                "tag": {
+                  "type": "string"
+                }
               }
             }
           }
@@ -67,55 +94,102 @@
         "cloudMetadata": {
           "type": "object",
           "properties": {
-            "blockWithIptables": { "type": "boolean", "enum": [true] },
-            "ip": { "type": "string", "enum": ["169.254.169.254"] }
+            "blockWithIptables": {
+              "type": "boolean"
+            },
+            "ip": {
+              "type": "string"
+            }
           }
         },
         "networkPolicy": {
           "type": "object",
           "properties": {
-            "enabled": { "type": "boolean", "enum": [true] },
+            "enabled": {
+              "type": "boolean"
+            },
             "egressAllowRules": {
               "type": "object",
               "properties": {
-                "cloudMetadataServer": { "type": "boolean", "enum": [false] },
-                "dnsPortsCloudMetadataServer": { "type": "boolean", "enum": [true] },
-                "dnsPortsKubeSystemNamespace": { "type": "boolean", "enum": [true] },
-                "dnsPortsPrivateIPs": { "type": "boolean", "enum": [true] },
-                "nonPrivateIPs": { "type": "boolean", "enum": [true] },
-                "privateIPs": { "type": "boolean", "enum": [false] }
+                "cloudMetadataServer": {
+                  "type": "boolean"
+                },
+                "dnsPortsCloudMetadataServer": {
+                  "type": "boolean"
+                },
+                "dnsPortsKubeSystemNamespace": {
+                  "type": "boolean"
+                },
+                "dnsPortsPrivateIPs": {
+                  "type": "boolean"
+                },
+                "nonPrivateIPs": {
+                  "type": "boolean"
+                },
+                "privateIPs": {
+                  "type": "boolean"
+                }
               }
             },
-            "interNamespaceAccessLabels": { "type": "string", "enum": ["ignore"] }
+            "interNamespaceAccessLabels": {
+              "type": "string"
+            }
           }
         },
-        "events": { "type": "boolean", "enum": [true] },
+        "events": {
+          "type": "boolean"
+        },
         "extraLabels": {
           "type": "object",
           "properties": {
-            "hub.jupyter.org/network-access-hub": { "type": "string", "enum": ["true"] }
+            "hub.jupyter.org/network-access-hub": {
+              "type": "string"
+            }
           }
         },
-        "allowPrivilegeEscalation": { "type": "boolean", "enum": [false] },
-        "uid": { "type": "integer", "enum": [1000] },
-        "fsGid": { "type": "integer", "enum": [100] },
+        "allowPrivilegeEscalation": {
+          "type": "boolean"
+        },
+        "uid": {
+          "type": "integer"
+        },
+        "fsGid": {
+          "type": "integer"
+        },
         "storage": {
           "type": "object",
           "properties": {
-            "type": { "type": "string", "enum": ["dynamic"] },
+            "type": {
+              "type": "string",
+              "mutable": true
+            },
             "static": {
               "type": "object",
               "properties": {
-                "subPath": { "type": "string", "enum": ["{username}"] }
+                "subPath": {
+                  "type": "string"
+                }
               }
             },
-            "capacity": { "type": "string", "enum": ["10Gi"] },
-            "homeMountPath": { "type": "string", "enum": ["/home/jovyan"] },
+            "capacity": {
+              "type": "string",
+              "mutable": true
+            },
+            "homeMountPath": {
+              "type": "string"
+            },
             "dynamic": {
               "type": "object",
               "properties": {
-                "volumeNameTemplate": { "type": "string", "enum": ["volume-{user_server}"] },
-                "storageAccessModes": { "type": "array", "items": { "type": "string", "enum": ["ReadWriteOnce"] } }
+                "volumeNameTemplate": {
+                  "type": "string"
+                },
+                "storageAccessModes": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
               }
             }
           }
@@ -123,11 +197,19 @@
         "image": {
           "type": "object",
           "properties": {
-            "name": { "type": "string", "enum": ["quay.io/jupyterhub/k8s-singleuser-sample"] },
-            "tag": { "type": "string", "enum": ["4.1.1-0.dev.git.6957.h0e735928"] }
+            "name": {
+              "type": "string",
+              "mutable": true
+            },
+            "tag": {
+              "type": "string",
+              "mutable": true
+            }
           }
         },
-        "cmd": { "type": "string", "enum": ["jupyterhub-singleuser"] }
+        "cmd": {
+          "type": "string"
+        }
       }
     },
     "scheduling": {
@@ -137,9 +219,17 @@
         "userScheduler": {
           "type": "object",
           "properties": {
-            "enabled": { "type": "boolean", "enum": [true] },
-            "replicas": { "type": "integer", "enum": [2] },
-            "logLevel": { "type": "integer", "enum": [4] }
+            "enabled": {
+              "type": "boolean",
+              "mutable": true
+            },
+            "replicas": {
+              "type": "integer",
+              "mutable": true
+            },
+            "logLevel": {
+              "type": "integer"
+            }
           }
         }
       }
@@ -151,14 +241,20 @@
         "hook": {
           "type": "object",
           "properties": {
-            "enabled": { "type": "boolean", "enum": [true] },
-            "pullOnlyOnChanges": { "type": "boolean", "enum": [true] }
+            "enabled": {
+              "type": "boolean"
+            },
+            "pullOnlyOnChanges": {
+              "type": "boolean"
+            }
           }
         },
         "continuous": {
           "type": "object",
           "properties": {
-            "enabled": { "type": "boolean", "enum": [true] }
+            "enabled": {
+              "type": "boolean"
+            }
           }
         }
       }
@@ -167,14 +263,33 @@
       "category": "advanced",
       "type": "object",
       "properties": {
-        "enabled": { "type": "boolean", "enum": [true] },
-        "users": { "type": "boolean", "enum": [false] },
-        "adminUsers": { "type": "boolean", "enum": [true] },
-        "removeNamedServers": { "type": "boolean", "enum": [false] },
-        "timeout": { "type": "integer", "enum": [3600] },
-        "every": { "type": "integer", "enum": [600] },
-        "concurrency": { "type": "integer", "enum": [10] },
-        "maxAge": { "type": "integer", "enum": [0] }
+        "enabled": {
+          "type": "boolean",
+          "mutable": true
+        },
+        "users": {
+          "type": "boolean"
+        },
+        "adminUsers": {
+          "type": "boolean"
+        },
+        "removeNamedServers": {
+          "type": "boolean"
+        },
+        "timeout": {
+          "type": "integer",
+          "mutable": true
+        },
+        "every": {
+          "type": "integer",
+          "mutable": true
+        },
+        "concurrency": {
+          "type": "integer"
+        },
+        "maxAge": {
+          "type": "integer"
+        }
       }
     }
   }
