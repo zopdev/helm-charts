@@ -1,10 +1,24 @@
+# MySQL backing store (zopdev/mysql subchart). WordPress keeps posts, users and
+# settings here. The subchart emits a per-database ConfigMap + Secret carrying
+# DB_HOST / DB_PORT / DB_NAME / DB_USER / DB_PASSWORD, which the WORDPRESS_DB_*
+# entries under service.env reference with $(VAR).
 mysql:
+  diskSize: "10Gi"
   services:
     - name: wordpress
       database: wordpress
 
 service:
-  name: wordpress
+  # NOT "wordpress". The service subchart names its PrometheusRule after this value
+  # and the mysql subchart names its own after the release; the datastore ConfigMap
+  # naming in charts/service forces the release to be called "wordpress", so both
+  # would land on the name "wordpress" and helm refuses to install the release:
+  #   Error: 1 error occurred: * prometheusrules.monitoring.coreos.com "wordpress" already exists
+  # service 0.0.17 has no alerts on/off switch (that arrives in 0.0.30, which no
+  # longer expands $(VAR) - see Chart.yaml), and mysql's rule cannot be gated
+  # either, so distinguishing the two names here is the only fix available inside
+  # this chart. charts/service and charts/mysql are shared and out of scope to edit.
+  name: wordpress-app
   image: wordpress:php8.4
   minCPU: "250m"
   minMemory: "1000Mi"
@@ -14,22 +28,47 @@ service:
   maxReplicas: 1
 
   nginx:
+    # Hostname the site is served on. Empty means no Ingress is created.
+    host: ""
     annotations:
       kubernetes.io/ingress.class: "nginx"
       nginx.ingress.kubernetes.io/auth-realm: ''
       nginx.ingress.kubernetes.io/auth-secret: ''
       nginx.ingress.kubernetes.io/auth-type: ''
+    tlsHost: ""
+    tlsSecretName: ""
 
   env:
+    # $(VAR) is expanded by the kubelet against the MySQL ConfigMap/Secret that
+    # the same container pulls in via envFrom. It only works because the service
+    # chart renders these as container `env:` entries - see the note on the
+    # service dependency version in Chart.yaml.
     WORDPRESS_DB_HOST: "$(DB_HOST):$(DB_PORT)"
     WORDPRESS_DB_USER: "$(DB_USER)"
     WORDPRESS_DB_PASSWORD: "$(DB_PASSWORD)"
     WORDPRESS_DB_NAME: "$(DB_NAME)"
+    # Table-name prefix. Two WordPress installs can share one database if they
+    # use different prefixes.
+    WORDPRESS_TABLE_PREFIX: "wp_"
+    # Set to 1 to turn on WP_DEBUG. Empty values are dropped, so the constant is
+    # simply not defined by default.
+    WORDPRESS_DEBUG: ""
+    # Raw PHP appended to wp-config.php. This is where the site URL is pinned, e.g.
+    #   define('WP_HOME','https://blog.example.com'); define('WP_SITEURL','https://blog.example.com');
+    WORDPRESS_CONFIG_EXTRA: ""
 
   datastores:
     mysql:
       - datastore: wordpress
         database: wordpress
-  
 
   httpPort: 80
+
+  # WordPress writes uploads, themes and plugins under /var/www/html, so without a
+  # volume every restart loses them. The service subchart creates this PVC.
+  volumeMounts:
+    pvc:
+      - name: wordpress-data
+        mountPath: /var/www/html
+        subPath: ""
+        storage: "10Gi"

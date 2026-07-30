@@ -2,71 +2,138 @@
   "$schema": "https://json-schema.org/draft-07/schema#",
   "type": "object",
   "properties": {
-    "mysql": {
-      "category": "advanced",
-      "type": "object",
-      "properties": {
-        "services": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "name": { "type": "string", "enum": ["wordpress"] },
-              "database": { "type": "string", "enum": ["wordpress"] }
-            },
-            "required": ["name", "database"]
-          }
-        }
-      }
-    },
     "service": {
-      "category": "compute",
       "type": "object",
+      "category": "runtime",
+      "description": "The WordPress deployment itself",
       "properties": {
-        "name": { "type": "string", "enum": ["wordpress"] },
-        "image": { "type": "string", "enum": ["wordpress:php8.4"] },
-        "minCPU": { "type": "string", "default": "250m", "mutable": true },
-        "minMemory": { "type": "string", "default": "1000Mi", "mutable": true },
-        "maxCPU": { "type": "string", "default": "500m", "mutable": true },
-        "maxMemory": { "type": "string", "default": "1500Mi", "mutable": true },
-        "minReplicas": { "type": "integer", "enum": [1]  },
-        "maxReplicas": { "type": "integer", "enum": [1] },
+        "image": {
+          "type": "string",
+          "description": "WordPress container image, e.g. wordpress:php8.4. Raising the tag upgrades PHP/WordPress on the next rollout",
+          "default": "wordpress:php8.4",
+          "mutable": true
+        },
+        "nginx": {
+          "type": "object",
+          "description": "nginx Ingress for the site. Created only when host is set",
+          "properties": {
+            "host": {
+              "type": "string",
+              "description": "Hostname the site is served on, e.g. blog.example.com. Leave empty and no Ingress is created (reach it by port-forwarding the Service on port 80 instead)",
+              "default": "",
+              "mutable": true
+            },
+            "tlsHost": {
+              "type": "string",
+              "description": "Hostname to put in the TLS certificate. Defaults to the host above; set it only when the certificate is issued for a different name",
+              "default": "",
+              "mutable": true
+            },
+            "tlsSecretName": {
+              "type": "string",
+              "description": "Name of an existing Kubernetes TLS secret holding the certificate for that host",
+              "default": "",
+              "mutable": true
+            }
+          }
+        },
         "env": {
           "type": "object",
+          "description": "Environment the WordPress container runs with",
           "properties": {
-            "WORDPRESS_DB_HOST": { "type": "string",
-              "enum": ["$(DB_HOST):$(DB_PORT)"]
+            "WORDPRESS_TABLE_PREFIX": {
+              "type": "string",
+              "description": "Prefix for WordPress table names, e.g. wp_. Two sites can share one database if they use different prefixes. Changing it on a live site hides all existing content",
+              "default": "wp_",
+              "mutable": true
             },
-            "WORDPRESS_DB_USER": { "type": "string",
-              "enum": ["$(DB_USER)"]
+            "WORDPRESS_DEBUG": {
+              "type": "string",
+              "description": "Set to the string '1' to turn on WordPress debug mode (WP_DEBUG); the value is a string, not the number 1. Leave empty for production - it prints PHP warnings to visitors",
+              "default": "",
+              "mutable": true
             },
-            "WORDPRESS_DB_PASSWORD": { "type": "string",
-              "enum": ["$(DB_PASSWORD)"]
-            },
-            "WORDPRESS_DB_NAME": { "type": "string",
-              "enum": ["$(DB_NAME)"]
-            }
-          },
-          "required": ["WORDPRESS_DB_HOST", "WORDPRESS_DB_USER", "WORDPRESS_DB_PASSWORD", "WORDPRESS_DB_NAME"]
-        },
-        "datastores": {
-          "type": "object",
-          "properties": {
-            "mysql": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "datastore": { "type": "string", "enum": ["wordpress"] },
-                  "database": { "type": "string", "enum": ["wordpress"] }
-                },
-                "required": ["datastore", "database"]
-              }
+            "WORDPRESS_CONFIG_EXTRA": {
+              "type": "string",
+              "description": "Extra PHP appended to wp-config.php. This is where you pin the public site URL, e.g. define('WP_HOME','https://blog.example.com'); define('WP_SITEURL','https://blog.example.com');",
+              "default": "",
+              "mutable": true
             }
           }
         },
-        "httpPort": { "type": "integer", "enum": [80] }
+        "minCPU": {
+          "type": "string",
+          "description": "CPU reserved for each WordPress pod, e.g. 250m",
+          "default": "250m",
+          "mutable": true
+        },
+        "minMemory": {
+          "type": "string",
+          "description": "Memory reserved for each WordPress pod, e.g. 1000Mi",
+          "default": "1000Mi",
+          "mutable": true
+        },
+        "maxCPU": {
+          "type": "string",
+          "description": "CPU ceiling for each WordPress pod, e.g. 500m",
+          "default": "500m",
+          "mutable": true
+        },
+        "maxMemory": {
+          "type": "string",
+          "description": "Memory ceiling for each WordPress pod, e.g. 1500Mi",
+          "default": "1500Mi",
+          "mutable": true
+        },
+        "minReplicas": {
+          "type": "integer",
+          "description": "Number of WordPress pods. Keep at 1 unless the storage below is switched to a ReadWriteMany volume - several pods cannot share a ReadWriteOnce disk",
+          "default": 1,
+          "mutable": true
+        },
+        "volumeMounts": {
+          "type": "object",
+          "description": "Storage attached to the WordPress container",
+          "properties": {
+            "pvc": {
+              "type": "array",
+              "description": "Disks mounted into WordPress. The default entry gives /var/www/html a 10Gi volume so uploads, themes and plugins survive a restart. Set \"storage\" to change the size, at install time only - a live volume cannot be resized",
+              "default": [
+                {
+                  "name": "wordpress-data",
+                  "mountPath": "/var/www/html",
+                  "subPath": "",
+                  "storage": "10Gi"
+                }
+              ],
+              "mutable": true,
+              "editDisabled": true
+            }
+          }
+        }
+      },
+      "required": [
+        "image",
+        "minCPU",
+        "minMemory",
+        "maxCPU",
+        "maxMemory"
+      ]
+    },
+    "mysql": {
+      "type": "object",
+      "category": "advanced",
+      "description": "Bundled MySQL database (zopdev/mysql subchart)",
+      "properties": {
+        "diskSize": {
+          "type": "string",
+          "description": "Disk for the bundled MySQL, e.g. 10Gi. Fixed at install time - a live volume cannot be resized afterwards",
+          "default": "10Gi",
+          "mutable": true,
+          "editDisabled": true
+        }
       }
     }
-  }
+  },
+  "title": "WordPress Helm Chart Values"
 }
