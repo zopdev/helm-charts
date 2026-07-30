@@ -2,7 +2,7 @@ apiVersion: v2
 appVersion: "1.0"
 description: Helm chart for Deploying Apache Superset
 name: superset
-version: 0.0.7
+version: 0.0.8
 type: application
 icon: "https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20250226/195c1a30-da2a-4eb4-8394-68fe3fd52523-superset.png"
 maintainers:
@@ -11,8 +11,14 @@ maintainers:
 dependencies:
   - condition: postgres.enabled 
     name: postgres
-    version: 0.0.11
+    version: 0.0.12
     repository: https://helm.zop.dev
+  # redis is PINNED to 0.0.1 ON PURPOSE - do not bump alongside the postgres subchart.
+  # From 0.0.5 the redis chart ships templates/alerts.yaml, whose PrometheusRule is named
+  # "{{ .Release.Name }}" - exactly the same name postgres/templates/alerts.yaml uses. Two
+  # objects of the same kind and name in one release make helm refuse to install:
+  #   Error: 1 error occurred: * prometheusrules.monitoring.coreos.com "sup" already exists
+  # redis 0.0.1 has no alerts.yaml, so there is only one PrometheusRule and the install works.
   - condition: redis.enabled 
     name: redis
     version: 0.0.1

@@ -28,13 +28,7 @@ spec:
           image: apache/superset:dockerize
           imagePullPolicy: IfNotPresent
           env:
-            - name: "DB_PASS"
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Release.Name }}-postgres-root-secret
-                  key: postgres-password
-            - name: "DB_USER"
-              value: postgres
+            {{- include "superset.dbEnv" . | nindent 12 }}
           envFrom:
             - secretRef:
                 name: '{{ template "superset.fullname" . }}-env'
@@ -44,21 +38,20 @@ spec:
             - dockerize -wait "tcp://$DB_HOST:$DB_PORT" -wait "tcp://$REDIS_HOST:$REDIS_PORT" -timeout 120s
       containers:
         - name: "{{ .Chart.Name }}-flower"
-          image: "apachesuperset.docker.scarf.sh/apache/superset:4.1.1"
+          image: {{ include "superset.image" . | quote }}
           imagePullPolicy: IfNotPresent
-          command: 
+          command:
             - "/bin/sh"
             - "-c"
-            - pip install psycopg2-binary==2.9.6 
-            - "celery --app=superset.tasks.celery_app:app flower"
+            # Three things were wrong here. The command used to be a FOUR element array
+            # ("sh", "-c", "pip install psycopg2-binary==2.9.6", "celery ... flower"), and
+            # `sh -c` runs only its first operand, so the container pip-installed and exited.
+            # It also never sourced superset_bootstrap.sh, and the Superset image does not
+            # ship Flower - `celery flower` fails with "Error: No such command 'flower'"
+            # (verified on minikube), so the package has to be installed first.
+            - ". /app/pythonpath/superset_bootstrap.sh; pip install --no-cache-dir flower==2.0.1; celery --app=superset.tasks.celery_app:app flower --port=5555"
           env:
-            - name: "DB_PASS"
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Release.Name }}-postgres-root-secret
-                  key: postgres-password
-            - name: "DB_USER"
-              value: postgres
+            {{- include "superset.dbEnv" . | nindent 12 }}
           envFrom:
             - secretRef:
                 name: {{ template "superset.fullname" . }}-env
@@ -70,9 +63,15 @@ spec:
             - name: superset-config
               mountPath: "/app/pythonpath"
               readOnly: true
+          # /api/workers needs auth in this flower version and answers 401 forever:
+          #   401 GET /api/workers: FLOWER_UNAUTHENTICATED_API environment variable is
+          #   required to enable API without authentication
+          # so all three probes failed and the pod NEVER became Ready even though flower
+          # was running and connected to redis. /healthcheck is flower's unauthenticated
+          # health endpoint (verified in-pod: /healthcheck 200, /api/workers 401).
           startupProbe:
             httpGet:
-              path: /api/workers
+              path: /healthcheck
               port: flower
             initialDelaySeconds: 5
             timeoutSeconds: 1
@@ -81,7 +80,7 @@ spec:
             successThreshold: 1
           readinessProbe:
             httpGet:
-              path: /api/workers
+              path: /healthcheck
               port: flower
             initialDelaySeconds: 5
             timeoutSeconds: 1
@@ -90,7 +89,7 @@ spec:
             successThreshold: 1
           livenessProbe:
             httpGet:
-              path: /api/workers
+              path: /healthcheck
               port: flower
             initialDelaySeconds: 5
             timeoutSeconds: 1
@@ -98,12 +97,7 @@ spec:
             periodSeconds: 5
             successThreshold: 1
           resources:
-            requests:
-              cpu: 250m
-              memory: 250Mi 
-            limits:
-              cpu: 500m
-              memory: 500Mi
+            {{- toYaml .Values.resources | nindent 12 }}
       volumes:
         - name: superset-config
           secret:

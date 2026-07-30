@@ -22,13 +22,7 @@ spec:
           image: apache/superset:dockerize
           imagePullPolicy: IfNotPresent
           env:
-            - name: "DB_PASS"
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Release.Name }}-postgres-root-secret
-                  key: postgres-password
-            - name: "DB_USER"
-              value: postgres
+            {{- include "superset.dbEnv" . | nindent 12 }}
           envFrom:
             - secretRef:
                 name: '{{ template "superset.fullname" . }}-env'
@@ -38,15 +32,9 @@ spec:
             - dockerize -wait "tcp://$DB_HOST:$DB_PORT" -timeout 120s
       containers:
       - name: {{ template "superset.name" . }}-init-db
-        image: "apachesuperset.docker.scarf.sh/apache/superset:4.1.1"
+        image: {{ include "superset.image" . | quote }}
         env:
-          - name: "DB_PASS"
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Release.Name }}-postgres-root-secret
-                key: postgres-password
-          - name: "DB_USER"
-            value: postgres
+          {{- include "superset.dbEnv" . | nindent 10 }}
         envFrom:
           - secretRef:
               name: {{ template "superset.fullname" . }}-env
@@ -60,12 +48,7 @@ spec:
           - "-c"
           - ". /app/pythonpath/superset_bootstrap.sh; . /app/pythonpath/superset_init.sh"
         resources:
-          requests:
-            cpu: 250m
-            memory: 250Mi 
-          limits:
-            cpu: 500m
-            memory: 500Mi
+          {{- toYaml .Values.resources | nindent 10 }}
       volumes:
         - name: superset-config
           secret:
