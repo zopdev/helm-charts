@@ -1,12 +1,12 @@
 dependencies:
 - name: postgres
   repository: https://helm.zop.dev
-  version: v0.0.11
+  version: v0.0.12
 - name: redis
   repository: https://helm.zop.dev
   version: v0.0.1
 - name: service
   repository: https://helm.zop.dev
-  version: v0.0.17
-digest: sha256:f4ad2d01b97113c468ce284f4237dbf55ea2db1bb384995e31b5798e33b8103d
-generated: "2025-07-28T10:58:26.677681+05:30"
+  version: v0.0.32
+digest: sha256:7c89214122464b5195ece55c706b974fb04a1228b40ef60c8a9dd9c18018346c
+generated: "2026-07-30T16:18:41.708812+05:30"
