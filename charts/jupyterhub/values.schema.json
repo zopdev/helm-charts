@@ -2,8 +2,41 @@
   "$schema": "https://json-schema.org/draft-07/schema#",
   "type": "object",
   "properties": {
+    "singleuser": {
+      "type": "object",
+      "properties": {
+        "image": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "default": "quay.io/jupyterhub/k8s-singleuser-sample",
+              "mutable": true,
+              "description": "Notebook image users get, e.g. quay.io/jupyterhub/k8s-singleuser-sample or a datascience image"
+            },
+            "tag": {
+              "type": "string",
+              "default": "4.1.1-0.dev.git.6957.h0e735928",
+              "mutable": true,
+              "description": "Tag of the notebook image"
+            }
+          }
+        },
+        "storage": {
+          "type": "object",
+          "properties": {
+            "capacity": {
+              "type": "string",
+              "default": "10Gi",
+              "mutable": true,
+              "description": "Persistent home directory size per user, e.g. 10Gi"
+            }
+          }
+        }
+      },
+      "category": "runtime"
+    },
     "hub": {
-      "category": "advanced",
       "type": "object",
       "properties": {
         "config": {
@@ -12,170 +45,65 @@
             "JupyterHub": {
               "type": "object",
               "properties": {
-                "admin_access": { "type": "boolean", "enum": [true] },
-                "authenticator_class": { "type": "string", "enum": ["dummy"] }
+                "authenticator_class": {
+                  "type": "string",
+                  "default": "dummy",
+                  "mutable": true,
+                  "description": "How users log in. The default \"dummy\" accepts ANY username/password \u2014 change this before exposing JupyterHub"
+                },
+                "admin_access": {
+                  "type": "boolean",
+                  "default": true,
+                  "mutable": true,
+                  "description": "Allow admins to access other users' notebook servers"
+                }
               }
             }
           }
+        }
+      },
+      "category": "advanced"
+    },
+    "cull": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "mutable": true,
+          "description": "Shut down idle notebook servers to free compute"
         },
-        "baseUrl": { "type": "string", "enum": ["/"] }
-      }
+        "timeout": {
+          "type": "integer",
+          "default": 3600,
+          "mutable": true,
+          "description": "Seconds a notebook may sit idle before it is culled"
+        }
+      },
+      "category": "runtime"
     },
     "proxy": {
-      "category": "advanced",
       "type": "object",
       "properties": {
         "https": {
           "type": "object",
           "properties": {
-            "enabled": { "type": "boolean", "enum": [false] },
-            "type": { "type": "string", "enum": ["letsencrypt"] },
-            "letsencrypt": {
-              "type": "object",
-              "properties": {
-                "acmeServer": { "type": "string", "enum": ["https://acme-v02.api.letsencrypt.org/directory"] }
-              }
+            "enabled": {
+              "type": "boolean",
+              "default": false,
+              "mutable": true,
+              "description": "Terminate HTTPS at the proxy"
             },
-            "secret": {
-              "type": "object",
-              "properties": {
-                "key": { "type": "string", "enum": ["tls.key"] },
-                "crt": { "type": "string", "enum": ["tls.crt"] }
-              }
-            },
-            "hosts": { "type": "array", "enum": [[]] }
-          }
-        }
-      }
-    },
-    "singleuser": {
-      "category": "runtime",
-      "type": "object",
-      "properties": {
-        "networkTools": {
-          "type": "object",
-          "properties": {
-            "image": {
-              "type": "object",
-              "properties": {
-                "name": { "type": "string", "enum": ["quay.io/jupyterhub/k8s-network-tools"] },
-                "tag": { "type": "string", "enum": ["4.1.1-0.dev.git.6949.h138f95a8"] }
-              }
+            "hosts": {
+              "type": "array",
+              "default": [],
+              "mutable": true,
+              "description": "Hostnames to serve HTTPS for, e.g. [\"jupyter.example.com\"]"
             }
           }
-        },
-        "cloudMetadata": {
-          "type": "object",
-          "properties": {
-            "blockWithIptables": { "type": "boolean", "enum": [true] },
-            "ip": { "type": "string", "enum": ["169.254.169.254"] }
-          }
-        },
-        "networkPolicy": {
-          "type": "object",
-          "properties": {
-            "enabled": { "type": "boolean", "enum": [true] },
-            "egressAllowRules": {
-              "type": "object",
-              "properties": {
-                "cloudMetadataServer": { "type": "boolean", "enum": [false] },
-                "dnsPortsCloudMetadataServer": { "type": "boolean", "enum": [true] },
-                "dnsPortsKubeSystemNamespace": { "type": "boolean", "enum": [true] },
-                "dnsPortsPrivateIPs": { "type": "boolean", "enum": [true] },
-                "nonPrivateIPs": { "type": "boolean", "enum": [true] },
-                "privateIPs": { "type": "boolean", "enum": [false] }
-              }
-            },
-            "interNamespaceAccessLabels": { "type": "string", "enum": ["ignore"] }
-          }
-        },
-        "events": { "type": "boolean", "enum": [true] },
-        "extraLabels": {
-          "type": "object",
-          "properties": {
-            "hub.jupyter.org/network-access-hub": { "type": "string", "enum": ["true"] }
-          }
-        },
-        "allowPrivilegeEscalation": { "type": "boolean", "enum": [false] },
-        "uid": { "type": "integer", "enum": [1000] },
-        "fsGid": { "type": "integer", "enum": [100] },
-        "storage": {
-          "type": "object",
-          "properties": {
-            "type": { "type": "string", "enum": ["dynamic"] },
-            "static": {
-              "type": "object",
-              "properties": {
-                "subPath": { "type": "string", "enum": ["{username}"] }
-              }
-            },
-            "capacity": { "type": "string", "enum": ["10Gi"] },
-            "homeMountPath": { "type": "string", "enum": ["/home/jovyan"] },
-            "dynamic": {
-              "type": "object",
-              "properties": {
-                "volumeNameTemplate": { "type": "string", "enum": ["volume-{user_server}"] },
-                "storageAccessModes": { "type": "array", "items": { "type": "string", "enum": ["ReadWriteOnce"] } }
-              }
-            }
-          }
-        },
-        "image": {
-          "type": "object",
-          "properties": {
-            "name": { "type": "string", "enum": ["quay.io/jupyterhub/k8s-singleuser-sample"] },
-            "tag": { "type": "string", "enum": ["4.1.1-0.dev.git.6957.h0e735928"] }
-          }
-        },
-        "cmd": { "type": "string", "enum": ["jupyterhub-singleuser"] }
-      }
-    },
-    "scheduling": {
-      "category": "compute",
-      "type": "object",
-      "properties": {
-        "userScheduler": {
-          "type": "object",
-          "properties": {
-            "enabled": { "type": "boolean", "enum": [true] },
-            "replicas": { "type": "integer", "enum": [2] },
-            "logLevel": { "type": "integer", "enum": [4] }
-          }
         }
-      }
-    },
-    "prePuller": {
-      "category": "advanced",
-      "type": "object",
-      "properties": {
-        "hook": {
-          "type": "object",
-          "properties": {
-            "enabled": { "type": "boolean", "enum": [true] },
-            "pullOnlyOnChanges": { "type": "boolean", "enum": [true] }
-          }
-        },
-        "continuous": {
-          "type": "object",
-          "properties": {
-            "enabled": { "type": "boolean", "enum": [true] }
-          }
-        }
-      }
-    },
-    "cull": {
-      "category": "advanced",
-      "type": "object",
-      "properties": {
-        "enabled": { "type": "boolean", "enum": [true] },
-        "users": { "type": "boolean", "enum": [false] },
-        "adminUsers": { "type": "boolean", "enum": [true] },
-        "removeNamedServers": { "type": "boolean", "enum": [false] },
-        "timeout": { "type": "integer", "enum": [3600] },
-        "every": { "type": "integer", "enum": [600] },
-        "concurrency": { "type": "integer", "enum": [10] },
-        "maxAge": { "type": "integer", "enum": [0] }
-      }
+      },
+      "category": "advanced"
     }
   }
 }

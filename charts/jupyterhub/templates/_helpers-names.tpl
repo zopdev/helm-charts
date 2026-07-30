@@ -8,6 +8,31 @@
 {{- end }}
 
 
+{{- /*
+  The hub Secret's name. Declared once because the bug it fixes was two places
+  disagreeing about it: the password helpers looked the Secret up as
+  `jupyterhub.hub.fullname` ("<release>-jupyterhubhub") while the Secret is
+  actually created as "jupyterhub-secrets". The lookup therefore always missed
+  and every `helm upgrade` regenerated the proxy auth token, the cookie secret,
+  the CryptKeeper keys and the service API tokens.
+*/ -}}
+{{- define "jupyterhub.hub-secret.fullname" -}}
+    jupyterhub-secrets
+{{- end }}
+
+{{- /*
+  The hub ConfigMap's name. Declared once for the same reason as the Secret
+  above: `image-puller/_helpers-daemonset.tpl` looked it up as
+  `jupyterhub.hub.fullname` ("<release>-jupyterhubhub") while
+  `hub/configmap.yaml` creates it as "jupyterhub-configs". That lookup always
+  missed, so the `checksum_hook-image-puller` it stores was never read back and
+  prePuller.hook.pullOnlyOnChanges always compared against "" — a no-op that
+  recreated and reran the pre-pull hook on every upgrade.
+*/ -}}
+{{- define "jupyterhub.hub-configmap.fullname" -}}
+    jupyterhub-configs
+{{- end }}
+
 {{- define "jupyterhub.hub.fullname" -}}
     {{- include "jupyterhub.fullname.dash" . }}hub
 {{- end }}

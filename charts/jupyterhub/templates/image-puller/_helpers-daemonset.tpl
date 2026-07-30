@@ -215,7 +215,7 @@ spec:
     {{- if .Values.prePuller.hook.enabled }}
         {{- if .Values.prePuller.hook.pullOnlyOnChanges }}
             {{- $new_checksum := include "jupyterhub.imagePuller.daemonset.hook.checksum" . }}
-            {{- $k8s_state := lookup "v1" "ConfigMap" .Release.Namespace (include "jupyterhub.hub.fullname" .) | default (dict "data" (dict)) }}
+            {{- $k8s_state := lookup "v1" "ConfigMap" .Release.Namespace (include "jupyterhub.hub-configmap.fullname" .) | default (dict "data" (dict)) }}
             {{- $old_checksum := index $k8s_state.data "checksum_hook-image-puller" | default "" }}
             {{- if ne $new_checksum $old_checksum -}}
 # prePuller.hook.enabled={{ .Values.prePuller.hook.enabled }}

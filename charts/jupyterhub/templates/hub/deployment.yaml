@@ -26,10 +26,10 @@ spec:
       volumes:
         - name: config
           configMap:
-            name: jupyterhub-configs
+            name: {{ include "jupyterhub.hub-configmap.fullname" . }}
         - name: secret
           secret:
-            secretName: jupyterhub-secrets
+            secretName: {{ include "jupyterhub.hub-secret.fullname" . }}
         - name: pvc
           persistentVolumeClaim:
             claimName: {{ include "jupyterhub.hub-pvc.fullname" . }}
@@ -83,7 +83,7 @@ spec:
             - name: CONFIGPROXY_AUTH_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: jupyterhub-secrets
+                  name: {{ include "jupyterhub.hub-secret.fullname" . }}
                   key: hub.config.ConfigurableHTTPProxy.auth_token
           ports:
             - name: http
