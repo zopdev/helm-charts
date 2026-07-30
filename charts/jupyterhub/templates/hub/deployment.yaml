@@ -26,7 +26,7 @@ spec:
       volumes:
         - name: config
           configMap:
-            name: jupyterhub-configs
+            name: {{ include "jupyterhub.hub-configmap.fullname" . }}
         - name: secret
           secret:
             secretName: {{ include "jupyterhub.hub-secret.fullname" . }}
