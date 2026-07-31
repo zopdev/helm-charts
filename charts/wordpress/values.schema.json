@@ -9,6 +9,7 @@
       "properties": {
         "image": {
           "type": "string",
+          "minLength": 1,
           "description": "WordPress container image, e.g. wordpress:php8.4. Raising the tag upgrades PHP/WordPress on the next rollout",
           "default": "wordpress:php8.4",
           "mutable": true

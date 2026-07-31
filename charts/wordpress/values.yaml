@@ -64,6 +64,25 @@ service:
 
   httpPort: 80
 
+  # Gate traffic on the pod actually serving. This matters BECAUSE of the PVC below: on
+  # first boot the entrypoint copies the whole WordPress tree into the empty volume
+  # ("WordPress not found in /var/www/html - copying now..."), which takes tens of seconds,
+  # and without a probe the Service routes to the pod for that entire window.
+  # service 0.0.17 needs both the enable flag and a non-empty heartbeatURL to render one.
+  # "/" is safe here: WordPress answers it with a 302 to the install wizard on the same
+  # host:80, and a probe that follows that redirect still lands on a listening port -
+  # unlike outline, where a 301 to https:// pointed the kubelet at a closed :443.
+  heartbeatURL: /
+  readinessProbe:
+    enable: true
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    # ~2.5 min of grace: the first-boot copy is slow and must not fail the rollout.
+    failureThreshold: 30
+  # Liveness is deliberately NOT enabled: a slow first-boot copy would trip it and restart
+  # the pod mid-copy, turning a slow start into a loop.
+
   # WordPress writes uploads, themes and plugins under /var/www/html, so without a
   # volume every restart loses them. The service subchart creates this PVC.
   volumeMounts:
