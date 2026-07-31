@@ -44,6 +44,7 @@
         },
         "image": {
           "type": "string",
+          "minLength": 1,
           "description": "Outline container image, e.g. outlinewiki/outline:0.84. Raising the tag upgrades Outline on the next rollout",
           "default": "outlinewiki/outline:0.84",
           "mutable": true

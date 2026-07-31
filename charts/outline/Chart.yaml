@@ -18,6 +18,21 @@ dependencies:
   - name: redis
     version: 0.0.1
     repository: https://helm.zop.dev
+  # service 0.0.32, NOT 0.0.17 like wordpress. The two charts diverge on purpose:
+  #   * wordpress MUST stay on 0.0.17 - from 0.0.18 .Values.env moved into a ConfigMap, and
+  #     the kubelet expands $(VAR) only inside container env[].value, so its
+  #     WORDPRESS_DB_HOST would arrive as the literal "$(DB_HOST):$(DB_PORT)".
+  #   * outline uses no $(VAR), so that constraint does not apply, and 0.0.17 would add a
+  #     permanently-failing scrape target: it defaults metricsPort to 2121 and nothing in
+  #     the outline container listens there.
+  # The PrometheusRule collision is NOT what pins this. That is resolved by
+  # service.name: outline-app in values.yaml - the same mitigation wordpress uses, which
+  # also lets outline keep its own alerts instead of switching them off.
+  # Differences from 0.0.17 that this version brings, all read off the rendered manifests:
+  # SECRET_KEY/UTILS_SECRET arrive via a ConfigMap consumed with envFrom rather than inline
+  # env entries; no app ServiceMonitor is emitted (see metricsPort above); and datastore
+  # ConfigMap names gain a replace "_" "-", which changes nothing here because neither
+  # datastore name contains an underscore.
   - name: service
     version: 0.0.32
     repository: https://helm.zop.dev

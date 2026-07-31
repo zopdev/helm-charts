@@ -15,7 +15,14 @@ redis:
 
 
 service:
-  name: outline
+  # NOT "outline". The service subchart names its PrometheusRule after this value and the
+  # postgres subchart names its own after the release; the datastore ConfigMap naming in
+  # charts/service forces the release to be called "outline", so both would land on the
+  # name "outline" and helm refuses two objects of one kind+name:
+  #   Error: prometheusrules.monitoring.coreos.com "outline" already exists
+  # Distinguishing the names here is the same mitigation wordpress uses, and unlike
+  # switching the alerts off it keeps outline's own availability alerting.
+  name: outline-app
   image: "outlinewiki/outline:0.84"
   minCPU: "250m"
   minMemory: "1000Mi"
@@ -60,16 +67,12 @@ service:
       - datastore: outline
         database: outline
 
-  # The service subchart's PrometheusRule is named after service.name, and the
-  # postgres subchart's is named after the release. Because the datastore ConfigMap
-  # naming in charts/service forces the release to be called "outline", both land on
-  # the name "outline" and helm refuses to install the release:
-  #   Error: 1 error occurred: * prometheusrules.monitoring.coreos.com "outline" already exists
-  # charts/service and charts/postgres are shared and out of scope to edit, so the
-  # service chart's own supported switch is used to drop one of the two. The postgres
-  # alerts (the ones that cannot be switched off) are kept.
+  # Kept ON. The PrometheusRule name collision that used to force this off is resolved by
+  # service.name above, so outline keeps its own availability alerting instead of trading
+  # it away - the release now renders two distinctly named rules, "outline" (postgres) and
+  # "outline-app" (service).
   alerts:
-    enabled: false
+    enabled: true
 
   # MUST NOT be "/". With FORCE_HTTPS=true (an exposed, mutable field, and the normal
   # setting once Outline is served over TLS) Outline answers "/" with a 301 to https://,
