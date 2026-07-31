@@ -40,13 +40,15 @@
       "properties": {
         "repository": {
           "type": "string",
-          "description": "Image repository for Superset. Change it to pull from a private mirror",
+          "minLength": 1,
+          "description": "Image repository for Superset. Change it to pull from a private mirror. Must not be empty",
           "default": "apachesuperset.docker.scarf.sh/apache/superset",
           "mutable": true
         },
         "tag": {
           "type": "string",
-          "description": "Superset version to run, e.g. 4.1.1. Raising this upgrades Superset; the init Job runs the database migrations on the next install/upgrade",
+          "minLength": 1,
+          "description": "Superset version to run, e.g. 4.1.1. Raising this upgrades Superset; the init Job runs the database migrations on the next install/upgrade. Must not be empty - it falls back to appVersion \"1.0\", which is not a published tag",
           "default": "4.1.1",
           "mutable": true
         }
@@ -195,9 +197,45 @@
       "properties": {
         "replicaCount": {
           "type": "integer",
-          "description": "Number of Superset web pods. The web tier holds no local state (metadata is in PostgreSQL, cache and celery in Redis), so this is safe to raise for more concurrent users",
+          "minimum": 1,
+          "description": "Number of Superset web pods. The web tier holds no local state (metadata is in PostgreSQL, cache and celery in Redis), so this is safe to raise for more concurrent users. With autoscaling enabled this is the autoscaler's minimum, since the autoscaler owns the replica count",
           "default": 1,
           "mutable": true
+        },
+        "autoscaling": {
+          "type": "object",
+          "description": "Horizontal autoscaling for the Superset web pods",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Autoscale the web tier. When on, the autoscaler owns the replica count and supersetNode.replicaCount becomes its minimum; when off, the pod count is exactly supersetNode.replicaCount",
+              "default": true,
+              "mutable": true
+            },
+            "maxReplicas": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Upper bound on web pods when autoscaling is on",
+              "default": 15,
+              "mutable": true
+            },
+            "targetCPUUtilizationPercentage": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "description": "Scale up once average CPU exceeds this percentage of the CPU request",
+              "default": 80,
+              "mutable": true
+            },
+            "targetMemoryUtilizationPercentage": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "description": "Scale up once average memory exceeds this percentage of the memory request. Superset's web memory sits in the hundreds of MiB even when idle, so raise this (or the memory request) if the tier scales up with no traffic",
+              "default": 80,
+              "mutable": true
+            }
+          }
         },
         "secretKey": {
           "type": "string",
@@ -207,7 +245,10 @@
         },
         "featureFlags": {
           "type": "object",
-          "description": "Superset feature flags, as FLAG_NAME: true, e.g. {\"ALERT_REPORTS\": true, \"DASHBOARD_RBAC\": true}",
+          "additionalProperties": {
+            "type": "boolean"
+          },
+          "description": "Superset feature flags, as FLAG_NAME: true, e.g. {\"ALERT_REPORTS\": true, \"DASHBOARD_RBAC\": true}. Values must be booleans",
           "default": {},
           "mutable": true
         },
@@ -223,7 +264,7 @@
           "properties": {
             "db_host": {
               "type": "string",
-              "description": "PostgreSQL host for Superset metadata. Only read when the bundled postgres is turned off",
+              "description": "PostgreSQL host for Superset metadata. Always used, including with the bundled postgres - leave it at the default in that case, and point it at your own server when postgres.enabled is false",
               "default": "{{ .Release.Name }}-postgres",
               "mutable": true
             },
@@ -253,7 +294,7 @@
             },
             "redis_host": {
               "type": "string",
-              "description": "Redis host. Only read when the bundled redis is turned off. Supports Helm templating, e.g. {{ .Release.Name }}-redis-headless-service",
+              "description": "Redis host. Always used, including with the bundled redis - leave it at the default in that case, and point it at your own server when redis.enabled is false. Supports Helm templating, e.g. {{ .Release.Name }}-redis-headless-service",
               "default": "{{ .Release.Name }}-redis-headless-service",
               "mutable": true
             },

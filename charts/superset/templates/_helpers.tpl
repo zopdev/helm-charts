@@ -85,15 +85,41 @@
 
 {{- /*
   Render a values entry as a Python literal for superset_config.py.
-  A YAML boolean has to become True/False - Go templates print `true`, which Python
-  reads as an undefined name and every Superset pod then fails to boot.
-  A string that already looks like a dict/list, or that spells True/False, is passed
+
+  superset_config.py is PYTHON, so every value must come out as a Python literal. A Go
+  template prints a YAML boolean as `true`, which Python reads as an undefined name and
+  every pod then dies on boot:
+      NameError: name 'true' is not defined
+
+  This RECURSES deliberately, and `toJson` is not a safe shortcut for the container
+  cases: JSON spells booleans and null `true`/`false`/`null`, so `{"a": true}` would be
+  exactly as broken as the bare boolean this helper exists to fix. Walking the structure
+  normalises a bool or nil at any depth. Both shapes are reachable from the form:
+  `config.HTTP_HEADERS` is a dict in normal Superset use, and `featureFlags` values are
+  booleans.
+
+  A string that already looks like a dict/list, or that spells True/False/None, is passed
   through unquoted so callers can still hand in raw Python.
 */ -}}
 {{- define "superset.pyValue" -}}
   {{- $v := . -}}
   {{- if kindIs "bool" $v -}}
     {{- ternary "True" "False" $v -}}
+  {{- else if kindIs "invalid" $v -}}
+    {{- /* `KEY:` with no value is nil, which would otherwise render as nothing at all */ -}}
+    None
+  {{- else if kindIs "map" $v -}}
+    {{- $parts := list -}}
+    {{- range $k := (keys $v | sortAlpha) -}}
+      {{- $parts = append $parts (printf "%s: %s" ($k | quote) (include "superset.pyValue" (index $v $k))) -}}
+    {{- end -}}
+    {{- printf "{%s}" (join ", " $parts) -}}
+  {{- else if kindIs "slice" $v -}}
+    {{- $parts := list -}}
+    {{- range $e := $v -}}
+      {{- $parts = append $parts (include "superset.pyValue" $e) -}}
+    {{- end -}}
+    {{- printf "[%s]" (join ", " $parts) -}}
   {{- else if kindIs "string" $v -}}
     {{- if or (hasPrefix "{" $v) (hasPrefix "[" $v) (eq $v "True") (eq $v "False") (eq $v "None") -}}
       {{- $v -}}

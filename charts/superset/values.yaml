@@ -27,7 +27,24 @@ supersetNode:
   # Number of Superset web pods. Safe to scale: the web tier keeps no local state - metadata
   # lives in PostgreSQL and cache/celery in Redis, and this Deployment mounts no PVC.
   # (Only supersetWorker was scalable before; the web Deployment hardcoded replicas: 1.)
+  #
+  # With autoscaling on (the default) this is the HPA's FLOOR - minReplicas - because an
+  # HPA owns spec.replicas outright: writing replicas into the Deployment while an HPA
+  # targets it just makes helm and the HPA overwrite each other on every upgrade.
   replicaCount: 1
+
+  autoscaling:
+    # The HPA used to be unconditional with minReplicas hardcoded to 1, so any replica
+    # count set here was reconciled straight back. It is now gated and driven by these
+    # values; defaults reproduce the previous behaviour exactly (1..15, 80%/80%).
+    enabled: true
+    maxReplicas: 15
+    targetCPUUtilizationPercentage: 80
+    # NOTE: this is a percentage of resources.requests.memory, and Superset's web RSS sits
+    # in the hundreds of MiB even when idle - at requests.memory 512Mi, 80% is ~410Mi, so a
+    # low request can peg the tier at maxReplicas. Raise the request or this target if the
+    # web tier scales up with no traffic.
+    targetMemoryUtilizationPercentage: 80
 
   connections:
     # Redis Configs

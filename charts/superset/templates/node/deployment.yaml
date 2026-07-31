@@ -8,7 +8,11 @@ metadata:
     chart: {{ template "superset.chart" . }}
     release: {{ .Release.Name }}
 spec:
+{{- if not .Values.supersetNode.autoscaling.enabled }}
+  {{- /* omitted when an HPA targets this Deployment: it owns spec.replicas, and setting
+      both makes helm and the HPA overwrite each other on every upgrade */}}
   replicas: {{ .Values.supersetNode.replicaCount }}
+{{- end }}
   selector:
     matchLabels:
     {{- include "supersetNode.selectorLabels" . | nindent 6 }}
