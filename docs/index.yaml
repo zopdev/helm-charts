@@ -1187,6 +1187,32 @@ entries:
       type: application
     apiVersion: v2
     appVersion: "1.0"
+    created: "2026-07-31T12:31:54.903298+05:30"
+    dependencies:
+    - name: postgres
+      repository: https://helm.zop.dev
+      version: 0.0.12
+    - name: redis
+      repository: https://helm.zop.dev
+      version: 0.0.1
+    - name: service
+      repository: https://helm.zop.dev
+      version: 0.0.32
+    description: Helm chart for deploying outline app
+    digest: 6cc6bd3bbea53eceea2a4a8320105ae76f2da9898882959d12cf83adad112562
+    icon: https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20241129/517f58c3-427a-4cd0-8d37-abe941776827-download1.jpeg
+    maintainers:
+    - name: ZopDev
+      url: zop.dev
+    name: outline
+    type: application
+    urls:
+    - https://helm.zop.dev/outline-v0.0.9.tgz
+    version: v0.0.9
+  - annotations:
+      type: application
+    apiVersion: v2
+    appVersion: "1.0"
     created: "2026-07-30T11:57:00.148708+05:30"
     dependencies:
     - name: postgres
@@ -2347,6 +2373,31 @@ entries:
       type: application
     apiVersion: v2
     appVersion: "1.0"
+    created: "2026-07-31T12:31:54.903977+05:30"
+    dependencies:
+    - condition: postgres.enabled
+      name: postgres
+      repository: https://helm.zop.dev
+      version: 0.0.12
+    - condition: redis.enabled
+      name: redis
+      repository: https://helm.zop.dev
+      version: 0.0.1
+    description: Helm chart for Deploying Apache Superset
+    digest: 188b0c3b47c080a793b030531a782a93b28437e0a7ae08073f3d892f14959e8d
+    icon: https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20250226/195c1a30-da2a-4eb4-8394-68fe3fd52523-superset.png
+    maintainers:
+    - name: ZopDev
+      url: zop.dev
+    name: superset
+    type: application
+    urls:
+    - https://helm.zop.dev/superset-v0.0.8.tgz
+    version: v0.0.8
+  - annotations:
+      type: application
+    apiVersion: v2
+    appVersion: "1.0"
     created: "2026-07-30T11:57:00.187728+05:30"
     dependencies:
     - condition: postgres.enabled
@@ -2564,6 +2615,29 @@ entries:
       type: application
     apiVersion: v2
     appVersion: "1.0"
+    created: "2026-07-31T12:31:54.904565+05:30"
+    dependencies:
+    - name: mysql
+      repository: https://helm.zop.dev
+      version: 0.0.17
+    - name: service
+      repository: https://helm.zop.dev
+      version: 0.0.17
+    description: Helm chart for deploying WordPress app
+    digest: 1000b6544c7ffdbcdde3e9fd123741b4c83a95deac39ed65a72e993d3c7aea2e
+    icon: https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20241129/9f2ff083-4ba6-4494-91d4-c6c7c96c8ab0-download.jpeg
+    maintainers:
+    - name: ZopDev
+      url: zop.dev
+    name: wordpress
+    type: application
+    urls:
+    - https://helm.zop.dev/wordpress-v0.0.8.tgz
+    version: v0.0.8
+  - annotations:
+      type: application
+    apiVersion: v2
+    appVersion: "1.0"
     created: "2026-07-30T11:57:00.192812+05:30"
     dependencies:
     - name: mysql
@@ -2747,4 +2821,4 @@ entries:
     urls:
     - https://helm.zop.dev/zookeeper-operator-v0.0.1.tgz
     version: v0.0.1
-generated: "2026-07-30T11:57:00.120248+05:30"
+generated: "2026-07-31T12:31:54.901701+05:30"

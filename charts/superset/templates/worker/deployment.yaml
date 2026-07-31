@@ -8,7 +8,7 @@ metadata:
     chart: {{ template "superset.chart" . }}
     release: {{ .Release.Name }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.supersetWorker.replicaCount }}
   selector:
     matchLabels:
     {{- include "supersetWorker.selectorLabels" . | nindent 6 }}
@@ -37,7 +37,7 @@ spec:
             - dockerize -wait "tcp://$DB_HOST:$DB_PORT" -wait "tcp://$REDIS_HOST:$REDIS_PORT" -timeout 120s
       containers:
         - name: {{ .Chart.Name }}
-          image: "apachesuperset.docker.scarf.sh/apache/superset:4.1.1"
+          image: {{ include "superset.image" . | quote }}
           imagePullPolicy: IfNotPresent
           command:
             - "/bin/sh"
@@ -50,13 +50,7 @@ spec:
             - name: {{ $key | quote}}
               value: {{ $value | quote }}
             {{- end }}
-            - name: "DB_PASS"
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Release.Name }}-postgres-root-secret
-                  key: postgres-password
-            - name: "DB_USER"
-              value: postgres
+            {{- include "superset.dbEnv" . | nindent 12 }}
           envFrom:
             - secretRef:
                 name: {{ template "superset.fullname" . }}-env
@@ -77,12 +71,7 @@ spec:
             periodSeconds: 60
             successThreshold: 1
           resources:
-            requests:
-              cpu: 250m
-              memory: 250Mi
-            limits:
-              cpu: 500m
-              memory: 1000Mi
+            {{- toYaml .Values.resources | nindent 12 }}
       volumes:
         - name: superset-config
           secret:

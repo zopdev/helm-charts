@@ -2,18 +2,39 @@ apiVersion: v2
 appVersion: "1.0"
 description: Helm chart for deploying outline app
 name: outline
-version: 0.0.8
+version: 0.0.9
 type: application
 icon: "https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20241129/517f58c3-427a-4cd0-8d37-abe941776827-download1.jpeg"
 dependencies:
   - name: postgres
-    version: 0.0.11
+    version: 0.0.12
     repository:  https://helm.zop.dev
+  # redis is PINNED to 0.0.1 ON PURPOSE - do not bump alongside the postgres subchart.
+  # From 0.0.5 the redis chart ships templates/alerts.yaml, whose PrometheusRule is named
+  # "{{ .Release.Name }}" - exactly the same name postgres/templates/alerts.yaml uses. Two
+  # objects of the same kind and name in one release make helm refuse to install:
+  #   Error: 1 error occurred: * prometheusrules.monitoring.coreos.com "sup" already exists
+  # redis 0.0.1 has no alerts.yaml, so there is only one PrometheusRule and the install works.
   - name: redis
     version: 0.0.1
     repository: https://helm.zop.dev
+  # service 0.0.32, NOT 0.0.17 like wordpress. The two charts diverge on purpose:
+  #   * wordpress MUST stay on 0.0.17 - from 0.0.18 .Values.env moved into a ConfigMap, and
+  #     the kubelet expands $(VAR) only inside container env[].value, so its
+  #     WORDPRESS_DB_HOST would arrive as the literal "$(DB_HOST):$(DB_PORT)".
+  #   * outline uses no $(VAR), so that constraint does not apply, and 0.0.17 would add a
+  #     permanently-failing scrape target: it defaults metricsPort to 2121 and nothing in
+  #     the outline container listens there.
+  # The PrometheusRule collision is NOT what pins this. That is resolved by
+  # service.name: outline-app in values.yaml - the same mitigation wordpress uses, which
+  # also lets outline keep its own alerts instead of switching them off.
+  # Differences from 0.0.17 that this version brings, all read off the rendered manifests:
+  # SECRET_KEY/UTILS_SECRET arrive via a ConfigMap consumed with envFrom rather than inline
+  # env entries; no app ServiceMonitor is emitted (see metricsPort above); and datastore
+  # ConfigMap names gain a replace "_" "-", which changes nothing here because neither
+  # datastore name contains an underscore.
   - name: service
-    version: 0.0.17
+    version: 0.0.32
     repository: https://helm.zop.dev
 maintainers:
   - name: ZopDev

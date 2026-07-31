@@ -2,97 +2,400 @@
   "$schema": "https://json-schema.org/draft-07/schema#",
   "type": "object",
   "properties": {
-    "resources": {
-      "category": "compute",
+    "service": {
       "type": "object",
+      "category": "runtime",
+      "description": "How Superset is reached from outside the cluster",
       "properties": {
-        "requests": {
+        "nginx": {
           "type": "object",
+          "description": "nginx Ingress for the Superset web UI. Created only when host is set",
           "properties": {
-            "cpu": { "type": "string", "enum": ["250m"] },
-            "memory": { "type": "string", "enum": ["250Mi"] }
-          }
-        },
-        "limits": {
-          "type": "object",
-          "properties": {
-            "cpu": { "type": "string", "enum": ["500m"] },
-            "memory": { "type": "string", "enum": ["500Mi"] }
-          }
-        }
-      }
-    },
-    "supersetNode": {
-      "category": "environment",
-      "type": "object",
-      "properties": {
-        "connections": {
-          "type": "object",
-          "properties": {
-            "redis_host": { "type": "string", "enum": ["{{ .Release.Name }}-redis-headless-service"] },
-            "redis_port": { "type": "string", "enum": ["6379"] },
-            "redis_user": { "type": "string", "enum": [""] },
-            "redis_cache_db": { "type": "string", "enum": ["1"] },
-            "redis_celery_db": { "type": "string", "enum": ["0"] },
-            "redis_ssl": {
-              "type": "object",
-              "properties": {
-                "enabled": { "type": "boolean", "enum": [false] },
-                "ssl_cert_reqs": { "type": "string", "enum": ["CERT_NONE"] }
-              }
+            "host": {
+              "type": "string",
+              "description": "Hostname to serve Superset on, e.g. superset.example.com. Leave empty and no Ingress is created (reach the UI by port-forwarding the Service on 8088 instead)",
+              "default": "",
+              "mutable": true
             },
-            "db_host": { "type": "string", "enum": ["{{ .Release.Name }}-postgres"] },
-            "db_port": { "type": "string", "enum": ["5432"] },
-            "db_user": { "type": "string", "enum": ["superset_user"] },
-            "db_pass": { "type": "string", "enum": ["superset"] },
-            "db_name": { "type": "string", "enum": ["superset"] }
-          }
-        }
-      }
-    },
-    "init": {
-      "category": "advanced",
-      "type": "object",
-      "properties": {
-        "createAdmin": { "type": "boolean", "enum": [true] },
-        "adminUser": {
-          "type": "object",
-          "properties": {
-            "username": { "type": "string", "enum": ["admin"] },
-            "firstname": { "type": "string", "enum": ["Superset"] },
-            "lastname": { "type": "string", "enum": ["Admin"] },
-            "email": { "type": "string", "enum": ["admin@superset.com"] },
-            "password": { "type": "string", "enum": ["admin"] }
-          }
-        },
-        "initscript": { "type": "string" }
-      }
-    },
-    "postgres": {
-      "category": "advanced",
-      "type": "object",
-      "properties": {
-        "enabled": { "type": "boolean", "enum": [true] },
-        "postgresRootPassword": { "type": "string", "enum": ["superset"] },
-        "services": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "name": { "type": "string", "enum": ["superset"] },
-              "password": { "type": "string", "enum": ["superset"] },
-              "database": { "type": "string", "enum": ["superset"] }
+            "tlshost": {
+              "type": "string",
+              "description": "Hostname to put in the TLS certificate. Defaults to the host above; set it only when the certificate is issued for a different name",
+              "default": "",
+              "mutable": true
+            },
+            "tlsSecretname": {
+              "type": "string",
+              "description": "Name of an existing Kubernetes TLS secret holding the certificate for that host",
+              "default": "",
+              "mutable": true
             }
           }
         }
       }
     },
-    "redis": {
-      "category": "advanced",
+    "image": {
       "type": "object",
+      "category": "runtime",
+      "description": "Superset container image, shared by the web node, the Celery worker/beat/flower pods and the init Job",
       "properties": {
-        "enabled": { "type": "boolean", "enum": [true] }
+        "repository": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Image repository for Superset. Change it to pull from a private mirror. Must not be empty",
+          "default": "apachesuperset.docker.scarf.sh/apache/superset",
+          "mutable": true
+        },
+        "tag": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Superset version to run, e.g. 4.1.1. Raising this upgrades Superset; the init Job runs the database migrations on the next install/upgrade. Must not be empty - it falls back to appVersion \"1.0\", which is not a published tag",
+          "default": "4.1.1",
+          "mutable": true
+        }
       }
+    },
+    "init": {
+      "type": "object",
+      "category": "runtime",
+      "description": "One-off setup Job: database migrations, roles, and the first admin user",
+      "properties": {
+        "createAdmin": {
+          "type": "boolean",
+          "description": "Create the first admin account on install. Turn off once the account exists, or if you log in through an external identity provider",
+          "default": true,
+          "mutable": true
+        },
+        "adminUser": {
+          "type": "object",
+          "description": "The first Superset admin account",
+          "properties": {
+            "username": {
+              "type": "string",
+              "description": "Login name for the first admin account",
+              "default": "admin",
+              "mutable": true
+            },
+            "password": {
+              "type": "string",
+              "description": "Password for the first admin account. The default is literally \"admin\" - change it before exposing Superset",
+              "default": "admin",
+              "mutable": true
+            },
+            "email": {
+              "type": "string",
+              "description": "Email address for the first admin account",
+              "default": "admin@superset.com",
+              "mutable": true
+            },
+            "firstname": {
+              "type": "string",
+              "description": "First name shown in the Superset UI for the admin account",
+              "default": "Superset",
+              "mutable": true
+            },
+            "lastname": {
+              "type": "string",
+              "description": "Last name shown in the Superset UI for the admin account",
+              "default": "Admin",
+              "mutable": true
+            }
+          }
+        }
+      },
+      "required": [
+        "createAdmin",
+        "adminUser"
+      ]
+    },
+    "supersetWorker": {
+      "type": "object",
+      "category": "runtime",
+      "properties": {
+        "replicaCount": {
+          "type": "integer",
+          "description": "Number of Celery worker pods. Workers run scheduled reports, alerts and long SQL Lab queries, so raise this when charts queue up",
+          "default": 1,
+          "mutable": true
+        }
+      }
+    },
+    "supersetCeleryBeat": {
+      "type": "object",
+      "category": "runtime",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Run the Celery beat scheduler. Required for scheduled reports and alerts to actually fire; keep exactly one of these",
+          "default": false,
+          "mutable": true
+        }
+      }
+    },
+    "supersetCeleryFlower": {
+      "type": "object",
+      "category": "runtime",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Run Flower, a web dashboard on port 5555 for inspecting the Celery queue. Useful for debugging stuck reports",
+          "default": false,
+          "mutable": true
+        }
+      }
+    },
+    "resources": {
+      "type": "object",
+      "category": "compute",
+      "description": "CPU/memory applied to every Superset pod (web, worker, beat, flower, init Job)",
+      "properties": {
+        "requests": {
+          "type": "object",
+          "description": "Guaranteed CPU/memory per Superset pod",
+          "properties": {
+            "cpu": {
+              "type": "string",
+              "description": "CPU reserved for each Superset pod, e.g. 250m",
+              "default": "250m",
+              "mutable": true
+            },
+            "memory": {
+              "type": "string",
+              "description": "Memory reserved for each Superset pod, e.g. 512Mi",
+              "default": "512Mi",
+              "mutable": true
+            }
+          }
+        },
+        "limits": {
+          "type": "object",
+          "description": "Hard CPU/memory ceiling per Superset pod",
+          "properties": {
+            "cpu": {
+              "type": "string",
+              "description": "CPU ceiling for each Superset pod, e.g. 1000m",
+              "default": "1000m",
+              "mutable": true
+            },
+            "memory": {
+              "type": "string",
+              "description": "Memory ceiling for each Superset pod. Below roughly 1Gi the web pod is OOM-killed while booting, because it pip-installs its database drivers before gunicorn starts",
+              "default": "2Gi",
+              "mutable": true
+            }
+          }
+        }
+      },
+      "required": [
+        "requests",
+        "limits"
+      ]
+    },
+    "supersetNode": {
+      "type": "object",
+      "category": "advanced",
+      "description": "Superset application configuration",
+      "properties": {
+        "replicaCount": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of Superset web pods. The web tier holds no local state (metadata is in PostgreSQL, cache and celery in Redis), so this is safe to raise for more concurrent users. With autoscaling enabled this is the autoscaler's minimum, since the autoscaler owns the replica count",
+          "default": 1,
+          "mutable": true
+        },
+        "autoscaling": {
+          "type": "object",
+          "description": "Horizontal autoscaling for the Superset web pods",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Autoscale the web tier. When on, the autoscaler owns the replica count and supersetNode.replicaCount becomes its minimum; when off, the pod count is exactly supersetNode.replicaCount",
+              "default": true,
+              "mutable": true
+            },
+            "maxReplicas": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Upper bound on web pods when autoscaling is on. Must be at least supersetNode.replicaCount: a lower value renders an autoscaler the API server rejects with \"spec.maxReplicas: Invalid value: must be greater than or equal to minReplicas\", which fails the upgrade",
+              "default": 15,
+              "mutable": true
+            },
+            "targetCPUUtilizationPercentage": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "description": "Scale up once average CPU exceeds this percentage of the CPU request",
+              "default": 80,
+              "mutable": true
+            },
+            "targetMemoryUtilizationPercentage": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "description": "Scale up once average memory exceeds this percentage of the memory request. Superset's web memory sits in the hundreds of MiB even when idle, so raise this (or the memory request) if the tier scales up with no traffic",
+              "default": 80,
+              "mutable": true
+            }
+          }
+        },
+        "secretKey": {
+          "type": "string",
+          "description": "Flask SECRET_KEY. Leave empty and the chart generates one on install and reuses it on every upgrade. It signs login sessions AND encrypts the database passwords Superset stores, so changing it logs everyone out and makes saved database connections unreadable",
+          "default": "",
+          "mutable": true
+        },
+        "featureFlags": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "boolean"
+          },
+          "description": "Superset feature flags, as FLAG_NAME: true, e.g. {\"ALERT_REPORTS\": true, \"DASHBOARD_RBAC\": true}. Values must be booleans",
+          "default": {},
+          "mutable": true
+        },
+        "config": {
+          "type": "object",
+          "description": "Extra settings written into superset_config.py, as SETTING: value, e.g. {\"ROW_LIMIT\": 5000, \"SUPERSET_WEBSERVER_TIMEOUT\": 300}",
+          "default": {},
+          "mutable": true
+        },
+        "connections": {
+          "type": "object",
+          "description": "Database and Redis endpoints. Only used when the bundled postgres / redis subcharts are turned off - with them on, the chart wires these automatically",
+          "properties": {
+            "db_host": {
+              "type": "string",
+              "description": "PostgreSQL host for Superset metadata. Always used, including with the bundled postgres - leave it at the default in that case, and point it at your own server when postgres.enabled is false",
+              "default": "{{ .Release.Name }}-postgres",
+              "mutable": true
+            },
+            "db_port": {
+              "type": "string",
+              "description": "PostgreSQL port, normally 5432",
+              "default": "5432",
+              "mutable": true
+            },
+            "db_name": {
+              "type": "string",
+              "description": "Name of the Superset metadata database",
+              "default": "superset",
+              "mutable": true
+            },
+            "db_user": {
+              "type": "string",
+              "description": "PostgreSQL user. Only read when the bundled postgres is turned off (with it on, the chart uses the credentials that subchart generates)",
+              "default": "superset_user",
+              "mutable": true
+            },
+            "db_pass": {
+              "type": "string",
+              "description": "PostgreSQL password. Only read when the bundled postgres is turned off",
+              "default": "superset",
+              "mutable": true
+            },
+            "redis_host": {
+              "type": "string",
+              "description": "Redis host. Always used, including with the bundled redis - leave it at the default in that case, and point it at your own server when redis.enabled is false. Supports Helm templating, e.g. {{ .Release.Name }}-redis-headless-service",
+              "default": "{{ .Release.Name }}-redis-headless-service",
+              "mutable": true
+            },
+            "redis_port": {
+              "type": "string",
+              "description": "Redis port, normally 6379",
+              "default": "6379",
+              "mutable": true
+            },
+            "redis_user": {
+              "type": "string",
+              "description": "Redis username, if your Redis uses ACLs. Usually empty",
+              "default": "",
+              "mutable": true
+            },
+            "redis_password": {
+              "type": "string",
+              "description": "Redis password. Leave empty for an unauthenticated Redis",
+              "default": "",
+              "mutable": true
+            },
+            "redis_cache_db": {
+              "type": "string",
+              "description": "Redis database number used for the query/chart cache",
+              "default": "1",
+              "mutable": true
+            },
+            "redis_celery_db": {
+              "type": "string",
+              "description": "Redis database number used for the Celery queue. Keep it different from the cache database",
+              "default": "0",
+              "mutable": true
+            },
+            "redis_ssl": {
+              "type": "object",
+              "description": "TLS for the Redis connection",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "description": "Connect to Redis over TLS (rediss://)",
+                  "default": false,
+                  "mutable": true
+                },
+                "ssl_cert_reqs": {
+                  "type": "string",
+                  "description": "How strictly the Redis server certificate is checked: CERT_NONE, CERT_OPTIONAL or CERT_REQUIRED",
+                  "default": "CERT_NONE",
+                  "mutable": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "postgres": {
+      "type": "object",
+      "category": "advanced",
+      "description": "Bundled PostgreSQL metadata database (zopdev/postgres subchart)",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Deploy the bundled PostgreSQL for Superset metadata. Turn off to use your own database, then set the db_host / db_port / db_user / db_pass / db_name fields below",
+          "default": true,
+          "mutable": true
+        },
+        "diskSize": {
+          "type": "string",
+          "description": "Disk for the bundled PostgreSQL, e.g. 10Gi. Fixed at install time - a live volume cannot be resized afterwards",
+          "default": "10Gi",
+          "mutable": true,
+          "editDisabled": true
+        }
+      },
+      "required": [
+        "enabled"
+      ]
+    },
+    "redis": {
+      "type": "object",
+      "category": "advanced",
+      "description": "Bundled Redis, used for the cache and as the Celery broker (zopdev/redis subchart)",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Deploy the bundled Redis used for caching and the Celery queue. Turn off to use your own, then set the redis_host / redis_port / redis_password fields below",
+          "default": true,
+          "mutable": true
+        },
+        "diskSize": {
+          "type": "string",
+          "description": "Disk for the bundled Redis, e.g. 10Gi. Fixed at install time - a live volume cannot be resized afterwards",
+          "default": "10Gi",
+          "mutable": true,
+          "editDisabled": true
+        }
+      },
+      "required": [
+        "enabled"
+      ]
     }
-  }
+  },
+  "title": "Apache Superset Helm Chart Values"
 }

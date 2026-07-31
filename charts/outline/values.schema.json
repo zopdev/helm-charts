@@ -2,58 +2,164 @@
   "$schema": "https://json-schema.org/draft-07/schema#",
   "type": "object",
   "properties": {
-    "postgres": {
-      "category": "advanced",
+    "service": {
       "type": "object",
+      "category": "runtime",
+      "description": "The Outline deployment itself",
       "properties": {
-        "services": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "name": { "type": "string", "enum": ["outline"] },
-              "database": { "type": "string", "enum": ["outline"] }
+        "env": {
+          "type": "object",
+          "description": "Environment the Outline container runs with",
+          "properties": {
+            "URL": {
+              "type": "string",
+              "description": "Public address Outline is reached at, e.g. https://wiki.example.com. Outline checks this is a real URL on startup and refuses to boot if it is empty, and it is also what goes into share links, invite emails and OAuth redirects - so a wrong value gives working pods and broken links",
+              "default": "http://localhost:3000",
+              "mutable": true
+            },
+            "SECRET_KEY": {
+              "type": "string",
+              "description": "Encrypts session cookies and stored credentials. The shipped default is a PUBLIC placeholder - generate your own with `openssl rand -hex 32`. Changing it later signs every user out",
+              "default": "106ff5ec40e340972540fefd770dad24db868deb68bec9d2556365f2ff66ed99",
+              "mutable": true
+            },
+            "UTILS_SECRET": {
+              "type": "string",
+              "description": "Authenticates Outline's internal utility endpoints. The shipped default is a PUBLIC placeholder - generate your own with `openssl rand -hex 32`",
+              "default": "45aec6e6b7340f3c8e5b34d533f9d63fd72a2830ee35d1345cb144d484205ba2",
+              "mutable": true
+            },
+            "FORCE_HTTPS": {
+              "type": "boolean",
+              "description": "Redirect http to https and mark cookies secure. Turn this on once Outline is behind TLS; leaving it on without TLS makes the login loop",
+              "default": false,
+              "mutable": true
+            }
+          },
+          "required": [
+            "URL",
+            "SECRET_KEY",
+            "UTILS_SECRET"
+          ]
+        },
+        "image": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Outline container image, e.g. outlinewiki/outline:0.84. Raising the tag upgrades Outline on the next rollout",
+          "default": "outlinewiki/outline:0.84",
+          "mutable": true
+        },
+        "nginx": {
+          "type": "object",
+          "description": "nginx Ingress for Outline. Created only when host is set",
+          "properties": {
+            "host": {
+              "type": "string",
+              "description": "Hostname to serve Outline on, e.g. wiki.example.com. Leave empty and no Ingress is created (reach it by port-forwarding the Service instead). Set service.env.URL to match",
+              "default": "",
+              "mutable": true
+            },
+            "tlsHost": {
+              "type": "string",
+              "description": "Hostname to put in the TLS certificate. Defaults to the host above; set it only when the certificate is issued for a different name",
+              "default": "",
+              "mutable": true
+            },
+            "tlsSecretName": {
+              "type": "string",
+              "description": "Name of an existing Kubernetes TLS secret holding the certificate for that host",
+              "default": "",
+              "mutable": true
             }
           }
+        },
+        "minCPU": {
+          "type": "string",
+          "description": "CPU reserved for each Outline pod, e.g. 250m",
+          "default": "250m",
+          "mutable": true
+        },
+        "minMemory": {
+          "type": "string",
+          "description": "Memory reserved for each Outline pod, e.g. 1000Mi. Outline is a Node app and needs roughly 1Gi to start",
+          "default": "1000Mi",
+          "mutable": true
+        },
+        "maxCPU": {
+          "type": "string",
+          "description": "CPU ceiling for each Outline pod, e.g. 500m",
+          "default": "500m",
+          "mutable": true
+        },
+        "maxMemory": {
+          "type": "string",
+          "description": "Memory ceiling for each Outline pod, e.g. 1500Mi",
+          "default": "1500Mi",
+          "mutable": true
+        },
+        "minReplicas": {
+          "type": "integer",
+          "description": "Smallest number of Outline pods. Keep at 1 unless the storage below is switched to a ReadWriteMany volume - several pods cannot share a ReadWriteOnce disk",
+          "default": 1,
+          "mutable": true
+        },
+        "volumeMounts": {
+          "type": "object",
+          "description": "Storage attached to the Outline container",
+          "properties": {
+            "pvc": {
+              "type": "array",
+              "description": "Disks mounted into Outline. The default entry gives /data a 10Gi volume, which is where FILE_STORAGE=local keeps every uploaded image and attachment. Set \"storage\" to change the size, at install time only - a live volume cannot be resized",
+              "default": [
+                {
+                  "name": "outline-storage",
+                  "mountPath": "/data",
+                  "subPath": "",
+                  "storage": "10Gi"
+                }
+              ],
+              "mutable": true,
+              "editDisabled": true
+            }
+          }
+        }
+      },
+      "required": [
+        "image",
+        "minCPU",
+        "minMemory",
+        "maxCPU",
+        "maxMemory"
+      ]
+    },
+    "postgres": {
+      "type": "object",
+      "category": "advanced",
+      "description": "Bundled PostgreSQL holding documents, users and collections",
+      "properties": {
+        "diskSize": {
+          "type": "string",
+          "description": "Disk for the bundled PostgreSQL, e.g. 10Gi. Fixed at install time - a live volume cannot be resized afterwards",
+          "default": "10Gi",
+          "mutable": true,
+          "editDisabled": true
         }
       }
     },
     "redis": {
+      "type": "object",
       "category": "advanced",
-      "type": "object",
+      "description": "Bundled Redis used for websockets, the job queue and rate limits",
       "properties": {
-        "services": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "name": { "type": "string", "enum": ["outline"] },
-              "database": { "type": "string", "enum": ["outline"] }
-            }
-          }
-        }
-      }
-    },
-    "service": {
-      "category": "compute",
-      "type": "object",
-      "properties": {
-        "name": { "type": "string", "enum": ["outline"] },
-        "image": { "type": "string", "enum": ["outlinewiki/outline:0.84"] },
-        "minCPU": { "type": "string" ,"default": "250m", "mutable": true},
-        "minMemory": { "type": "string","default": "1000Mi", "mutable": true },
-        "maxCPU": { "type": "string","default": "500m", "mutable": true },
-        "maxMemory": { "type": "string","default": "1500Mi", "mutable": true
-        },
-        "minReplicas": { "type": "integer", "enum": [1] },
-        "env": {
-          "type": "object",
-          "properties": {
-            "URL": {"type": "string", "mutable": true}
-          },
-          "required": ["URL"]
+        "diskSize": {
+          "type": "string",
+          "description": "Disk for the bundled Redis, e.g. 10Gi. Fixed at install time - a live volume cannot be resized afterwards",
+          "default": "10Gi",
+          "mutable": true,
+          "editDisabled": true
         }
       }
     }
-  }
+  },
+  "title": "Outline Helm Chart Values"
 }

@@ -1,15 +1,28 @@
+# PostgreSQL backing store (zopdev/postgres subchart). Outline keeps documents,
+# users and collections here. The subchart emits a per-database ConfigMap + Secret
+# carrying DB_* and DATABASE_URL, pulled in via service.datastores.postgres below.
 postgres:
+  diskSize: "10Gi"
   services:
     - name: "outline"
       database: "outline"
+# Redis (zopdev/redis subchart), used for websockets, the job queue and rate limits.
 redis:
+  diskSize: "10Gi"
   services:
     - name: "outline"
       database: "outline"
 
 
 service:
-  name: outline
+  # NOT "outline". The service subchart names its PrometheusRule after this value and the
+  # postgres subchart names its own after the release; the datastore ConfigMap naming in
+  # charts/service forces the release to be called "outline", so both would land on the
+  # name "outline" and helm refuses two objects of one kind+name:
+  #   Error: prometheusrules.monitoring.coreos.com "outline" already exists
+  # Distinguishing the names here is the same mitigation wordpress uses, and unlike
+  # switching the alerts off it keeps outline's own availability alerting.
+  name: outline-app
   image: "outlinewiki/outline:0.84"
   minCPU: "250m"
   minMemory: "1000Mi"
@@ -18,24 +31,33 @@ service:
   minReplicas: 1
 
   nginx:
-    host : 
+    # Hostname Outline is served on. Empty means no Ingress is created.
+    host: ""
     annotations:
       kubernetes.io/ingress.class: "nginx"
       nginx.ingress.kubernetes.io/auth-realm: ''
       nginx.ingress.kubernetes.io/auth-secret: ''
       nginx.ingress.kubernetes.io/auth-type: ''
-    tlsHost : 
-    tlsSecretName: 
+    tlsHost: ""
+    tlsSecretName: ""
 
   env:
-    SECRET_KEY: 106ff5ec40e340972540fefd770dad24db868deb68bec9d2556365f2ff66ed99 # Replace with a hex-encoded 32-byte random key. You should use `openssl rand -hex 32`
-    UTILS_SECRET: 45aec6e6b7340f3c8e5b34d533f9d63fd72a2830ee35d1345cb144d484205ba2 # Replace with a unique random key. You could still use `openssl rand -hex 32`
-    FILE_STORAGE : local
+    # These two defaults are PLACEHOLDERS that ship in a public chart, so every
+    # install that leaves them alone shares the same keys. Replace both before
+    # putting anything real in Outline: `openssl rand -hex 32`.
+    # SECRET_KEY encrypts session cookies and at-rest fields; changing it later
+    # invalidates every session.
+    SECRET_KEY: 106ff5ec40e340972540fefd770dad24db868deb68bec9d2556365f2ff66ed99
+    UTILS_SECRET: 45aec6e6b7340f3c8e5b34d533f9d63fd72a2830ee35d1345cb144d484205ba2
+    FILE_STORAGE: local
     FORCE_HTTPS: false
     PGSSLMODE: disable
     PORT: 3000
-    FILE_STORAGE_LOCAL_ROOT_DIR : /data
-    URL: ""
+    FILE_STORAGE_LOCAL_ROOT_DIR: /data
+    # Outline validates URL as a real URL on boot and exits when it is empty, so a
+    # default install has to carry a usable one. This value is also what Outline puts
+    # in share links and OAuth redirects, so set it to the public address in production.
+    URL: "http://localhost:3000"
 
   datastores:
     postgres:
@@ -45,8 +67,25 @@ service:
       - datastore: outline
         database: outline
 
-  heartbeatURL: /
-  
+  # Kept ON. The PrometheusRule name collision that used to force this off is resolved by
+  # service.name above, so outline keeps its own availability alerting instead of trading
+  # it away - the release now renders two distinctly named rules, "outline" (postgres) and
+  # "outline-app" (service).
+  alerts:
+    enabled: true
+
+  # MUST NOT be "/". With FORCE_HTTPS=true (an exposed, mutable field, and the normal
+  # setting once Outline is served over TLS) Outline answers "/" with a 301 to https://,
+  # and the kubelet FOLLOWS a probe redirect - to port 443, where nothing listens:
+  #   Liveness probe failed: Get "https://10.244.1.39/": dial tcp 10.244.1.39:443:
+  #     connect: connection refused
+  #   Container outline failed liveness probe, will be restarted
+  # so the pod CrashLoops forever and setting FORCE_HTTPS from the UI would brick the
+  # release. Outline exempts /_health from the redirect (verified in-pod: "/" -> 301,
+  # "/_health" -> 200) and it is a purpose-built health endpoint, so it is the correct
+  # probe target with FORCE_HTTPS either on or off.
+  heartbeatURL: /_health
+
   httpPort: 3000
 
   livenessProbe:
@@ -63,7 +102,12 @@ service:
     timeoutSeconds: 5
     failureThreshold: 3
 
+  # FILE_STORAGE=local writes every uploaded image and attachment under /data.
+  # That used to be an emptyDir, which discards all of it on any pod restart, so it
+  # is a PersistentVolumeClaim (created by the service subchart) instead.
   volumeMounts:
-    emptyDir:
+    pvc:
       - name: outline-storage
         mountPath: /data
+        subPath: ""
+        storage: "10Gi"

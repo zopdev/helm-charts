@@ -8,7 +8,18 @@ metadata:
     chart: {{ template "superset.chart" . }}
     release: {{ .Release.Name }}
 spec:
-  replicas: 1
+{{- if not .Values.supersetNode.autoscaling.enabled }}
+  {{- /* omitted when an HPA targets this Deployment: it owns spec.replicas, and setting
+      both makes helm and the HPA overwrite each other on every upgrade.
+
+      ONE-TIME CAVEAT for releases that already exist: their live Deployment has
+      spec.replicas set, so helm's three-way merge sees the field in the old manifest and
+      absent in the new one and patches it out. The API server then applies the Deployment
+      default of 1 until the HPA's next reconcile, so anything the HPA had scaled above 1
+      dips briefly during that first upgrade. Self-correcting, and only on the first
+      upgrade after this change lands. */}}
+  replicas: {{ .Values.supersetNode.replicaCount }}
+{{- end }}
   selector:
     matchLabels:
     {{- include "supersetNode.selectorLabels" . | nindent 6 }}
@@ -38,7 +49,7 @@ spec:
             - dockerize -wait "tcp://$DB_HOST:$DB_PORT" -timeout 120s
       containers:
         - name: {{ .Chart.Name }}
-          image: "apachesuperset.docker.scarf.sh/apache/superset:4.1.1"
+          image: {{ include "superset.image" . | quote }}
           imagePullPolicy: IfNotPresent
           command:
             - "/bin/sh"
@@ -51,13 +62,7 @@ spec:
             - name: {{ $key | quote}}
               value: {{ $value | quote }}
             {{- end }}
-            - name: "DB_PASS"
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Release.Name }}-postgres-root-secret
-                  key: postgres-password
-            - name: "DB_USER"
-              value: postgres
+            {{- include "superset.dbEnv" . | nindent 12 }}
           envFrom:
             - secretRef:
                 name: {{ template "superset.fullname" . }}-env
@@ -98,12 +103,7 @@ spec:
             periodSeconds: 15
             successThreshold: 1
           resources:
-            requests:
-              cpu: 250m
-              memory: 250Mi
-            limits:
-              cpu: 500m
-              memory: 500Mi
+            {{- toYaml .Values.resources | nindent 12 }}
       volumes:
         - name: superset-config
           secret:

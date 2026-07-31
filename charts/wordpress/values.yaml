@@ -1,10 +1,24 @@
+# MySQL backing store (zopdev/mysql subchart). WordPress keeps posts, users and
+# settings here. The subchart emits a per-database ConfigMap + Secret carrying
+# DB_HOST / DB_PORT / DB_NAME / DB_USER / DB_PASSWORD, which the WORDPRESS_DB_*
+# entries under service.env reference with $(VAR).
 mysql:
+  diskSize: "10Gi"
   services:
     - name: wordpress
       database: wordpress
 
 service:
-  name: wordpress
+  # NOT "wordpress". The service subchart names its PrometheusRule after this value
+  # and the mysql subchart names its own after the release; the datastore ConfigMap
+  # naming in charts/service forces the release to be called "wordpress", so both
+  # would land on the name "wordpress" and helm refuses to install the release:
+  #   Error: 1 error occurred: * prometheusrules.monitoring.coreos.com "wordpress" already exists
+  # service 0.0.17 has no alerts on/off switch (that arrives in 0.0.30, which no
+  # longer expands $(VAR) - see Chart.yaml), and mysql's rule cannot be gated
+  # either, so distinguishing the two names here is the only fix available inside
+  # this chart. charts/service and charts/mysql are shared and out of scope to edit.
+  name: wordpress-app
   image: wordpress:php8.4
   minCPU: "250m"
   minMemory: "1000Mi"
@@ -14,22 +28,66 @@ service:
   maxReplicas: 1
 
   nginx:
+    # Hostname the site is served on. Empty means no Ingress is created.
+    host: ""
     annotations:
       kubernetes.io/ingress.class: "nginx"
       nginx.ingress.kubernetes.io/auth-realm: ''
       nginx.ingress.kubernetes.io/auth-secret: ''
       nginx.ingress.kubernetes.io/auth-type: ''
+    tlsHost: ""
+    tlsSecretName: ""
 
   env:
+    # $(VAR) is expanded by the kubelet against the MySQL ConfigMap/Secret that
+    # the same container pulls in via envFrom. It only works because the service
+    # chart renders these as container `env:` entries - see the note on the
+    # service dependency version in Chart.yaml.
     WORDPRESS_DB_HOST: "$(DB_HOST):$(DB_PORT)"
     WORDPRESS_DB_USER: "$(DB_USER)"
     WORDPRESS_DB_PASSWORD: "$(DB_PASSWORD)"
     WORDPRESS_DB_NAME: "$(DB_NAME)"
+    # Table-name prefix. Two WordPress installs can share one database if they
+    # use different prefixes.
+    WORDPRESS_TABLE_PREFIX: "wp_"
+    # Set to 1 to turn on WP_DEBUG. Empty values are dropped, so the constant is
+    # simply not defined by default.
+    WORDPRESS_DEBUG: ""
+    # Raw PHP appended to wp-config.php. This is where the site URL is pinned, e.g.
+    #   define('WP_HOME','https://blog.example.com'); define('WP_SITEURL','https://blog.example.com');
+    WORDPRESS_CONFIG_EXTRA: ""
 
   datastores:
     mysql:
       - datastore: wordpress
         database: wordpress
-  
 
   httpPort: 80
+
+  # Gate traffic on the pod actually serving. This matters BECAUSE of the PVC below: on
+  # first boot the entrypoint copies the whole WordPress tree into the empty volume
+  # ("WordPress not found in /var/www/html - copying now..."), which takes tens of seconds,
+  # and without a probe the Service routes to the pod for that entire window.
+  # service 0.0.17 needs both the enable flag and a non-empty heartbeatURL to render one.
+  # "/" is safe here: WordPress answers it with a 302 to the install wizard on the same
+  # host:80, and a probe that follows that redirect still lands on a listening port -
+  # unlike outline, where a 301 to https:// pointed the kubelet at a closed :443.
+  heartbeatURL: /
+  readinessProbe:
+    enable: true
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    # ~2.5 min of grace: the first-boot copy is slow and must not fail the rollout.
+    failureThreshold: 30
+  # Liveness is deliberately NOT enabled: a slow first-boot copy would trip it and restart
+  # the pod mid-copy, turning a slow start into a loop.
+
+  # WordPress writes uploads, themes and plugins under /var/www/html, so without a
+  # volume every restart loses them. The service subchart creates this PVC.
+  volumeMounts:
+    pvc:
+      - name: wordpress-data
+        mountPath: /var/www/html
+        subPath: ""
+        storage: "10Gi"

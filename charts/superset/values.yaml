@@ -1,24 +1,61 @@
 service:
   nginx:
-    host :
-    tlshost :
-    tlsSecretname :
+    host: ""
+    tlshost: ""
+    tlsSecretname: ""
 
+# Superset container image, shared by the web node, the Celery worker/beat/flower
+# pods and the init Job.
+image:
+  repository: apachesuperset.docker.scarf.sh/apache/superset
+  tag: "4.1.1"
+
+# Applied to every Superset pod. The previous 500Mi limit OOM-killed the web
+# node during boot (run-server.sh pip-installs psycopg2 / bigquery / elasticsearch
+# drivers before gunicorn starts), so the limit is now 2Gi while the request stays
+# small enough to schedule on a modest node.
 resources:
   requests:
     cpu: 250m
-    memory: 250Mi 
+    memory: 512Mi
   limits:
-    cpu: 500m
-    memory: 500Mi
+    cpu: 1000m
+    memory: 2Gi
 
 # SuperSet Configs
 supersetNode:
+  # Number of Superset web pods. Safe to scale: the web tier keeps no local state - metadata
+  # lives in PostgreSQL and cache/celery in Redis, and this Deployment mounts no PVC.
+  # (Only supersetWorker was scalable before; the web Deployment hardcoded replicas: 1.)
+  #
+  # With autoscaling on (the default) this is the HPA's FLOOR - minReplicas - because an
+  # HPA owns spec.replicas outright: writing replicas into the Deployment while an HPA
+  # targets it just makes helm and the HPA overwrite each other on every upgrade.
+  replicaCount: 1
+
+  autoscaling:
+    # The HPA used to be unconditional with minReplicas hardcoded to 1, so any replica
+    # count set here was reconciled straight back. It is now gated and driven by these
+    # values; defaults reproduce the previous behaviour exactly (1..15, 80%/80%).
+    enabled: true
+    # MUST be >= replicaCount above. JSON Schema cannot express a cross-field constraint, so
+    # nothing blocks maxReplicas < replicaCount at render time; the API server then rejects
+    # the object ("spec.maxReplicas: Invalid value: must be greater than or equal to
+    # minReplicas") and the upgrade fails. It fails loudly rather than corrupting anything.
+    maxReplicas: 15
+    targetCPUUtilizationPercentage: 80
+    # NOTE: this is a percentage of resources.requests.memory, and Superset's web RSS sits
+    # in the hundreds of MiB even when idle - at requests.memory 512Mi, 80% is ~410Mi, so a
+    # low request can peg the tier at maxReplicas. Raise the request or this target if the
+    # web tier scales up with no traffic.
+    targetMemoryUtilizationPercentage: 80
+
   connections:
     # Redis Configs
     redis_host: "{{ .Release.Name }}-redis-headless-service"
     redis_port: "6379"
     redis_user: ""
+    redis_password: ""
     redis_cache_db: "1"
     redis_celery_db: "0"
     redis_ssl:
@@ -32,11 +69,20 @@ supersetNode:
     db_pass: superset
     db_name: superset
 
+  # Flask SECRET_KEY. Leave empty to generate one on first install and reuse it on
+  # every later upgrade; it encrypts session cookies AND the database-connection
+  # passwords stored in Superset's metadata DB, so changing it logs everyone out
+  # and makes saved connections undecryptable.
+  secretKey: ""
+
   # Feature flags configuration
   featureFlags: {}
 
   # Additional Superset configurations
   config: {}
+
+supersetWorker:
+  replicaCount: 1
 
 supersetCeleryBeat:
   enabled: false
@@ -77,11 +123,14 @@ init:
 
 postgres:
   enabled: true
-  postgresRootPassword: "superset"
+  diskSize: "10Gi"
+  # postgres v0.0.12 generates the root password and every services[] user/password
+  # at random, so there is nothing to configure here beyond the database name. Superset
+  # connects as the root user (see the superset.dbEnv helper).
   services:
-    - name : superset
-      password : superset
-      database : superset
+    - name: superset
+      database: superset
 
 redis:
   enabled: true
+  diskSize: "10Gi"
