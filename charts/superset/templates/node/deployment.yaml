@@ -10,7 +10,14 @@ metadata:
 spec:
 {{- if not .Values.supersetNode.autoscaling.enabled }}
   {{- /* omitted when an HPA targets this Deployment: it owns spec.replicas, and setting
-      both makes helm and the HPA overwrite each other on every upgrade */}}
+      both makes helm and the HPA overwrite each other on every upgrade.
+
+      ONE-TIME CAVEAT for releases that already exist: their live Deployment has
+      spec.replicas set, so helm's three-way merge sees the field in the old manifest and
+      absent in the new one and patches it out. The API server then applies the Deployment
+      default of 1 until the HPA's next reconcile, so anything the HPA had scaled above 1
+      dips briefly during that first upgrade. Self-correcting, and only on the first
+      upgrade after this change lands. */}}
   replicas: {{ .Values.supersetNode.replicaCount }}
 {{- end }}
   selector:

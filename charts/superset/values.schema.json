@@ -215,7 +215,7 @@
             "maxReplicas": {
               "type": "integer",
               "minimum": 1,
-              "description": "Upper bound on web pods when autoscaling is on",
+              "description": "Upper bound on web pods when autoscaling is on. Must be at least supersetNode.replicaCount: a lower value renders an autoscaler the API server rejects with \"spec.maxReplicas: Invalid value: must be greater than or equal to minReplicas\", which fails the upgrade",
               "default": 15,
               "mutable": true
             },

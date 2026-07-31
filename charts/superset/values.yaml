@@ -38,6 +38,10 @@ supersetNode:
     # count set here was reconciled straight back. It is now gated and driven by these
     # values; defaults reproduce the previous behaviour exactly (1..15, 80%/80%).
     enabled: true
+    # MUST be >= replicaCount above. JSON Schema cannot express a cross-field constraint, so
+    # nothing blocks maxReplicas < replicaCount at render time; the API server then rejects
+    # the object ("spec.maxReplicas: Invalid value: must be greater than or equal to
+    # minReplicas") and the upgrade fails. It fails loudly rather than corrupting anything.
     maxReplicas: 15
     targetCPUUtilizationPercentage: 80
     # NOTE: this is a percentage of resources.requests.memory, and Superset's web RSS sits
