@@ -49,78 +49,90 @@ data:
   DB_PASSWORD: {{ $password | b64enc }}
   DATABASE_URL: {{ printf "postgres://%s:%s@%s-postgres:5432/%s" $username $password $.Release.Name $service.database | b64enc }}
 ---
-apiVersion: v1
-kind: Pod
+apiVersion: batch/v1
+kind: Job
 metadata:
   name: postgres-{{ $.Release.Name }}-{{ $service.name }}-init-job
   namespace: {{ $.Release.Namespace }}
 spec:
-  containers:
-    - name: postgres-init-role
-      image: docker.io/bitnamilegacy/postgresql:{{ $.Values.version }}
-      command: ["/bin/bash"]
-      args:
-        - "-c"
-        - |
-          sleep 20
-          POSTGRES_PASSWORD="$PGPASSWORD"
-          psql -h {{ $.Release.Name }}-postgres -U postgres -c "
-            CREATE EXTENSION IF NOT EXISTS dblink;
-            DO \$\$
-            BEGIN
-              IF NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = '{{ $service.database }}') THEN
-                PERFORM dblink_exec(
-                  'host={{ $.Release.Name }}-postgres user=postgres password=$POSTGRES_PASSWORD',
-                  'CREATE DATABASE \"{{ $service.database }}\";'
-                );
-              END IF;
-            END
-            \$\$;
-          "
-          psql -h {{ $.Release.Name }}-postgres -U postgres -d {{ $service.database }} -c "
-            REVOKE ALL ON SCHEMA public FROM PUBLIC;
-            DO \$do\$
-            BEGIN
-              IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '{{ $username }}') THEN
-                CREATE USER \"{{ $username }}\" WITH ENCRYPTED PASSWORD '{{ $password }}';
+  # helm --wait (which the ZopDay installer always passes) requires every Pod it
+  # owns to reach Ready=True. A bare Pod that finishes its work reports
+  # Succeeded / Ready=False / PodCompleted and NEVER goes Ready, so --wait sat
+  # for its full timeout and --atomic then rolled back a release that had in
+  # fact installed correctly. A Job is the right kind for run-once work: helm
+  # tracks the Job's completion instead of pod readiness.
+  backoffLimit: 6
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      name: postgres-{{ $.Release.Name }}-{{ $service.name }}-init-job
+    spec:
+      containers:
+        - name: postgres-init-role
+          image: docker.io/bitnamilegacy/postgresql:{{ $.Values.version }}
+          command: ["/bin/bash"]
+          args:
+            - "-c"
+            - |
+              sleep 20
+              POSTGRES_PASSWORD="$PGPASSWORD"
+              psql -h {{ $.Release.Name }}-postgres -U postgres -c "
+                CREATE EXTENSION IF NOT EXISTS dblink;
+                DO \$\$
                 BEGIN
-                  GRANT CONNECT, CREATE ON DATABASE \"{{ $service.database }}\" TO \"{{ $username }}\";
-                EXCEPTION WHEN OTHERS THEN
-                  RAISE NOTICE 'Error granting database privileges: %', SQLERRM;
-                  RAISE;
-                END;
+                  IF NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = '{{ $service.database }}') THEN
+                    PERFORM dblink_exec(
+                      'host={{ $.Release.Name }}-postgres user=postgres password=$POSTGRES_PASSWORD',
+                      'CREATE DATABASE \"{{ $service.database }}\";'
+                    );
+                  END IF;
+                END
+                \$\$;
+              "
+              psql -h {{ $.Release.Name }}-postgres -U postgres -d {{ $service.database }} -c "
+                REVOKE ALL ON SCHEMA public FROM PUBLIC;
+                DO \$do\$
                 BEGIN
-                  GRANT CREATE, USAGE ON SCHEMA public TO \"{{ $username }}\";
-                EXCEPTION WHEN OTHERS THEN
-                  RAISE NOTICE 'Error granting schema privileges: %', SQLERRM;
-                  RAISE;
-                END;
-                BEGIN
-                  ALTER DEFAULT PRIVILEGES FOR USER postgres IN SCHEMA public
-                  GRANT INSERT, REFERENCES, SELECT, UPDATE, DELETE, TRUNCATE ON TABLES TO \"{{ $username }}\";
-                EXCEPTION WHEN OTHERS THEN
-                  RAISE NOTICE 'Error granting table privileges: %', SQLERRM;
-                  RAISE;
-                END;
-                BEGIN
-                  ALTER DEFAULT PRIVILEGES FOR USER postgres IN SCHEMA public
-                  GRANT SELECT, UPDATE ON SEQUENCES TO \"{{ $username }}\";
-                EXCEPTION WHEN OTHERS THEN
-                  RAISE NOTICE 'Error granting sequence privileges: %', SQLERRM;
-                  RAISE;
-                END;
-              ELSE
-                ALTER USER \"{{ $username }}\" PASSWORD '{{ $password }}';
-              END IF;
-            END
-            \$do\$;
-          "
-      env:
-        - name: PGPASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: {{ $.Release.Name }}-postgres-root-secret
-              key: postgres-password
-  restartPolicy: OnFailure
+                  IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '{{ $username }}') THEN
+                    CREATE USER \"{{ $username }}\" WITH ENCRYPTED PASSWORD '{{ $password }}';
+                    BEGIN
+                      GRANT CONNECT, CREATE ON DATABASE \"{{ $service.database }}\" TO \"{{ $username }}\";
+                    EXCEPTION WHEN OTHERS THEN
+                      RAISE NOTICE 'Error granting database privileges: %', SQLERRM;
+                      RAISE;
+                    END;
+                    BEGIN
+                      GRANT CREATE, USAGE ON SCHEMA public TO \"{{ $username }}\";
+                    EXCEPTION WHEN OTHERS THEN
+                      RAISE NOTICE 'Error granting schema privileges: %', SQLERRM;
+                      RAISE;
+                    END;
+                    BEGIN
+                      ALTER DEFAULT PRIVILEGES FOR USER postgres IN SCHEMA public
+                      GRANT INSERT, REFERENCES, SELECT, UPDATE, DELETE, TRUNCATE ON TABLES TO \"{{ $username }}\";
+                    EXCEPTION WHEN OTHERS THEN
+                      RAISE NOTICE 'Error granting table privileges: %', SQLERRM;
+                      RAISE;
+                    END;
+                    BEGIN
+                      ALTER DEFAULT PRIVILEGES FOR USER postgres IN SCHEMA public
+                      GRANT SELECT, UPDATE ON SEQUENCES TO \"{{ $username }}\";
+                    EXCEPTION WHEN OTHERS THEN
+                      RAISE NOTICE 'Error granting sequence privileges: %', SQLERRM;
+                      RAISE;
+                    END;
+                  ELSE
+                    ALTER USER \"{{ $username }}\" PASSWORD '{{ $password }}';
+                  END IF;
+                END
+                \$do\$;
+              "
+          env:
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Release.Name }}-postgres-root-secret
+                  key: postgres-password
+      restartPolicy: OnFailure
 ---
 {{- end }}

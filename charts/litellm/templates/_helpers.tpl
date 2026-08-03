@@ -34,6 +34,13 @@ set, otherwise the auto-generated <fullname>-masterkey secret.
 {{- end -}}
 
 {{/*
+Name of the chart-owned secret holding the provider API keys given in .Values.apiKeys.
+*/}}
+{{- define "litellm.apiKeysSecretName" -}}
+  {{- printf "%s-apikeys" (include "litellm.fullname" .) -}}
+{{- end -}}
+
+{{/*
 Name of the postgres subchart's per-database secret (carries DATABASE_URL).
 Derived from the first postgres.services entry so it stays in sync with the
 zopdev/postgres init-script-config-map naming convention.

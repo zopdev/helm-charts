@@ -7,7 +7,7 @@ metadata:
     {{- include "litellm.labels" . | nindent 4 }}
 spec:
 {{- if not .Values.autoscaling.enabled }}
-  replicas: 1
+  replicas: {{ .Values.replicaCount }}
 {{- end }}
   selector:
     matchLabels:
@@ -16,6 +16,8 @@ spec:
     metadata:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        # envFrom secrets are not hot-reloaded, so changing apiKeys must roll the pod.
+        checksum/apikeys: {{ include (print $.Template.BasePath "/secret-apikeys.yaml") . | sha256sum }}
       labels:
         {{- include "litellm.selectorLabels" . | nindent 8 }}
     spec:
@@ -35,6 +37,11 @@ spec:
             # DATABASE_URL (+ DB_USER/DB_PASSWORD) from the postgres subchart secret.
             - secretRef:
                 name: {{ include "litellm.postgresSecretName" . }}
+            {{- end }}
+            {{- if .Values.apiKeys }}
+            # Chart-owned provider API keys, so os.environ/<VAR> in proxy_config resolves.
+            - secretRef:
+                name: {{ include "litellm.apiKeysSecretName" . }}
             {{- end }}
             {{- range .Values.extraEnvFrom }}
             # When postgres.enabled=false, supply DATABASE_URL via one of these secrets.

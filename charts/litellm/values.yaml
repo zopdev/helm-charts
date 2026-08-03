@@ -26,6 +26,10 @@ storeModelInDB: true
 logLevel: INFO
 
 masterkey:
+  # Set the master key explicitly. Takes precedence over auto-generation, so the
+  # key is reproducible and can be handed to callers up front. Leave empty to let
+  # the chart generate one. Ignored when existingSecret is set.
+  value: ""
   # If set, this pre-created secret is used as-is for the proxy master key.
   # Otherwise a secret is auto-generated and preserved across upgrades.
   existingSecret: ""
@@ -35,6 +39,14 @@ metrics:
   # Renders a ServiceMonitor scraping LiteLLM's own /metrics on the proxy port.
   enabled: true
   scrapeInterval: 30s
+
+# Provider API keys managed by this chart. Each entry becomes a key in the
+# chart-owned <fullname>-apikeys Secret, mounted via envFrom, so a model declared
+# with api_key: os.environ/OPENAI_API_KEY resolves without pre-creating a secret
+# by hand. Values are stored in the release, so prefer extraEnvFrom when a secret
+# already exists or is managed by an external secrets operator.
+apiKeys: {}
+#  OPENAI_API_KEY: sk-...
 
 # Existing secrets that hold provider API keys (e.g. OPENAI_API_KEY). Each is
 # mounted via envFrom so keys referenced as os.environ/<VAR> in proxy_config resolve.
@@ -56,13 +68,26 @@ proxy_config:
   general_settings:
     master_key: os.environ/PROXY_MASTER_KEY
 
+# Sized so a default install boots without being OOM-killed. On start the
+# litellm-database image runs Prisma (a Node process) to apply migrations while the
+# Python proxy imports ~100 provider SDKs, so peak boot RSS sits well above the
+# steady state. LiteLLM's own guidance is a 1Gi floor with a 1.5Gi limit; upstream
+# production guidance is 4Gi per uvicorn worker. 1Gi requested / 2Gi limit clears
+# the boot spike and leaves headroom for LiteLLM's known slow RAM growth, while
+# still fitting a small single-node cluster.
 resources:
   requests:
-    cpu: 250m
-    memory: 512Mi
-  limits:
-    cpu: "1"
+    cpu: 500m
     memory: 1Gi
+  limits:
+    cpu: 2000m
+    memory: 2Gi
+
+# Fixed number of proxy pods. LiteLLM keeps no local state (keys/models live in the Secret,
+# ConfigMap and PostgreSQL), so this is safe to raise.
+# IGNORED when autoscaling.enabled is true: the Deployment then omits `replicas` entirely so
+# the HPA owns it, otherwise helm and the HPA would fight over the field on every upgrade.
+replicaCount: 1
 
 autoscaling:
   enabled: false

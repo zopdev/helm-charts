@@ -2,13 +2,13 @@ apiVersion: v2
 appVersion: "1.0"
 description: Helm chart for deploying WordPress app
 name: wordpress
-version: 0.0.8
+version: 0.0.9
 type: application
 icon: "https://storage.googleapis.com/zopdev-test-bucket/zop/files/originals/20241129/9f2ff083-4ba6-4494-91d4-c6c7c96c8ab0-download.jpeg"
 dependencies:
   - name: mysql
     repository: "https://helm.zop.dev"
-    version: 0.0.17
+    version: 0.0.18
   # PINNED to 0.0.17 ON PURPOSE - do not bump without re-checking the env wiring.
   # From 0.0.18 the service chart stopped rendering .Values.env as container `env:`
   # entries and moved them into a <name>-env-configmap consumed via envFrom. The

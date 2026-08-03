@@ -11,8 +11,9 @@
       "properties": {
         "repository": {
           "type": "string",
-          "description": "Image repository",
-          "default": "ghcr.io/berriai/litellm-database"
+          "description": "Image repository. Must stay a litellm *-database image: the plain litellm image has no Prisma and cannot run the DB migrations this chart relies on",
+          "default": "ghcr.io/berriai/litellm-database",
+          "mutable": true
         },
         "tag": {
           "type": "string",
@@ -22,12 +23,15 @@
         },
         "pullPolicy": {
           "type": "string",
-          "description": "Image pull policy",
+          "description": "Image pull policy (IfNotPresent, Always or Never)",
           "default": "IfNotPresent",
           "mutable": true
         }
       },
-      "required": ["repository", "tag"]
+      "required": [
+        "repository",
+        "tag"
+      ]
     },
     "service": {
       "type": "object",
@@ -36,29 +40,34 @@
       "properties": {
         "type": {
           "type": "string",
-          "description": "Service type",
-          "default": "ClusterIP"
+          "description": "Service type. ClusterIP keeps the proxy internal; LoadBalancer or NodePort exposes the admin UI and key-management API, so front it with auth first",
+          "default": "ClusterIP",
+          "mutable": true
         },
         "port": {
           "type": "integer",
-          "description": "Proxy port (also serves /metrics)",
-          "default": 4000
+          "description": "Port the proxy listens on and the Service publishes; also serves /metrics",
+          "default": 4000,
+          "mutable": true
         }
       },
-      "required": ["type", "port"]
+      "required": [
+        "type",
+        "port"
+      ]
     },
     "storeModelInDB": {
       "type": "boolean",
-      "category": "runtime",
       "description": "Persist models added through the admin UI / API into Postgres so they survive restarts",
       "default": true,
+      "category": "runtime",
       "mutable": true
     },
     "logLevel": {
       "type": "string",
-      "category": "runtime",
-      "description": "LITELLM_LOG level",
+      "description": "LITELLM_LOG level, e.g. DEBUG, INFO, WARNING or ERROR",
       "default": "INFO",
+      "category": "runtime",
       "mutable": true
     },
     "metrics": {
@@ -68,29 +77,38 @@
       "properties": {
         "enabled": {
           "type": "boolean",
-          "description": "Render the ServiceMonitor",
+          "description": "Render the ServiceMonitor that scrapes LiteLLM's /metrics",
           "default": true,
           "mutable": true
         },
         "scrapeInterval": {
           "type": "string",
-          "description": "ServiceMonitor scrape interval",
+          "description": "ServiceMonitor scrape interval, e.g. 30s",
           "default": "30s",
           "mutable": true
         }
       },
-      "required": ["enabled"]
+      "required": [
+        "enabled"
+      ]
     },
     "proxy_config": {
       "type": "object",
       "category": "runtime",
       "description": "Rendered verbatim to /etc/litellm/config.yaml; at least one model is required to boot",
-      "mutable": true,
       "properties": {
         "model_list": {
           "type": "array",
-          "description": "Models exposed by the proxy",
-          "mutable": true,
+          "description": "Models the proxy exposes. Each entry needs model_name plus litellm_params (model, api_key). Reference credentials as api_key: os.environ/<VAR> and supply <VAR> via apiKeys or extraEnvFrom. At least one model is required to boot",
+          "default": [
+            {
+              "model_name": "placeholder",
+              "litellm_params": {
+                "model": "openai/gpt-3.5-turbo",
+                "api_key": "os.environ/OPENAI_API_KEY"
+              }
+            }
+          ],
           "items": {
             "type": "object",
             "properties": {
@@ -101,39 +119,72 @@
                 "type": "object"
               }
             },
-            "required": ["model_name", "litellm_params"]
-          }
+            "required": [
+              "model_name",
+              "litellm_params"
+            ]
+          },
+          "mutable": true
         },
         "general_settings": {
           "type": "object",
-          "description": "LiteLLM general settings (e.g. master_key)"
+          "description": "LiteLLM general_settings block. Keep master_key: os.environ/PROXY_MASTER_KEY - dropping it leaves the admin UI and key-management API unauthenticated",
+          "default": {
+            "master_key": "os.environ/PROXY_MASTER_KEY"
+          },
+          "mutable": true
         }
       },
-      "required": ["model_list"]
+      "required": [
+        "model_list"
+      ]
     },
     "masterkey": {
       "type": "object",
       "category": "environment",
-      "description": "Proxy master key (PROXY_MASTER_KEY). Auto-generated and preserved across upgrades unless existingSecret is set",
+      "description": "Proxy master key (PROXY_MASTER_KEY) used to authenticate admin UI and key-management calls",
       "properties": {
+        "value": {
+          "type": "string",
+          "description": "Set the master key explicitly instead of letting the chart generate one, so it is reproducible and can be handed to callers up front. Ignored when existingSecret is set",
+          "default": "",
+          "mutable": true
+        },
         "existingSecret": {
           "type": "string",
-          "description": "Use a pre-created master-key secret instead of auto-generating one",
+          "description": "Use a pre-created master-key secret instead of a chart-managed one. Required for GitOps, where the lookup that preserves a generated key may not run",
           "default": "",
           "mutable": true
         },
         "secretKey": {
           "type": "string",
-          "description": "Key within the master-key secret",
-          "default": "PROXY_MASTER_KEY"
+          "description": "Key within the master-key secret to read. Must match the key name inside existingSecret when you bring your own",
+          "default": "PROXY_MASTER_KEY",
+          "mutable": true
         }
       },
-      "required": ["secretKey"]
+      "required": [
+        "secretKey"
+      ]
+    },
+    "apiKeys": {
+      "type": "object",
+      "description": "Provider API keys managed by this chart, as VAR: value (e.g. OPENAI_API_KEY: sk-...). Each becomes a key in a chart-owned secret mounted via envFrom, so api_key: os.environ/<VAR> resolves without creating a secret by hand",
+      "default": {},
+      "category": "environment",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "mutable": true
     },
     "extraEnvFrom": {
-      "type": ["array", "null"],
+      "type": [
+        "array",
+        "null"
+      ],
+      "description": "Existing secrets (by secretName) mounted via envFrom, e.g. holding provider API keys or a DATABASE_URL when postgres.enabled is false",
+      "default": [],
       "category": "environment",
-      "description": "Existing secrets (by secretName) mounted via envFrom, e.g. holding provider API keys",
       "items": {
         "type": "object",
         "properties": {
@@ -141,16 +192,26 @@
             "type": "string"
           }
         },
-        "required": ["secretName"]
+        "required": [
+          "secretName"
+        ]
       },
       "mutable": true
     },
     "extraEnv": {
-      "type": ["object", "null"],
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "Extra plain environment variables as VAR: value. These land unencrypted in the Deployment, so put credentials in apiKeys or extraEnvFrom instead",
+      "default": {},
       "category": "environment",
-      "description": "Extra plain environment variables (avoid putting secrets here)",
       "additionalProperties": {
-        "type": ["string", "number", "boolean"]
+        "type": [
+          "string",
+          "number",
+          "boolean"
+        ]
       },
       "mutable": true
     },
@@ -161,42 +222,60 @@
       "properties": {
         "requests": {
           "type": "object",
+          "description": "Guaranteed CPU/memory reserved for the proxy container",
           "properties": {
             "cpu": {
               "type": "string",
-              "description": "CPU request",
-              "default": "250m",
+              "description": "CPU request, e.g. 500m. Boot runs Prisma migrations alongside the Python proxy, so too small a request makes startup slow enough to trip the startup probe",
+              "default": "500m",
               "mutable": true
             },
             "memory": {
               "type": "string",
-              "description": "Memory request",
-              "default": "512Mi",
-              "mutable": true
-            }
-          },
-          "required": ["cpu", "memory"]
-        },
-        "limits": {
-          "type": "object",
-          "properties": {
-            "cpu": {
-              "type": "string",
-              "description": "CPU limit",
-              "default": "1",
-              "mutable": true
-            },
-            "memory": {
-              "type": "string",
-              "description": "Memory limit",
+              "description": "Memory request, e.g. 1Gi. LiteLLM's own guidance is a 1Gi floor",
               "default": "1Gi",
               "mutable": true
             }
           },
-          "required": ["cpu", "memory"]
+          "required": [
+            "cpu",
+            "memory"
+          ]
+        },
+        "limits": {
+          "type": "object",
+          "description": "Hard CPU/memory ceiling for the proxy container",
+          "properties": {
+            "cpu": {
+              "type": "string",
+              "description": "CPU limit in millicores, e.g. 2000m. Headroom above the request lets the Prisma migration burst on boot",
+              "default": "2000m",
+              "mutable": true
+            },
+            "memory": {
+              "type": "string",
+              "description": "Memory limit, e.g. 2Gi. Below ~1.5Gi the container is OOM-killed during the Prisma-plus-proxy boot spike",
+              "default": "2Gi",
+              "mutable": true
+            }
+          },
+          "required": [
+            "cpu",
+            "memory"
+          ]
         }
       },
-      "required": ["requests", "limits"]
+      "required": [
+        "requests",
+        "limits"
+      ]
+    },
+    "replicaCount": {
+      "type": "integer",
+      "description": "Number of proxy pods to run. LiteLLM keeps no local state, so this is safe to raise. Ignored when autoscaling.enabled is true, because the HorizontalPodAutoscaler then owns the replica count",
+      "default": 1,
+      "category": "compute",
+      "mutable": true
     },
     "autoscaling": {
       "type": "object",
@@ -205,30 +284,32 @@
       "properties": {
         "enabled": {
           "type": "boolean",
-          "description": "Enable the HorizontalPodAutoscaler",
+          "description": "Enable the HorizontalPodAutoscaler. Multiple replicas need Redis to share rate-limit and spend state",
           "default": false,
           "mutable": true
         },
         "minReplicas": {
           "type": "integer",
-          "description": "Minimum number of replicas",
+          "description": "Minimum number of proxy replicas",
           "default": 1,
           "mutable": true
         },
         "maxReplicas": {
           "type": "integer",
-          "description": "Maximum number of replicas",
+          "description": "Maximum number of proxy replicas",
           "default": 3,
           "mutable": true
         },
         "targetCPUUtilizationPercentage": {
           "type": "integer",
-          "description": "Target average CPU utilization percentage",
+          "description": "Average CPU utilization percentage the autoscaler targets",
           "default": 80,
           "mutable": true
         }
       },
-      "required": ["enabled"]
+      "required": [
+        "enabled"
+      ]
     },
     "postgres": {
       "type": "object",
@@ -237,12 +318,19 @@
       "properties": {
         "enabled": {
           "type": "boolean",
-          "description": "Deploy the postgres subchart",
-          "default": true
+          "description": "Deploy the bundled postgres subchart. Turn off to bring your own database, then supply a Prisma-compatible DATABASE_URL through a secret listed in extraEnvFrom",
+          "default": true,
+          "mutable": true
         },
         "services": {
           "type": "array",
-          "description": "Databases to create (name/database)",
+          "description": "Databases the postgres subchart creates (name/database). Internal wiring: the proxy's DATABASE_URL secret name is derived from the first entry",
+          "default": [
+            {
+              "name": "litellm",
+              "database": "litellm"
+            }
+          ],
           "items": {
             "type": "object",
             "properties": {
@@ -253,12 +341,24 @@
                 "type": "string"
               }
             },
-            "required": ["name", "database"]
+            "required": [
+              "name",
+              "database"
+            ]
           }
         }
       },
-      "required": ["enabled", "services"]
+      "required": [
+        "enabled",
+        "services"
+      ]
     }
   },
-  "required": ["image", "service", "proxy_config", "resources", "postgres"]
+  "required": [
+    "image",
+    "service",
+    "proxy_config",
+    "resources",
+    "postgres"
+  ]
 }
