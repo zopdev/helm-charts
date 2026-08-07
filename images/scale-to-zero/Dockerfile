@@ -16,8 +16,8 @@
 # and reads /etc/caddy), so nothing runs this container. The VM's
 # scale-to-zero component pulls the image and copies the binary out:
 #
-#   docker create --name caddy-x zopdev/scale-to-zero:v<version>
-#   docker cp caddy-x:/usr/bin/caddy /tmp/caddy && docker rm caddy-x
+#   CID=$(docker create zopdev/scale-to-zero:v<version>)
+#   docker cp "$CID:/usr/bin/caddy" /tmp/caddy && docker rm "$CID"
 #
 # Docker Hub is used rather than a release asset because Docker is already
 # a baseline component on every pool VM and those VMs already pull public
@@ -49,8 +49,16 @@ ARG SABLIER_PLUGIN_VERSION=v1.0.2
 # toolchain, so the build needs no extra dependencies.
 FROM caddy:${CADDY_VERSION}-builder AS builder
 
+ARG CADDY_VERSION
 ARG SABLIER_PLUGIN_VERSION
-RUN xcaddy build \
+
+# The Caddy version is passed EXPLICITLY rather than inherited. The builder
+# image sets `ENV CADDY_VERSION=v2.11.3` (with a "v") and a bare `xcaddy build`
+# would silently use it — while the assertion below needs the un-prefixed ARG
+# for its `^v${CADDY_VERSION}` grep. Relying on that difference would make the
+# build depend on where the ARG line sits relative to this one, so both values
+# are derived from one source here instead.
+RUN xcaddy build "v${CADDY_VERSION}" \
     --with github.com/sablierapp/sablier-caddy-plugin@${SABLIER_PLUGIN_VERSION}
 
 
@@ -67,7 +75,6 @@ RUN xcaddy build \
 #
 # Both were verified against a real build before this image was written; a
 # plugin or Caddy bump that breaks either one stops here.
-ARG CADDY_VERSION
 RUN /usr/bin/caddy version | grep -q "^v${CADDY_VERSION} " \
       || { echo "version mismatch: $(/usr/bin/caddy version)" >&2; exit 1; } \
  && /usr/bin/caddy list-modules | grep -q '^http.handlers.sablier' \
@@ -83,3 +90,13 @@ RUN /usr/bin/caddy version | grep -q "^v${CADDY_VERSION} " \
 FROM caddy:${CADDY_VERSION}
 
 COPY --from=builder /usr/bin/caddy /usr/bin/caddy
+
+# -------------------------------
+# Ship-stage assertion
+# -------------------------------
+# The checks above run in the builder; this one runs on the image that is
+# actually published, so a wrong COPY path or a base-tag/builder-tag mismatch
+# cannot slip through.
+ARG CADDY_VERSION
+RUN caddy version | grep -q "^v${CADDY_VERSION} " \
+ && caddy list-modules | grep -q '^http.handlers.sablier'

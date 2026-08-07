@@ -102,18 +102,22 @@ images/scale-to-zero/
 The image is published via the `Image Deployment` GitHub Actions workflow. Push a tag in the form `scale-to-zero-image-v<N>` to trigger the build:
 
 ```bash
-git tag scale-to-zero-image-v2.11.3
-git push origin scale-to-zero-image-v2.11.3
+git tag scale-to-zero-image-v0.0.1
+git push origin scale-to-zero-image-v0.0.1
 ```
 
 This produces:
 
-- `zopdev/scale-to-zero:v2.11.3`
+- `zopdev/scale-to-zero:v0.0.1`
 - `zopdev/scale-to-zero:latest`
 
-> **The tag is the Caddy version, not a version of this image.** `v2.11.3` means "Caddy 2.11.3" — it is not an incrementing counter like `db-init`'s. This is forced by the lockstep rule above: the deployer's component derives the tag it pulls from its own `CADDY_VERSION`, so the two must agree exactly. Bump this tag when Caddy is bumped, and re-tag with the same scheme if only the plugin changes (e.g. append a suffix) so the Caddy version stays readable.
+The image tag is an **independent, incrementing version** (same convention as `db-init` and `opentsdb`, both starting at `v0.0.1`) — it is deliberately *not* the Caddy version. Decoupling them means a plugin bump or a CVE rebuild of the same Caddy is just the next image tag, which would be impossible if the tag had to equal `CADDY_VERSION`.
 
-Consumers should pin the versioned tag, never `latest`.
+| Image tag | Caddy | Plugin |
+|---|---|---|
+| `v0.0.1` | 2.11.3 | v1.0.2 |
+
+Consumers pin the **full tag** (`zopdev/scale-to-zero:v0.0.1`), never `latest` and never a tag derived from a version string. When Caddy is bumped: publish a new image tag *and* update both the consumer's pin and its `CADDY_VERSION` together — the lockstep in *Components & Versions* still applies, it is just enforced by the build assertions plus an explicit pin rather than by string arithmetic.
 
 ---
 
@@ -131,6 +135,10 @@ To maintain a healthy and collaborative community, please adhere to our [Code of
 
 ## License
 
-This project is licensed under the [LICENSE](../../LICENSE). Please review it for terms of use.
+**The image published from this Dockerfile is licensed under AGPL-3.0 — not Apache-2.0 like the rest of this repository.**
+
+[sablier-caddy-plugin](https://github.com/sablierapp/sablier-caddy-plugin) is AGPL-3.0, and Go statically links it into the Caddy binary, so the resulting artifact is a combined work governed by AGPL-3.0. Caddy itself is Apache-2.0, and the build files in this directory remain under the repository [LICENSE](../../LICENSE); the *binary and the published image* are what carry AGPL-3.0.
+
+Anyone distributing this image, or offering network access to software running it, takes on the corresponding AGPL-3.0 obligations — including making the complete corresponding source available. All of it is public: [Caddy](https://github.com/caddyserver/caddy), [the plugin](https://github.com/sablierapp/sablier-caddy-plugin), and this Dockerfile.
 
 ---
