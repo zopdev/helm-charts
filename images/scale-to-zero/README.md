@@ -66,8 +66,8 @@ The plugin is **inert** unless a `sablier` directive appears in the Caddyfile, s
 The consumer is the ZopDay deployer's `scale-to-zero` VM component, which copies the binary onto the VM rather than running the container:
 
 ```bash
-docker pull zopdev/scale-to-zero:v2.11.3
-CID=$(docker create zopdev/scale-to-zero:v2.11.3)
+docker pull zopdev/scale-to-zero:v0.0.1
+CID=$(docker create zopdev/scale-to-zero:v0.0.1)
 docker cp "$CID:/usr/bin/caddy" /tmp/caddy
 docker rm "$CID"
 # validated against the live Caddyfile, then installed to /usr/local/bin/caddy
@@ -111,7 +111,7 @@ This produces:
 - `zopdev/scale-to-zero:v0.0.1`
 - `zopdev/scale-to-zero:latest`
 
-The image tag is an **independent, incrementing version** (same convention as `db-init` and `opentsdb`, both starting at `v0.0.1`) — it is deliberately *not* the Caddy version. Decoupling them means a plugin bump or a CVE rebuild of the same Caddy is just the next image tag, which would be impossible if the tag had to equal `CADDY_VERSION`.
+The image tag is an **independent, incrementing version** (matching the tags this repo has actually published — `db-init-image-v0.0.1` and `opentsdb-image-v0.0.1`) — it is deliberately *not* the Caddy version. Decoupling them means a plugin bump or a CVE rebuild of the same Caddy is just the next image tag, which would be impossible if the tag had to equal `CADDY_VERSION`.
 
 | Image tag | Caddy | Plugin |
 |---|---|---|

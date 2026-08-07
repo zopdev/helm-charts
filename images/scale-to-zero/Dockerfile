@@ -16,7 +16,7 @@
 # and reads /etc/caddy), so nothing runs this container. The VM's
 # scale-to-zero component pulls the image and copies the binary out:
 #
-#   CID=$(docker create zopdev/scale-to-zero:v<version>)
+#   CID=$(docker create zopdev/scale-to-zero:v0.0.1)
 #   docker cp "$CID:/usr/bin/caddy" /tmp/caddy && docker rm "$CID"
 #
 # Docker Hub is used rather than a release asset because Docker is already
