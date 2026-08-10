@@ -1,0 +1,390 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "LocalAI",
+  "type": "object",
+  "properties": {
+    "image": {
+      "category": "runtime",
+      "type": "object",
+      "properties": {
+        "repository": {
+          "type": "string",
+          "default": "localai/localai",
+          "editDisabled": true,
+          "description": "Image repository."
+        },
+        "tag": {
+          "type": "string",
+          "default": "master",
+          "mutable": true,
+          "description": "Image tag. Distributed mode needs a build shipping the `worker` subcommand; no tagged release has one yet."
+        },
+        "pullPolicy": {
+          "type": "string",
+          "enum": [
+            "Always",
+            "IfNotPresent",
+            "Never"
+          ],
+          "default": "IfNotPresent",
+          "mutable": true,
+          "description": "When the kubelet pulls the image."
+        }
+      },
+      "description": "Container image for every LocalAI pod."
+    },
+    "distributed": {
+      "category": "runtime",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false,
+          "mutable": true,
+          "description": "Route inference to worker pods instead of serving it from one pod."
+        },
+        "frontend": {
+          "type": "object",
+          "properties": {
+            "replicaCount": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "mutable": true
+            },
+            "existingClaim": {
+              "type": "string",
+              "default": "",
+              "mutable": true
+            }
+          }
+        },
+        "worker": {
+          "type": "object",
+          "properties": {
+            "replicaCount": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 2,
+              "mutable": true
+            },
+            "diskSize": {
+              "type": "string",
+              "pattern": "^[0-9]+Gi$",
+              "default": "10Gi",
+              "mutable": true,
+              "editDisabled": true
+            },
+            "existingClaim": {
+              "type": "string",
+              "default": "",
+              "mutable": true
+            },
+            "resources": {
+              "type": "object",
+              "properties": {
+                "requests": {
+                  "type": "object",
+                  "properties": {
+                    "cpu": {
+                      "type": "string",
+                      "pattern": "^[0-9]+m$",
+                      "default": "500m",
+                      "mutable": true
+                    },
+                    "memory": {
+                      "type": "string",
+                      "pattern": "^[0-9]+(Mi|Gi)$",
+                      "default": "2Gi",
+                      "mutable": true
+                    }
+                  }
+                },
+                "limits": {
+                  "type": "object",
+                  "properties": {
+                    "cpu": {
+                      "type": "string",
+                      "pattern": "^[0-9]+m$",
+                      "default": "2000m",
+                      "mutable": true
+                    },
+                    "memory": {
+                      "type": "string",
+                      "pattern": "^[0-9]+(Mi|Gi)$",
+                      "default": "4Gi",
+                      "mutable": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "autoApproveNodes": {
+          "type": "boolean",
+          "default": true,
+          "mutable": true,
+          "description": "Admit workers as soon as they register, rather than holding them for admin approval."
+        },
+        "registrationToken": {
+          "type": "string",
+          "default": "",
+          "mutable": true,
+          "description": "Token authenticating worker registration. Generated when empty."
+        },
+        "sharedModels": {
+          "type": "boolean",
+          "default": false,
+          "mutable": true,
+          "description": "Skip staging model files, asserting every pod mounts one shared models volume."
+        },
+        "adminEmail": {
+          "type": "string",
+          "default": "",
+          "mutable": true,
+          "description": "Account promoted to admin. Empty means whoever registers first wins the role."
+        },
+        "registrationMode": {
+          "type": "string",
+          "enum": [
+            "open",
+            "approval",
+            "invite"
+          ],
+          "default": "open",
+          "mutable": true,
+          "description": "Who may create an account."
+        }
+      },
+      "description": "Topology: one all-in-one pod, or API frontends plus a pool of inference workers."
+    },
+    "service": {
+      "category": "runtime",
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "ClusterIP",
+            "NodePort",
+            "LoadBalancer"
+          ],
+          "default": "ClusterIP",
+          "mutable": true,
+          "description": "Kubernetes Service type."
+        },
+        "port": {
+          "type": "integer",
+          "default": 8080,
+          "mutable": true,
+          "description": "Port the API is served on."
+        }
+      },
+      "description": "Service fronting the API."
+    },
+    "diskSize": {
+      "category": "compute",
+      "type": "string",
+      "pattern": "^[0-9]+Gi$",
+      "default": "10Gi",
+      "mutable": true,
+      "editDisabled": true,
+      "description": "Size of the models volume for the standalone pod, or for each frontend."
+    },
+    "resources": {
+      "category": "compute",
+      "type": "object",
+      "properties": {
+        "requests": {
+          "type": "object",
+          "properties": {
+            "cpu": {
+              "type": "string",
+              "pattern": "^[0-9]+m$",
+              "default": "500m",
+              "mutable": true
+            },
+            "memory": {
+              "type": "string",
+              "pattern": "^[0-9]+(Mi|Gi)$",
+              "default": "2Gi",
+              "mutable": true
+            }
+          }
+        },
+        "limits": {
+          "type": "object",
+          "properties": {
+            "cpu": {
+              "type": "string",
+              "pattern": "^[0-9]+m$",
+              "default": "2000m",
+              "mutable": true
+            },
+            "memory": {
+              "type": "string",
+              "pattern": "^[0-9]+(Mi|Gi)$",
+              "default": "4Gi",
+              "mutable": true
+            }
+          }
+        }
+      },
+      "description": "CPU and memory for the standalone pod, or for each frontend."
+    },
+    "env": {
+      "category": "environment",
+      "type": "object",
+      "mutable": true,
+      "description": "Extra environment variables applied to every LocalAI pod."
+    },
+    "ingress": {
+      "category": "runtime",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false,
+          "mutable": true,
+          "description": "Create an Ingress for the API."
+        },
+        "className": {
+          "type": "string",
+          "default": "",
+          "mutable": true,
+          "description": "IngressClass to use."
+        },
+        "host": {
+          "type": "string",
+          "default": "",
+          "mutable": true,
+          "description": "Hostname to serve on. Required when the ingress is enabled."
+        },
+        "annotations": {
+          "type": "object",
+          "mutable": true,
+          "description": "Annotations applied to the Ingress."
+        },
+        "tlsSecretName": {
+          "type": "string",
+          "default": "",
+          "mutable": true,
+          "description": "Existing TLS secret for the host."
+        }
+      },
+      "description": "Ingress exposing the API outside the cluster."
+    },
+    "externalDatabase": {
+      "category": "advanced",
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string",
+          "default": "",
+          "mutable": true,
+          "description": "PostgreSQL connection URL, e.g. postgresql://user:pass@host:5432/localai?sslmode=disable"
+        }
+      },
+      "description": "Use an existing PostgreSQL instead of installing one."
+    },
+    "externalNats": {
+      "category": "advanced",
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string",
+          "default": "",
+          "mutable": true,
+          "description": "NATS URL, e.g. nats://host:4222"
+        }
+      },
+      "description": "Use an existing NATS server instead of installing one."
+    },
+    "postgres": {
+      "category": "advanced",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false,
+          "mutable": true,
+          "description": "Install PostgreSQL with this release."
+        },
+        "name": {
+          "type": "string",
+          "default": "localai",
+          "mutable": true,
+          "description": "Service name labelled on the PostgreSQL alerts."
+        },
+        "services": {
+          "type": "array",
+          "description": "Databases to provision. LocalAI needs exactly one.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Service the database belongs to."
+              },
+              "database": {
+                "type": "string",
+                "description": "Database name."
+              }
+            },
+            "required": [
+              "name",
+              "database"
+            ]
+          }
+        }
+      },
+      "description": "PostgreSQL installed with the release. Required by the distributed topology."
+    },
+    "nats": {
+      "category": "advanced",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false,
+          "mutable": true,
+          "description": "Install NATS with this release."
+        }
+      },
+      "description": "NATS installed with the release. Required by the distributed topology."
+    },
+    "metrics": {
+      "category": "runtime",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "mutable": true,
+          "description": "Render a ServiceMonitor scraping the API tier."
+        },
+        "scrapeInterval": {
+          "type": "string",
+          "default": "30s",
+          "mutable": true,
+          "description": "How often Prometheus scrapes."
+        }
+      },
+      "description": "Prometheus scraping of the API tier. Needs the Prometheus Operator CRDs."
+    },
+    "alerts": {
+      "category": "runtime",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "mutable": true,
+          "description": "Render the LocalAIDown PrometheusRule."
+        }
+      },
+      "description": "Alerting rules for the API tier. Needs the Prometheus Operator CRDs."
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{{/*
+Environment shared by every LocalAI pod in the release, whatever its
+role. Role-specific settings stay on the pod specs that need them.
+*/}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "localai.fullname" . }}-configmap
+  labels:
+    {{- include "localai.labels" . | nindent 4 }}
+data:
+  # Owned by the chart: it has to agree with the volume mount, so it is
+  # not overridable through `env`. Setting it there is rejected in
+  # validate.yaml rather than silently emitting the key twice.
+  MODELS_PATH: "/models"
+  {{- range $key, $value := omit .Values.env "MODELS_PATH" }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}

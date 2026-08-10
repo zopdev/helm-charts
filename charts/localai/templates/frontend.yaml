@@ -1,0 +1,175 @@
+{{- if .Values.distributed.enabled }}
+{{/*
+Distributed topology, API tier. Frontends terminate the API, hold the
+canonical model files, and route inference to workers over NATS and
+gRPC. Shared state lives in PostgreSQL, so any frontend can serve any
+request.
+
+A StatefulSet rather than a Deployment because each replica's models
+directory is durable state that must survive rescheduling: the frontend
+is the source the router stages model files to workers from.
+*/}}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "localai.fullname" . }}
+  annotations:
+    # Values under `env` land in a ConfigMap consumed with envFrom, and
+    # environment is read once at container start. Without this the
+    # ConfigMap updates on `helm upgrade` while every running pod keeps
+    # the old environment, so a setting looks applied and does nothing.
+    configmap.reloader.stakater.com/reload: {{ include "localai.fullname" . }}-configmap
+    # The metrics Secret is listed too: the frontend reads that key as
+    # LOCALAI_API_KEY at start, so rotating it would otherwise leave the
+    # running pods rejecting the scrape Prometheus has started sending.
+    secret.reloader.stakater.com/reload: {{ include "localai.registrationSecretName" . }}{{ if .Values.metrics.enabled }},{{ include "localai.fullname" . }}-metrics{{ end }}
+  labels:
+    {{- include "localai.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.distributed.frontend.replicaCount }}
+  serviceName: {{ include "localai.fullname" . }}-headless
+  selector:
+    matchLabels:
+      {{- include "localai.serverSelectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "localai.serverSelectorLabels" . | nindent 8 }}
+    spec:
+      {{- if not .Values.externalDatabase.url }}
+      initContainers:
+        # The postgres chart creates the database and its user from a
+        # pod of its own, which finishes well after PostgreSQL starts
+        # accepting connections. LocalAI exits when it cannot open the
+        # auth database, so without this wait the frontend crash-loops
+        # through that window and lands in a backoff far longer than the
+        # gap itself. Waiting on credentials that actually work, rather
+        # than on an open port, is what closes it.
+        - name: wait-for-database
+          image: docker.io/bitnamilegacy/postgresql:{{ .Values.postgres.version | default "17.4.0" }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              attempt=0
+              until psql "$LOCALAI_AUTH_DATABASE_URL" -c 'SELECT 1' \
+                >/dev/null 2>&1; do
+                attempt=$((attempt + 1))
+                echo "waiting for the localai database to accept our credentials"
+                # A first start takes seconds. Waiting minutes means the
+                # credentials are wrong rather than late, and there is one
+                # way that happens on its own -- name it, because the wait
+                # otherwise looks identical to a slow start.
+                if [ "$attempt" = "20" ]; then
+                  echo "---"
+                  echo "still waiting after a minute. If this release has"
+                  echo "ever run with postgres.enabled=false, its PostgreSQL"
+                  echo "volume outlived the Secret holding the password, and"
+                  echo "the password regenerated on re-enable no longer opens"
+                  echo "the volume. A postgres-*-init-job pod stuck in Error"
+                  echo "confirms it. Delete that PVC to re-provision the"
+                  echo "database, or restore the previous Secret."
+                  echo "---"
+                fi
+                sleep 3
+              done
+          env:
+            {{- include "localai.databaseEnv" . | nindent 12 }}
+      {{- end }}
+      containers:
+        - name: localai
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "localai.fullname" . }}-configmap
+          env:
+            - name: LOCALAI_DISTRIBUTED
+              value: "true"
+            - name: LOCALAI_NATS_URL
+              value: {{ include "localai.natsUrl" . | quote }}
+            # Distributed mode stores its node registry and job state in
+            # PostgreSQL, which LocalAI only opens with auth enabled.
+            - name: LOCALAI_AUTH
+              value: "true"
+            {{- include "localai.databaseEnv" . | nindent 12 }}
+            - name: LOCALAI_REGISTRATION_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "localai.registrationSecretName" . }}
+                  key: registration-token
+            - name: LOCALAI_AUTO_APPROVE_NODES
+              value: {{ .Values.distributed.autoApproveNodes | quote }}
+            {{- if .Values.distributed.adminEmail }}
+            # Pins who administers the cluster. Without it the first
+            # account to register wins the admin role, and only an
+            # admin can reach the Nodes and scheduling APIs.
+            - name: LOCALAI_ADMIN_EMAIL
+              value: {{ .Values.distributed.adminEmail | quote }}
+            {{- end }}
+            - name: LOCALAI_REGISTRATION_MODE
+              value: {{ .Values.distributed.registrationMode | quote }}
+            {{- if .Values.distributed.sharedModels }}
+            - name: LOCALAI_DISTRIBUTED_SHARED_MODELS
+              value: "true"
+            {{- end }}
+            {{- if .Values.metrics.enabled }}
+            # Gives Prometheus a credential to scrape /metrics with,
+            # which authentication would otherwise refuse.
+            - name: LOCALAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "localai.fullname" . }}-metrics
+                  key: api-key
+            {{- end }}
+            # Skip probing remote gallery metadata during boot; it makes
+            # startup wait on network calls the frontend does not need.
+            - name: LOCALAI_VRAM_WARM_LIMIT
+              value: "0"
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          volumeMounts:
+            - name: models
+              mountPath: /models
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          startupProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 10
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+      {{- if .Values.distributed.frontend.existingClaim }}
+      volumes:
+        - name: models
+          persistentVolumeClaim:
+            claimName: {{ .Values.distributed.frontend.existingClaim }}
+      {{- end }}
+  {{- if not .Values.distributed.frontend.existingClaim }}
+  volumeClaimTemplates:
+    - metadata:
+        name: models
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: {{ .Values.diskSize }}
+  {{- end }}
+{{- end }}

@@ -1,0 +1,36 @@
+{{- if .Values.distributed.enabled }}
+{{/*
+Governing service for the worker StatefulSet. Nothing routes through it
+— the frontend reaches each worker on the pod IP it advertises — but a
+StatefulSet's serviceName must name a real headless service for its pods
+to get stable DNS, which is what makes an individual worker addressable
+when debugging.
+*/}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "localai.fullname" . }}-worker
+  labels:
+    {{- include "localai.labels" . | nindent 4 }}
+    # Keeps this Service distinguishable from the API one by metadata
+    # labels alone, which is what label selectors outside the chart see.
+    app.kubernetes.io/component: worker
+spec:
+  type: ClusterIP
+  clusterIP: None
+  # A worker is reachable before it is ready to take work, and the
+  # frontend has to be able to reach it to register it in the first
+  # place.
+  publishNotReadyAddresses: true
+  ports:
+    - name: grpc
+      port: 50051
+      targetPort: grpc
+      protocol: TCP
+    - name: http
+      port: 50050
+      targetPort: http
+      protocol: TCP
+  selector:
+    {{- include "localai.workerSelectorLabels" . | nindent 4 }}
+{{- end }}

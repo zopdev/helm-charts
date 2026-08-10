@@ -1,0 +1,165 @@
+# LocalAI serves an OpenAI-compatible API for local inference.
+#
+# The chart ships two topologies, picked by `distributed.enabled`:
+#
+#   false (default) - standalone. One pod serves the API and runs the
+#                     model itself. No PostgreSQL, no NATS.
+#   true            - distributed. Stateless API frontends route work to
+#                     generic worker pods. Shared state lives in
+#                     PostgreSQL, coordination happens over NATS.
+#
+# Switching to distributed also needs its backing services, which are
+# off by default so the standalone install stays self-contained:
+#   --set distributed.enabled=true --set postgres.enabled=true \
+#   --set nats.enabled=true
+
+image:
+  repository: localai/localai
+  # Distributed mode needs a build that ships the `worker` subcommand.
+  # No tagged release has it yet, so the default tracks master. Pin a
+  # released tag (e.g. v3.12.1) if you only ever run standalone.
+  tag: "master"
+  pullPolicy: IfNotPresent
+
+# Topology switch. See the note at the top of this file.
+distributed:
+  enabled: false
+
+  # API frontends. Shared state is in PostgreSQL and coordination is
+  # over NATS, so any frontend can serve any request.
+  frontend:
+    # Model *files*, unlike the rest of the state, live on the
+    # frontend's own disk, and the router stages them from there to the
+    # workers. With the per-replica disks below, a model installed
+    # through one frontend is invisible to the others. Raise this only
+    # together with existingClaim.
+    replicaCount: 1
+    # Name of an existing ReadWriteMany claim to mount as the models
+    # directory on every frontend. Set this to run more than one.
+    existingClaim: ""
+
+  # Generic inference workers. A worker starts with no backend
+  # installed; the frontend's router installs whatever a model needs on
+  # demand, so workers take no per-model configuration.
+  worker:
+    replicaCount: 2
+    # Each worker keeps its own copy of the models staged to it. This
+    # is not just capacity: the router drops any worker whose models
+    # filesystem cannot hold the model (its size plus 5%, at least
+    # 1GiB) before placing it, so a worker sized below your largest
+    # model is silently never scheduled for it.
+    diskSize: "10Gi"
+    # Name of an existing ReadWriteMany claim to mount as the models
+    # directory on every worker, instead of a disk per worker. Set this
+    # to the same claim as the frontend's to use sharedModels below.
+    existingClaim: ""
+    resources:
+      requests:
+        cpu: "500m"
+        memory: "2Gi"
+      limits:
+        cpu: "2000m"
+        memory: "4Gi"
+
+  # Let workers join as soon as they register. Set false to hold new
+  # nodes in `pending` until an admin approves them from the Nodes page.
+  autoApproveNodes: true
+
+  # Distributed mode forces user authentication on, and the first
+  # account created becomes the admin -- the only role that can reach
+  # the Nodes page and the scheduling API. Left empty, that is whoever
+  # signs up first, which on a reachable cluster is a race anyone can
+  # win. Naming the address here makes it deterministic: that account
+  # gets admin whenever it registers, and is promoted on login if it
+  # already exists.
+  adminEmail: ""
+
+  # Who may create an account: `open` (anyone), `approval` (an admin
+  # must activate them), or `invite` (an invite code is required).
+  registrationMode: "open"
+
+  # Authenticates worker registration and the worker file-transfer
+  # server. Generated and stored in a Secret when left empty, and
+  # preserved across upgrades. Never leave this unset in production: an
+  # empty token makes the worker file-transfer server fail open.
+  registrationToken: ""
+
+  # Assert that every pod mounts the same models volume at the same
+  # path, which lets the router skip staging model files to workers
+  # entirely. Requires frontend.existingClaim and worker.existingClaim
+  # to name the same ReadWriteMany claim; with per-pod disks it is
+  # false, and the router would skip staging files a worker lacks.
+  sharedModels: false
+
+# API service fronting the standalone pod or the frontends.
+service:
+  type: ClusterIP
+  port: 8080
+
+# Models volume for the standalone pod and for each frontend.
+diskSize: "10Gi"
+
+# Applies to the standalone pod and to each frontend. Worker resources
+# are set separately under distributed.worker.resources.
+resources:
+  requests:
+    cpu: "500m"
+    memory: "2Gi"
+  limits:
+    cpu: "2000m"
+    memory: "4Gi"
+
+# Extra environment variables applied to every LocalAI pod, e.g.
+#   env:
+#     LOCALAI_LOG_LEVEL: debug
+env: {}
+
+ingress:
+  enabled: false
+  className: ""
+  host: ""
+  annotations: {}
+  # Set to serve the host over TLS from an existing certificate secret.
+  tlsSecretName: ""
+
+# --- Backing services (distributed topology only) ---
+
+# Reuses the zopdev postgres chart. It provisions the database, a
+# dedicated user, and a Secret this chart reads the credentials from.
+# Turn it off and set externalDatabase.url to use an existing server.
+postgres:
+  enabled: false
+  # The postgres chart labels its alerts with `service: {{ .Values.name }}`
+  # and defines no default for it, which renders a null label the
+  # PrometheusRule CRD rejects. Naming the owning service here both
+  # fixes that and is the label's intended meaning.
+  name: localai
+  services:
+    - name: localai
+      database: localai
+
+externalDatabase:
+  # postgresql://user:password@host:5432/dbname?sslmode=disable
+  url: ""
+
+# Reuses the upstream NATS chart. JetStream is required.
+nats:
+  enabled: false
+  config:
+    jetstream:
+      enabled: true
+
+externalNats:
+  # nats://host:4222
+  url: ""
+
+# Prometheus scraping. LocalAI serves its own /metrics on the API port;
+# `api_call` (request latency by method and path) alongside Go runtime
+# metrics. Both this and `alerts` render monitoring.coreos.com objects,
+# so turn them off on a cluster without the Prometheus Operator CRDs.
+metrics:
+  enabled: true
+  scrapeInterval: 30s
+
+alerts:
+  enabled: true

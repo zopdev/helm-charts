@@ -1,0 +1,51 @@
+LocalAI is installed as release {{ .Release.Name }}.
+
+Topology: {{ if .Values.distributed.enabled }}distributed{{ else }}standalone{{ end }}
+{{- if .Values.distributed.enabled }}
+  frontends: {{ .Values.distributed.frontend.replicaCount }}
+  workers:   {{ .Values.distributed.worker.replicaCount }}
+  postgres:  {{ if .Values.externalDatabase.url }}external{{ else }}installed by this release{{ end }}
+  nats:      {{ if .Values.externalNats.url }}{{ .Values.externalNats.url }}{{ else }}installed by this release{{ end }}
+{{- end }}
+
+Reach the API:
+
+  kubectl port-forward -n {{ .Release.Namespace }} \
+    svc/{{ include "localai.fullname" . }} 8080:{{ .Values.service.port }}
+
+  curl http://localhost:8080/v1/models
+{{- if .Values.ingress.enabled }}
+
+Or over the ingress at http{{ if .Values.ingress.tlsSecretName }}s{{ end }}://{{ .Values.ingress.host }}
+{{- end }}
+{{- if .Values.distributed.enabled }}
+
+Workers register themselves on startup.
+{{- if .Values.distributed.autoApproveNodes }}
+They are approved automatically.
+{{- else }}
+They stay `pending` until approved, and receive no traffic before that.
+Approve them from the Nodes page in the web UI.
+{{- end }}
+
+Distributed mode runs with authentication on, because LocalAI only opens
+its PostgreSQL-backed state that way. The API, /api/nodes/ included,
+answers 401 without a key. To confirm the workers joined without one,
+read it from the pods instead:
+
+  kubectl logs -n {{ .Release.Namespace }} \
+    -l app.kubernetes.io/component=worker --tail=-1 \
+    | grep "Registered with frontend"
+
+The registration token is generated into a Secret. Read it with:
+
+  kubectl get secret -n {{ .Release.Namespace }} \
+    {{ include "localai.registrationSecretName" . }} \
+    -o jsonpath='{.data.registration-token}' | base64 -d
+{{- end }}
+
+No models are installed by default. Install one from the gallery, e.g.:
+
+  curl http://localhost:8080/models/apply \
+    -H 'Content-Type: application/json' \
+    -d '{"id": "localai@qwen3-1.7b"}'

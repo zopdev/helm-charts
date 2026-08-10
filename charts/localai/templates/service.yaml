@@ -1,0 +1,26 @@
+{{/*
+Fronts whichever pods serve the API: the standalone pod, or the
+distributed frontends. Workers are excluded by the component label.
+*/}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "localai.fullname" . }}
+  labels:
+    {{- include "localai.labels" . | nindent 4 }}
+    # A ServiceMonitor selects Services by their metadata labels, not by
+    # the pod selector below, and both Services this chart creates carry
+    # otherwise identical labels. Without the discriminator here the
+    # ServiceMonitor matches nothing, or -- worse, if it were relaxed to
+    # compensate -- also matches the worker Service, whose `http` port
+    # serves file transfer rather than metrics.
+    app.kubernetes.io/component: server
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "localai.serverSelectorLabels" . | nindent 4 }}

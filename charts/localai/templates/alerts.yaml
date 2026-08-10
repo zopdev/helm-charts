@@ -1,0 +1,41 @@
+{{- if .Values.alerts.enabled }}
+{{/*
+Deliberately one rule. The only application metric LocalAI exports is
+`api_call`, a latency histogram with no status-code label, and latency on
+an inference API is legitimately long and model-dependent -- an alert on
+it would fire on a healthy server generating a long completion. "Is it
+answering at all" is the signal that means the same thing on every
+deployment.
+
+Every label here is quoted, so none can render as null. An unquoted
+value from an unset key produces a null label, which the PrometheusRule
+CRD rejects, and the rejection fails the whole release rather than just
+the alert.
+*/}}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "localai.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: kube-prometheus-stack
+    release: prometheus
+    {{- include "localai.labels" . | nindent 4 }}
+spec:
+  groups:
+    - name: {{ .Release.Namespace }}.{{ include "localai.fullname" . }}.rules
+      rules:
+        - alert: LocalAIDown
+          expr: up{job="{{ include "localai.fullname" . }}",namespace="{{ .Release.Namespace }}"} == 0
+          for: 5m
+          labels:
+            severity: critical
+            servicealert: "true"
+            namespace: {{ .Release.Namespace | quote }}
+            service: {{ include "localai.fullname" . | quote }}
+          annotations:
+            summary: 'LocalAI {{ .Release.Name }} is not responding to scrapes'
+            description: 'The LocalAI API in {{ .Release.Namespace }} has failed
+              its metrics scrape for 5 minutes. Inference requests are most
+              likely failing too.'
+{{- end }}
