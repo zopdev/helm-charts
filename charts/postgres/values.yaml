@@ -1,3 +1,8 @@
+# Name of the service this datastore belongs to. Used as the
+# `service` label on the alerts, so they can be attributed to an
+# owner. Defaults to the release name when unset.
+name: ""
+
 version: "17.4.0"
 
 replication:
