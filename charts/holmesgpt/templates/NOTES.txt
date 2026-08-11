@@ -1,0 +1,57 @@
+HolmesGPT is installed as release {{ .Release.Name }}.
+
+{{- if not .Values.holmes.modelList }}
+
+  ────────────────────────────────────────────────────────────────
+  No model is configured, so Holmes cannot investigate anything yet.
+  It starts and answers /healthz, and /readyz even reports a model
+  named "Robusta" -- that is the hosted default, which needs Robusta
+  credentials. Until `holmes.modelList` has an entry, every
+  investigation fails with:
+
+    You're trying to use ROBUSTA_AI, but Cannot get credentials
+    for ROBUSTA_AI. Store not initialized.
+
+  Give it a model, and the Secret holding the credential:
+
+    kubectl create secret generic holmes-llm-keys -n {{ .Release.Namespace }} \
+      --from-literal=ANTHROPIC_API_KEY=sk-ant-...
+
+    helm upgrade {{ .Release.Name }} zopdev/holmesgpt --reuse-values \
+      --set holmes.extraEnvVarsSecrets[0]=holmes-llm-keys \
+      --set holmes.modelList.claude.model=anthropic/claude-sonnet-4-20250514 \
+      --set holmes.modelList.claude.api_key=envRef:ANTHROPIC_API_KEY
+
+  Or point it at an OpenAI-compatible endpoint inside the cluster,
+  such as the localai chart in this repo:
+
+    --set holmes.modelList.local.model=openai/qwen3-1.7b \
+    --set holmes.modelList.local.api_base=http://my-localai:8080/v1 \
+    --set holmes.modelList.local.api_key=not-needed
+  ────────────────────────────────────────────────────────────────
+{{- else }}
+
+Models configured: {{ keys .Values.holmes.modelList | sortAlpha | join ", " }}
+{{- end }}
+
+Reach the API:
+
+  kubectl port-forward -n {{ .Release.Namespace }} \
+    svc/{{ include "holmesgpt.holmesFullname" . }} 8080:80
+
+  curl http://localhost:8080/api/info
+  curl http://localhost:8080/api/model
+
+Ask it something:
+
+  curl -X POST http://localhost:8080/api/chat \
+    -H 'Content-Type: application/json' \
+    -d '{"ask": "what is failing in my cluster?"}'
+{{- if .Values.ingress.enabled }}
+
+Or over the ingress at http{{ if .Values.ingress.tlsSecretName }}s{{ end }}://{{ .Values.ingress.host }}
+{{- end }}
+
+Holmes reads cluster state through a ClusterRole created by the upstream
+chart. Restrict what it can see with `holmes.customClusterRoleRules`, or
+supply your own ServiceAccount with `holmes.createServiceAccount=false`.

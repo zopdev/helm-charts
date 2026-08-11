@@ -1,0 +1,42 @@
+{{/*
+Fail on configurations that render cleanly and then misbehave at
+runtime. Upstream validates the shape of `envRef:` names; these are the
+checks that belong to how this chart is wired.
+
+Deliberately absent: a check that `modelList` is non-empty. Holmes with
+no model still starts and serves /healthz, and the platform installs a
+chart before anyone has filled in its settings, so refusing to render
+would break that flow. The unconfigured state is called out in NOTES.txt
+instead, where it is read at exactly the right moment.
+*/}}
+
+{{/*
+A model referencing `envRef:X` resolves X from the pod's environment, so
+something has to put it there. Referencing a key nothing supplies is the
+half-configured case: it renders, deploys, and then fails on the first
+investigation with an authentication error naming the model rather than
+the missing credential.
+
+Upstream reads the environment from four separate values, and its own
+installation guide leads with `additionalEnvVars` rather than the
+`extraEnvVarsSecrets` shorthand. All four are accepted here: a guard
+recognising only one of them rejects the configuration upstream tells
+people to write, which is a worse failure than the one it set out to
+catch.
+*/}}
+{{- $usesEnvRef := false }}
+{{- range $model, $config := .Values.holmes.modelList }}
+{{- range $field, $value := $config }}
+{{- if and (kindIs "string" $value) (hasPrefix "envRef:" $value) }}
+{{- $usesEnvRef = true }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- $hasEnvSource := or .Values.holmes.extraEnvVarsSecrets .Values.holmes.additionalEnvVars .Values.holmes.additional_env_vars .Values.holmes.additional_env_froms }}
+{{- if and $usesEnvRef (not $hasEnvSource) }}
+{{- fail "holmes.modelList references a credential with `envRef:`, but nothing supplies it to the pod. Name the Secret holding it in holmes.extraEnvVarsSecrets, or supply it through holmes.additionalEnvVars or holmes.additional_env_froms. Alternatively set the key inline instead of using envRef:." }}
+{{- end }}
+
+{{- if and .Values.ingress.enabled (not .Values.ingress.host) }}
+{{- fail "ingress.enabled requires ingress.host" }}
+{{- end }}

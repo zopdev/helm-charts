@@ -1,0 +1,178 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "HolmesGPT",
+  "type": "object",
+  "properties": {
+    "holmes": {
+      "category": "runtime",
+      "description": "Settings passed to the upstream HolmesGPT chart.",
+      "type": "object",
+      "properties": {
+        "modelList": {
+          "type": "object",
+          "description": "Models Holmes may use. Until this has an entry it cannot investigate anything. Prefix a credential with `envRef:` to read it from a mounted Secret.",
+          "mutable": true
+        },
+        "extraEnvVarsSecrets": {
+          "type": "array",
+          "description": "Names of existing Secrets mounted as environment variables, which is how an `envRef:` credential reaches the pod.",
+          "items": {
+            "type": "string"
+          },
+          "mutable": true
+        },
+        "replicas": {
+          "type": "integer",
+          "description": "Number of Holmes replicas.",
+          "minimum": 1,
+          "default": 1,
+          "mutable": true
+        },
+        "createServiceAccount": {
+          "type": "boolean",
+          "description": "Create the ServiceAccount and ClusterRole Holmes uses to read cluster state.",
+          "default": true,
+          "mutable": true
+        },
+        "resources": {
+          "type": "object",
+          "description": "CPU and memory for the Holmes pod.",
+          "properties": {
+            "requests": {
+              "type": "object",
+              "properties": {
+                "cpu": {
+                  "type": "string",
+                  "description": "CPU request.",
+                  "pattern": "^[0-9]+m$",
+                  "default": "100m",
+                  "mutable": true
+                },
+                "memory": {
+                  "type": "string",
+                  "description": "Memory request.",
+                  "pattern": "^[0-9]+(Mi|Gi)$",
+                  "default": "2048Mi",
+                  "mutable": true
+                }
+              }
+            },
+            "limits": {
+              "type": "object",
+              "properties": {
+                "memory": {
+                  "type": "string",
+                  "description": "Memory limit.",
+                  "pattern": "^[0-9]+(Mi|Gi)$",
+                  "default": "2048Mi",
+                  "mutable": true
+                }
+              }
+            }
+          }
+        },
+        "autoscaling": {
+          "type": "object",
+          "description": "Upstream HPA for the Holmes deployment.",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Create a HorizontalPodAutoscaler.",
+              "default": false,
+              "mutable": true
+            },
+            "minReplicas": {
+              "type": "integer",
+              "description": "Lower bound.",
+              "minimum": 1,
+              "default": 1,
+              "mutable": true
+            },
+            "maxReplicas": {
+              "type": "integer",
+              "description": "Upper bound.",
+              "minimum": 1,
+              "default": 5,
+              "mutable": true
+            },
+            "targetCPU": {
+              "type": "string",
+              "description": "Target CPU utilisation percentage.",
+              "default": "60",
+              "mutable": true
+            }
+          }
+        }
+      }
+    },
+    "ingress": {
+      "category": "runtime",
+      "description": "Ingress exposing the HTTP API outside the cluster.",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Create an Ingress.",
+          "default": false,
+          "mutable": true
+        },
+        "className": {
+          "type": "string",
+          "description": "IngressClass to use.",
+          "default": "",
+          "mutable": true
+        },
+        "host": {
+          "type": "string",
+          "description": "Hostname to serve on. Required when the ingress is enabled.",
+          "default": "",
+          "mutable": true
+        },
+        "annotations": {
+          "type": "object",
+          "description": "Annotations applied to the Ingress.",
+          "mutable": true
+        },
+        "tlsSecretName": {
+          "type": "string",
+          "description": "Existing TLS secret for the host.",
+          "default": "",
+          "mutable": true
+        }
+      }
+    },
+    "alerts": {
+      "category": "runtime",
+      "description": "Alerting rules built on kube-state-metrics. Needs the Prometheus Operator CRDs.",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Create the PrometheusRule.",
+          "default": true,
+          "mutable": true
+        },
+        "unavailableReplicasThreshold": {
+          "type": "integer",
+          "description": "Unavailable replicas tolerated before alerting.",
+          "minimum": 0,
+          "default": 0,
+          "mutable": true
+        },
+        "podRestartThreshold": {
+          "type": "integer",
+          "description": "Restarts tolerated in the window below.",
+          "minimum": 0,
+          "default": 3,
+          "mutable": true
+        },
+        "podRestartTimeWindow": {
+          "type": "string",
+          "description": "Window the restart count is measured over.",
+          "default": "10m",
+          "mutable": true
+        }
+      }
+    }
+  }
+}

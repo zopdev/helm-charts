@@ -1,0 +1,72 @@
+{{- if .Values.alerts.enabled }}
+{{/*
+Every expression here reads kube-state-metrics, not Holmes. The server
+exposes /api/chat, /api/model, /api/info, /healthz and /readyz -- and no
+Prometheus endpoint -- so there is nothing of its own to alert on and no
+ServiceMonitor in this chart. A scrape target pointed at it would fail
+on every attempt while looking configured.
+
+The rollout guard (`changes(...replicas_updated[10m]) == 0`) matches the
+service chart's: without it, every deploy fires these alerts while pods
+are legitimately cycling.
+
+Label values are quoted so none can render as null. An unquoted value
+from an unset key produces a null label, which the PrometheusRule CRD
+rejects, and the rejection fails the whole release rather than the
+alert alone.
+*/}}
+{{- $deployment := include "holmesgpt.holmesFullname" . }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "holmesgpt.holmesFullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: kube-prometheus-stack
+    release: prometheus
+    {{- include "holmesgpt.labels" . | nindent 4 }}
+spec:
+  groups:
+    - name: {{ .Release.Namespace }}.{{ $deployment }}.rules
+      rules:
+        - alert: HolmesGPTUnavailableReplicas
+          expr: (sum(kube_deployment_status_replicas_unavailable{namespace="{{ .Release.Namespace }}",deployment="{{ $deployment }}"}) > {{ .Values.alerts.unavailableReplicasThreshold }}) and (changes(kube_deployment_status_replicas_updated{namespace="{{ .Release.Namespace }}",deployment="{{ $deployment }}"}[10m]) == 0)
+          for: 5m
+          labels:
+            severity: warning
+            servicealert: "true"
+            namespace: {{ .Release.Namespace | quote }}
+            service: {{ $deployment | quote }}
+          annotations:
+            summary: 'HolmesGPT {{ .Release.Name }} has unavailable replicas'
+            description: 'Replicas of {{ $deployment }} in {{ .Release.Namespace }}
+              have been unavailable for 5 minutes outside a rollout.'
+
+        - alert: HolmesGPTNoReplicas
+          expr: sum(kube_deployment_status_replicas{namespace="{{ .Release.Namespace }}",deployment="{{ $deployment }}"}) == 0
+          for: 5m
+          labels:
+            severity: critical
+            servicealert: "true"
+            namespace: {{ .Release.Namespace | quote }}
+            service: {{ $deployment | quote }}
+          annotations:
+            summary: 'HolmesGPT {{ .Release.Name }} is scaled to zero'
+            description: '{{ $deployment }} in {{ .Release.Namespace }} has no
+              replicas. The investigation API is unreachable.'
+
+        - alert: HolmesGPTPodRestarts
+          expr: sum(increase(kube_pod_container_status_restarts_total{namespace="{{ .Release.Namespace }}",pod=~"{{ $deployment }}-.*"}[{{ .Values.alerts.podRestartTimeWindow }}])) > {{ .Values.alerts.podRestartThreshold }}
+          for: 0m
+          labels:
+            severity: warning
+            servicealert: "true"
+            namespace: {{ .Release.Namespace | quote }}
+            service: {{ $deployment | quote }}
+          annotations:
+            summary: 'HolmesGPT {{ .Release.Name }} is restarting'
+            description: '{{ $deployment }} restarted more than
+              {{ .Values.alerts.podRestartThreshold }} times in
+              {{ .Values.alerts.podRestartTimeWindow }}. A model that returns
+              oversized responses can exhaust the pod memory limit.'
+{{- end }}
