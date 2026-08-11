@@ -4,10 +4,7 @@ description: Helm chart for deploying HolmesGPT, an AI agent for investigating p
 name: holmesgpt
 version: 0.0.1
 type: application
-# TODO: replace with a zopdev-hosted copy, as every other chart uses.
-# `/latest/` is a moving path on the upstream docs site, so a docs
-# rebuild can relocate this and break the tile.
-icon: "https://holmesgpt.dev/latest/assets/logo.png"
+icon: "https://storage.googleapis.com/zopdev-blog-resources/1/files/originals/20260811/c7698462-dd25-47ee-ba64-c386c0055415-holmesgpt.png"
 maintainers:
   - name: ZopDev
     url: zop.dev
