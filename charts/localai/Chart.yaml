@@ -1,0 +1,23 @@
+apiVersion: v2
+appVersion: "1.0"
+description: Helm chart for deploying LocalAI, an OpenAI-compatible inference API
+name: localai
+version: 0.0.1
+type: application
+icon: "https://storage.googleapis.com/zopdev-blog-resources/1/files/originals/20260811/a4e9ef7e-9e36-4caf-8715-72a7aff32b09-localai.png"
+maintainers:
+  - name: ZopDev
+    url: zop.dev
+# PostgreSQL and NATS back the distributed topology only. Both stay off in
+# the default standalone topology, so nothing extra is installed for it.
+dependencies:
+  - name: postgres
+    version: 0.0.12
+    repository: https://helm.zop.dev
+    condition: postgres.enabled
+  - name: nats
+    version: 2.14.4
+    repository: https://nats-io.github.io/k8s/helm/charts/
+    condition: nats.enabled
+annotations:
+  type: application

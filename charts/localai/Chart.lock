@@ -1,0 +1,9 @@
+dependencies:
+- name: postgres
+  repository: https://helm.zop.dev
+  version: v0.0.12
+- name: nats
+  repository: https://nats-io.github.io/k8s/helm/charts/
+  version: 2.14.4
+digest: sha256:21c063e3f4ba5aa8801783f85f27791b5f550f3364de2e360255c758d1006b13
+generated: "2026-08-10T21:23:58.90412+05:30"

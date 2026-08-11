@@ -1,0 +1,78 @@
+{{- if not .Values.distributed.enabled }}
+{{/*
+Standalone topology: one pod both serves the API and runs the model.
+A StatefulSet rather than a Deployment because the models directory is
+this pod's own durable state, not a cache.
+*/}}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "localai.fullname" . }}
+  annotations:
+    # Environment is read once at container start, so a ConfigMap
+    # change alone would leave every running pod on the old values.
+    configmap.reloader.stakater.com/reload: {{ include "localai.fullname" . }}-configmap
+  labels:
+    {{- include "localai.labels" . | nindent 4 }}
+spec:
+  # Inference state is local to this pod, so there is nothing to gain
+  # from a second replica; scale out with distributed.enabled instead.
+  replicas: 1
+  serviceName: {{ include "localai.fullname" . }}-headless
+  selector:
+    matchLabels:
+      {{- include "localai.serverSelectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "localai.serverSelectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: localai
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "localai.fullname" . }}-configmap
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          volumeMounts:
+            - name: models
+              mountPath: /models
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          # Model loading and backend installation can take minutes on a
+          # cold volume, so readiness is gated by a long startup budget
+          # instead of a long initialDelay on every probe.
+          startupProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 10
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+  volumeClaimTemplates:
+    - metadata:
+        name: models
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: {{ .Values.diskSize }}
+{{- end }}

@@ -1,0 +1,125 @@
+{{- if .Values.distributed.enabled }}
+{{/*
+Distributed topology, compute tier. Workers self-register with a
+frontend and then sit idle until the router sends them a backend to
+install over NATS. They carry no per-model configuration, so adding
+capacity is purely a matter of raising the replica count.
+
+A StatefulSet because each worker stages its own copy of the model files
+it is asked to run, onto its own disk.
+*/}}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "localai.fullname" . }}-worker
+  annotations:
+    # A worker whose registration token changed has to restart to pick
+    # it up; otherwise it keeps re-registering with the stale one.
+    configmap.reloader.stakater.com/reload: {{ include "localai.fullname" . }}-configmap
+    secret.reloader.stakater.com/reload: {{ include "localai.registrationSecretName" . }}
+  labels:
+    {{- include "localai.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.distributed.worker.replicaCount }}
+  serviceName: {{ include "localai.fullname" . }}-worker
+  selector:
+    matchLabels:
+      {{- include "localai.workerSelectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "localai.workerSelectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: worker
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - worker
+          envFrom:
+            - configMapRef:
+                name: {{ include "localai.fullname" . }}-configmap
+          env:
+            # The frontend reaches a worker at the address the worker
+            # advertises. A pod's own IP is what is routable here: the
+            # auto-derived value is the pod hostname, which resolves
+            # only through a headless service, and the pod is replaced
+            # with a new IP on reschedule anyway, at which point it
+            # re-registers with the new one.
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: LOCALAI_SERVE_ADDR
+              value: "0.0.0.0:50051"
+            - name: LOCALAI_ADVERTISE_ADDR
+              value: "$(POD_IP):50051"
+            # File transfer listens on the gRPC base port minus one.
+            - name: LOCALAI_ADVERTISE_HTTP_ADDR
+              value: "$(POD_IP):50050"
+            - name: LOCALAI_NODE_NAME
+              value: "$(POD_NAME)"
+            - name: LOCALAI_REGISTER_TO
+              value: "http://{{ include "localai.fullname" . }}:{{ .Values.service.port }}"
+            - name: LOCALAI_REGISTRATION_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "localai.registrationSecretName" . }}
+                  key: registration-token
+            - name: LOCALAI_NATS_URL
+              value: {{ include "localai.natsUrl" . | quote }}
+          ports:
+            # Base port for backend gRPC processes. A worker running
+            # several models allocates further ports upward from here.
+            - name: grpc
+              containerPort: 50051
+              protocol: TCP
+            - name: http
+              containerPort: 50050
+              protocol: TCP
+          volumeMounts:
+            - name: models
+              mountPath: /models
+          resources:
+            {{- toYaml .Values.distributed.worker.resources | nindent 12 }}
+          # Liveness is deliberately not tied to NATS: a brief bus
+          # outage would otherwise restart every worker at once.
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+          # Readiness is, because a worker whose NATS link is down still
+          # heartbeats to the frontend and so still looks healthy there,
+          # while being unable to receive any work.
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+      {{- if .Values.distributed.worker.existingClaim }}
+      volumes:
+        - name: models
+          persistentVolumeClaim:
+            claimName: {{ .Values.distributed.worker.existingClaim }}
+      {{- end }}
+  {{- if not .Values.distributed.worker.existingClaim }}
+  volumeClaimTemplates:
+    - metadata:
+        name: models
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: {{ .Values.distributed.worker.diskSize }}
+  {{- end }}
+{{- end }}

@@ -1,0 +1,33 @@
+{{/*
+Governing service for the API tier's StatefulSet. A StatefulSet's
+serviceName is meant to name a headless service -- that is what gives
+each pod a stable DNS record. Pointing it at the ClusterIP Service
+instead leaves the pods with no per-pod DNS, and the field is immutable
+once the object exists, so it is far cheaper to get right before release
+than after.
+
+Deliberately labelled `server-headless` rather than `server`: a
+ServiceMonitor selects Services by their metadata labels, so reusing
+`server` here would match this Service as well as the API one and scrape
+every pod twice.
+*/}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "localai.fullname" . }}-headless
+  labels:
+    {{- include "localai.labels" . | nindent 4 }}
+    app.kubernetes.io/component: server-headless
+spec:
+  type: ClusterIP
+  clusterIP: None
+  # A pod needs its DNS record before it is ready, since readiness here
+  # depends on reaching PostgreSQL and NATS by name.
+  publishNotReadyAddresses: true
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "localai.serverSelectorLabels" . | nindent 4 }}

@@ -1,0 +1,50 @@
+{{/*
+Fail rendering on configurations that would otherwise install cleanly
+and then fail at runtime, where the cause is a crash loop rather than a
+message. Distributed mode has hard external dependencies, so a missing
+one is a template-time error, not a pod-time one.
+*/}}
+
+{{/*
+The models directory is mounted at a fixed path, so the chart owns the
+variable naming it. Pointing it elsewhere through `env` would leave the
+volume mounted where nothing reads it, and models would fill the
+container filesystem instead of the disk provisioned for them.
+*/}}
+{{- if hasKey .Values.env "MODELS_PATH" }}
+{{- fail "MODELS_PATH is set by the chart to match the models volume mount and cannot be overridden through `env`. Use diskSize (or distributed.worker.diskSize) to size that volume." }}
+{{- end }}
+
+{{- if .Values.distributed.enabled }}
+
+{{- if and (not .Values.postgres.enabled) (not .Values.externalDatabase.url) }}
+{{- fail "distributed.enabled requires PostgreSQL: set postgres.enabled=true to install it, or externalDatabase.url to use an existing server. LocalAI keeps its node registry, job store and auth tables there; SQLite is not supported in distributed mode." }}
+{{- end }}
+
+{{- if and (not .Values.nats.enabled) (not .Values.externalNats.url) }}
+{{- fail "distributed.enabled requires NATS: set nats.enabled=true to install it, or externalNats.url to use an existing server. Workers receive backend-install and file-staging events over NATS." }}
+{{- end }}
+
+{{- if and (not .Values.externalDatabase.url) (not .Values.postgres.services) }}
+{{- fail "postgres.services must list one entry (name and database); it is what provisions the LocalAI database and the Secret holding its credentials." }}
+{{- end }}
+
+{{/*
+The router skips file staging entirely under sharedModels, so it is only
+correct when every pod really does mount one shared volume at one path.
+Per-pod claims do not satisfy that, and neither do two different shared
+claims: in both cases the router would hand a worker an absolute path to
+a file that only exists on the frontend.
+*/}}
+{{- if .Values.distributed.sharedModels }}
+{{- $frontendClaim := .Values.distributed.frontend.existingClaim }}
+{{- $workerClaim := .Values.distributed.worker.existingClaim }}
+{{- if not (and $frontendClaim $workerClaim) }}
+{{- fail "distributed.sharedModels requires distributed.frontend.existingClaim and distributed.worker.existingClaim to both name an existing ReadWriteMany claim. Without them each pod gets its own disk, and the router would skip staging model files that the worker does not have." }}
+{{- end }}
+{{- if ne $frontendClaim $workerClaim }}
+{{- fail "distributed.sharedModels requires distributed.frontend.existingClaim and distributed.worker.existingClaim to name the SAME claim; the setting asserts that one volume is mounted at one path by every pod." }}
+{{- end }}
+{{- end }}
+
+{{- end }}

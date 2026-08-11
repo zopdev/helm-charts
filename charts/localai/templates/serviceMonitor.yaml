@@ -1,0 +1,33 @@
+{{- if .Values.metrics.enabled }}
+{{/*
+Scrapes the API tier's /metrics. Workers are not scraped: their HTTP
+port serves file transfer and the health probes, not metrics.
+*/}}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "localai.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "localai.name" . }}
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      {{- include "localai.serverSelectorLabels" . | nindent 6 }}
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: {{ .Values.metrics.scrapeInterval }}
+      {{- if .Values.distributed.enabled }}
+      # Distributed mode authenticates every endpoint, /metrics
+      # included, so an unauthenticated scrape is a permanently failing
+      # target rather than a missing one. LocalAI has no metrics-only
+      # credential, so this is the API key from the Secret below.
+      authorization:
+        type: Bearer
+        credentials:
+          name: {{ include "localai.fullname" . }}-metrics
+          key: api-key
+      {{- end }}
+{{- end }}
