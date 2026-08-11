@@ -1,5 +1,12 @@
 <p align="center">
-  <img src="https://zop.dev/resources/cdn/newsletter/zopdev-transparent-logo.png" alt="zop.dev Logo" width="200">
+  <picture>
+    <!-- The logo is a dark wordmark on a transparent background, so it
+         disappears on GitHub's dark canvas. Dark mode gets the same
+         image flattened onto white by an image proxy - same source
+         asset, no second file to host. -->
+    <source media="(prefers-color-scheme: dark)" srcset="https://wsrv.nl/?url=zop.dev/logo.png&amp;bg=white">
+    <img src="https://zop.dev/logo.png" alt="zop.dev Logo" width="200">
+  </picture>
 </p>
 
 <h2 align="center">Helm Charts : An Extensive Collection of Helm Charts for Datastores & Applications</h2>
