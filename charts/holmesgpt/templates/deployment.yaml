@@ -52,6 +52,17 @@ spec:
           env:
             - name: LOG_LEVEL
               value: {{ .Values.logLevel | quote }}
+            - name: ENABLE_JSON_LOGS_FORMAT
+              value: {{ .Values.jsonLogs | quote }}
+            # Set explicitly rather than left to the image default, so
+            # whether this agent reports usage externally is answerable
+            # by reading the chart.
+            - name: ENABLE_TELEMETRY
+              value: {{ .Values.telemetry.enabled | quote }}
+            {{- if .Values.sentryDsn }}
+            - name: SENTRY_DSN
+              value: {{ .Values.sentryDsn | quote }}
+            {{- end }}
             {{- range $key, $value := .Values.env }}
             - name: {{ $key }}
               value: {{ $value | quote }}
@@ -93,4 +104,9 @@ spec:
           configMap:
             name: {{ include "holmesgpt.fullname" . }}
         - name: tmp
-          emptyDir: {}
+          emptyDir:
+            # readOnlyRootFilesystem sends every scratch write here, so
+            # the volume is capped: unbounded, a long investigation can
+            # consume the node's ephemeral storage and get the pod
+            # evicted, or pressure every other pod on the node.
+            sizeLimit: 256Mi

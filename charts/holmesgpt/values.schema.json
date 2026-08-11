@@ -273,6 +273,33 @@
           "mutable": true
         }
       }
+    },
+    "telemetry": {
+      "category": "advanced",
+      "description": "Whether Holmes reports usage back to Robusta. Off by default here; upstream defaults it on.",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Send usage telemetry.",
+          "default": false,
+          "mutable": true
+        }
+      }
+    },
+    "jsonLogs": {
+      "category": "runtime",
+      "type": "boolean",
+      "description": "Emit structured JSON logs.",
+      "default": false,
+      "mutable": true
+    },
+    "sentryDsn": {
+      "category": "advanced",
+      "type": "string",
+      "description": "Sentry DSN for error reporting. Empty disables it.",
+      "default": "",
+      "mutable": true
     }
   }
 }

@@ -54,6 +54,20 @@ extraEnvVarsSecrets: []
 # Plain environment variables, for anything that is not a credential.
 env: {}
 
+# Whether Holmes reports usage back to Robusta. Upstream defaults this
+# on; this chart turns it off, and states so rather than inheriting an
+# image default nothing here records. An agent with cluster-wide read
+# access phoning home should be something an operator switches on
+# deliberately, not something they discover.
+telemetry:
+  enabled: false
+
+# Structured JSON logs, for a collector that parses them.
+jsonLogs: false
+
+# Sentry error reporting. Empty disables it.
+sentryDsn: ""
+
 # Data sources Holmes may use. The defaults are the ones that work from
 # in-cluster access alone; the rest need credentials. See
 # https://holmesgpt.dev/data-sources/

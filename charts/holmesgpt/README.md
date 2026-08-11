@@ -102,6 +102,9 @@ if you want them gone.
 | `alerts.unavailableReplicasThreshold` | `integer` | Unavailable replicas tolerated before alerting. | `0` |
 | `alerts.podRestartThreshold` | `integer` | Restarts tolerated in the window below. | `3` |
 | `alerts.podRestartTimeWindow` | `string` | Window the restart count is measured over. | `"10m"` |
+| `telemetry.enabled` | `boolean` | Send usage telemetry. | `false` |
+| `jsonLogs` | `boolean` | Emit structured JSON logs. | `false` |
+| `sentryDsn` | `string` | Sentry DSN for error reporting. Empty disables it. | `""` |
 
 ### Giving it a model
 
@@ -157,6 +160,25 @@ Its answers are only as good as its data sources. Of the 42 toolsets
 shipped, roughly 10 enable themselves from in-cluster access alone; the
 rest need credentials for Prometheus, Datadog, GitHub and so on. See
 [data sources](https://holmesgpt.dev/data-sources/).
+
+### Deliberate differences from upstream's chart
+
+The workloads follow upstream's, with three exceptions worth stating so
+nobody has to rediscover them by diffing:
+
+- **Telemetry is off.** Upstream sets `ENABLE_TELEMETRY=true`; this
+  chart sets it explicitly to `false`. Turn it back on with
+  `telemetry.enabled=true`.
+- **The Robusta playbooks mount is not created.** Upstream mounts
+  `robusta-playbooks-config-secret` at `/etc/robusta/config` with
+  `optional: true`, for its SaaS integration. This chart deploys Holmes
+  standalone, so the mount is omitted. Add it through your own values if
+  you use Robusta SaaS.
+- **Readiness probes start sooner and retry longer** (10s delay / 10s
+  period / 5s timeout, against upstream's 15/5/3). Holmes answers
+  `/readyz` well before it is warm, and an investigation is a long
+  request, so a slower, more patient probe suits it better than a fast
+  one that can flap.
 
 ### Observability
 
@@ -264,10 +286,10 @@ it in-cluster, or put authentication in front of the ingress.
 
 ## Connection Config
 
-The API is served on port 80 of the `<release>-holmes` service.
+The API is served on port 80 of the `<release>-holmesgpt` service.
 
 ```bash
-kubectl port-forward svc/my-holmesgpt-holmes 8080:80
+kubectl port-forward svc/my-holmesgpt-holmesgpt 8080:80
 curl http://localhost:8080/api/info
 ```
 
