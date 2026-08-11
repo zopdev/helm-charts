@@ -5,9 +5,9 @@ name: holmesgpt
 version: 0.0.1
 type: application
 # TODO: replace with a zopdev-hosted copy, as every other chart uses.
-# Pinned to a commit rather than a branch so an upstream path change
-# cannot silently break the tile in the meantime.
-icon: "https://raw.githubusercontent.com/HolmesGPT/holmesgpt/a4b6eaf09b77c576533151d86287bd266d872d09/docs/assets/logo.png"
+# `/latest/` is a moving path on the upstream docs site, so a docs
+# rebuild can relocate this and break the tile.
+icon: "https://holmesgpt.dev/latest/assets/logo.png"
 maintainers:
   - name: ZopDev
     url: zop.dev
