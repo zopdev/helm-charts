@@ -5,12 +5,11 @@ sandbox project, that investigates production incidents by reading your
 cluster and correlating it with your observability data. This chart
 deploys it as an in-cluster HTTP API.
 
-It wraps the chart HolmesGPT publishes rather than reimplementing it.
-Upstream owns the parts that should not be duplicated — the CRDs, the
-ClusterRole it needs to read a cluster, the operator, and the
-per-integration MCP servers. This chart adds what the zop.dev platform
-expects and upstream does not ship: a `values.schema.json` for the
-settings UI, an ingress, and alerting rules.
+The chart carries its own templates. The workloads follow what upstream
+deploys, and the three `holmesgpt.dev` CRDs are vendored under `crds/`,
+but the values, naming and structure are this repo's rather than
+upstream's — which is what lets the settings UI describe them, and what
+keeps an upstream value rename from silently changing our surface.
 
 ---
 
@@ -25,18 +24,13 @@ settings UI, an ingress, and alerting rules.
 
 ## Dependencies
 
-This chart depends on the upstream `holmes` chart. Download it before
-installing from a checkout:
+None. The chart deploys HolmesGPT directly and needs no subcharts, so
+there is nothing to `helm dependency build` before installing from a
+checkout.
 
-```bash
-helm dependency build
-```
-
-This command will:
-1. Read the dependencies from `Chart.yaml`
-2. Download the `holmes` chart from `https://robusta-charts.storage.googleapis.com`
-3. Store it in the `charts/` directory
-4. Create or update the `Chart.lock` file with the exact version
+It does need an LLM, which is not a chart dependency: any supported AI
+provider, or any OpenAI-compatible endpoint — including the `localai`
+chart in this repo.
 
 ---
 
@@ -68,7 +62,7 @@ default to pick: the model and the credential are yours to choose. See
 helm uninstall my-holmesgpt
 ```
 
-The CRDs the upstream chart installs are not removed by `helm uninstall`,
+The CRDs are not removed by `helm uninstall`,
 which is Helm's behaviour for anything under `crds/`. Delete them by hand
 if you want them gone.
 
@@ -76,35 +70,43 @@ if you want them gone.
 
 ## Configuration
 
-Everything under `holmes` is passed to the upstream chart verbatim, so
-any value it accepts can be set there — not only the ones given defaults
-here.
-
 | **Input** | **Type** | **Description** | **Default** |
 |---|---|---|---|
-| `holmes.modelList` | `object` | Models Holmes may use. Empty means it cannot investigate. | `{}` |
-| `holmes.extraEnvVarsSecrets` | `array` | Existing Secrets mounted as env vars, which is how an `envRef:` credential reaches the pod. | `[]` |
-| `holmes.replicas` | `int` | Number of replicas. | `1` |
-| `holmes.resources` | `object` | CPU and memory. | 100m/2048Mi, limit 2048Mi |
-| `holmes.autoscaling.enabled` | `bool` | Create an HPA. | `false` |
-| `holmes.autoscaling.minReplicas` | `int` | Lower bound. | `1` |
-| `holmes.autoscaling.maxReplicas` | `int` | Upper bound. | `5` |
-| `holmes.autoscaling.targetCPU` | `string` | Target CPU utilisation. | `"60"` |
-| `holmes.createServiceAccount` | `bool` | Create the ServiceAccount and ClusterRole Holmes reads the cluster with. | `true` |
-| `ingress.enabled` | `bool` | Create an Ingress for the API. | `false` |
-| `ingress.className` | `string` | IngressClass name. | `""` |
+| `image.repository` | `string` | Image repository. | `"robustadev/holmes"` |
+| `image.tag` | `string` | Image tag. | `"0.39.0"` |
+| `image.pullPolicy` | `string` | When the kubelet pulls the image. | `"IfNotPresent"` |
+| `replicaCount` | `integer` | Number of API replicas. Ignored when autoscaling is enabled. | `1` |
+| `modelList` | `object` | Models Holmes may use. Empty means it cannot investigate. Prefix a credential with `envRef:` to read it from a mounted Secret. | `{}` |
+| `extraEnvVarsSecrets` | `array` | Existing Secrets loaded as environment variables, which is how an `envRef:` credential reaches the pod. | `[]` |
+| `env` | `object` | Plain environment variables, for anything that is not a credential. | `{}` |
+| `toolsets` | `object` | Data sources Holmes may use. Those beyond the defaults need credentials. | `{}` |
+| `logLevel` | `string` | Log verbosity. | `"INFO"` |
+| `service.type` | `string` | Kubernetes Service type. | `"ClusterIP"` |
+| `service.port` | `integer` | Port the API is served on. | `80` |
+| `resources.requests.cpu` | `string` | CPU request. | `"100m"` |
+| `resources.requests.memory` | `string` | Memory request. | `"2048Mi"` |
+| `resources.limits.memory` | `string` | Memory limit. | `"2048Mi"` |
+| `autoscaling.enabled` | `boolean` | Create a HorizontalPodAutoscaler. | `false` |
+| `autoscaling.minReplicas` | `integer` | Lower bound. | `1` |
+| `autoscaling.maxReplicas` | `integer` | Upper bound. | `5` |
+| `autoscaling.targetCPUUtilizationPercentage` | `integer` | Target CPU utilisation. | `60` |
+| `rbac.create` | `boolean` | Create the ServiceAccount, ClusterRole and binding. | `true` |
+| `rbac.serviceAccountName` | `string` | Existing ServiceAccount to use when create is false. | `""` |
+| `rbac.extraRules` | `array` | Additional ClusterRole rules. | `[]` |
+| `ingress.enabled` | `boolean` | Create an Ingress. | `false` |
+| `ingress.className` | `string` | IngressClass to use. | `""` |
 | `ingress.host` | `string` | Hostname. Required when the ingress is enabled. | `""` |
-| `ingress.annotations` | `object` | Ingress annotations. | `{}` |
+| `ingress.annotations` | `object` | Annotations applied to the Ingress. | `{}` |
 | `ingress.tlsSecretName` | `string` | Existing TLS secret for the host. | `""` |
-| `alerts.enabled` | `bool` | Create the PrometheusRule. Needs the Prometheus Operator CRDs. | `true` |
-| `alerts.unavailableReplicasThreshold` | `int` | Unavailable replicas tolerated. | `0` |
-| `alerts.podRestartThreshold` | `int` | Restarts tolerated in the window. | `3` |
-| `alerts.podRestartTimeWindow` | `string` | Window the restarts are counted over. | `"10m"` |
+| `alerts.enabled` | `boolean` | Create the PrometheusRule. | `true` |
+| `alerts.unavailableReplicasThreshold` | `integer` | Unavailable replicas tolerated before alerting. | `0` |
+| `alerts.podRestartThreshold` | `integer` | Restarts tolerated in the window below. | `3` |
+| `alerts.podRestartTimeWindow` | `string` | Window the restart count is measured over. | `"10m"` |
 
 ### Giving it a model
 
 Keep the credential in a Secret and reference it, so it never passes
-through values or a rendered manifest. `envRef:` is upstream's sugar for
+through values or a rendered manifest. `envRef:` means
 "read this from the environment at runtime":
 
 ```bash
@@ -112,15 +114,14 @@ kubectl create secret generic holmes-llm-keys \
   --from-literal=ANTHROPIC_API_KEY=sk-ant-...
 
 helm upgrade my-holmesgpt zopdev/holmesgpt --reuse-values \
-  --set 'holmes.extraEnvVarsSecrets[0]=holmes-llm-keys' \
-  --set holmes.modelList.claude.model=anthropic/claude-sonnet-4-20250514 \
-  --set holmes.modelList.claude.api_key=envRef:ANTHROPIC_API_KEY
+  --set 'extraEnvVarsSecrets[0]=holmes-llm-keys' \
+  --set modelList.claude.model=anthropic/claude-sonnet-4-20250514 \
+  --set modelList.claude.api_key=envRef:ANTHROPIC_API_KEY
 ```
 
-`extraEnvVarsSecrets` is the shorthand for mounting a whole Secret;
-`holmes.additionalEnvVars` and `holmes.additional_env_froms` work too
-when you need to remap a key or read from a ConfigMap. Any of them
-satisfies an `envRef:`.
+`extraEnvVarsSecrets` mounts whole Secrets; `env` sets plain
+variables for anything that is not a credential. Either satisfies an
+`envRef:`.
 
 Referencing a key with `envRef:` while *none* of them supplies it is
 rejected when the chart renders. That combination looks configured, but
@@ -133,20 +134,24 @@ the `localai` chart in this repo serves that API, which keeps prompts
 containing cluster state off the public internet:
 
 ```yaml
-holmes:
-  modelList:
-    local:
-      model: openai/qwen3-1.7b
-      api_base: http://my-localai:8080/v1
-      api_key: not-needed
+extraEnvVarsSecrets:
+  - holmes-llm-keys        # holds LOCALAI_API_KEY
+modelList:
+  local:
+    model: openai/qwen3-1.7b
+    api_base: http://my-localai:8080/v1
+    api_key: envRef:LOCALAI_API_KEY
 ```
 
 ### What it can see
 
-Holmes reads cluster state to investigate, so the upstream chart creates
-a ServiceAccount bound to a read-mostly ClusterRole. That is a broad
-grant: narrow it with `holmes.customClusterRoleRules`, or set
-`holmes.createServiceAccount=false` and bind your own.
+Holmes reads cluster state to investigate, so this chart creates a
+ServiceAccount bound to a read-mostly ClusterRole covering workloads,
+events, logs, metrics and the CRDs of operators it knows about. That is
+a broad grant: add to it with `rbac.extraRules`, or set
+`rbac.create=false` with `rbac.serviceAccountName` to bind a narrower
+role of your own — at the cost of Holmes being blind to what you leave
+out.
 
 Its answers are only as good as its data sources. Of the 42 toolsets
 shipped, roughly 10 enable themselves from in-cluster access alone; the
@@ -165,10 +170,9 @@ Prometheus endpoint. A ServiceMonitor pointed at it would be a
 permanently failing scrape target that looks configured, so the alerts
 above read kube-state-metrics instead.
 
-There are also no stakater reloader annotations, and none are needed:
-the upstream chart already hashes `modelList`, `toolsets` and the MCP
-server config into the pod template, so changing a model through
-`helm upgrade` rolls the pods on its own.
+There are no stakater reloader annotations, and none are needed: the
+config ConfigMap is hashed into the pod template, so changing a model
+through `helm upgrade` rolls the deployment on its own.
 
 The PrometheusRule needs the Prometheus Operator CRDs. Turn it off on a
 cluster without them:
@@ -182,21 +186,23 @@ helm install my-holmesgpt zopdev/holmesgpt --set alerts.enabled=false
 ## Example `values.yaml`
 
 ```yaml
-holmes:
-  replicas: 2
-  extraEnvVarsSecrets:
-    - holmes-llm-keys
-  modelList:
-    claude-sonnet:
-      model: anthropic/claude-sonnet-4-20250514
-      api_key: envRef:ANTHROPIC_API_KEY
-      temperature: 0
-  resources:
-    requests:
-      cpu: "500m"
-      memory: "2048Mi"
-    limits:
-      memory: "4096Mi"
+replicaCount: 2
+
+extraEnvVarsSecrets:
+  - holmes-llm-keys
+
+modelList:
+  claude-sonnet:
+    model: anthropic/claude-sonnet-4-20250514
+    api_key: envRef:ANTHROPIC_API_KEY
+    temperature: 0
+
+resources:
+  requests:
+    cpu: "500m"
+    memory: "2048Mi"
+  limits:
+    memory: "4096Mi"
 
 ingress:
   enabled: true
@@ -219,23 +225,22 @@ helm install my-holmesgpt zopdev/holmesgpt -f values.yaml
 - Works with any supported AI provider, or any OpenAI-compatible endpoint including one inside the cluster
 - Credentials referenced from an existing Secret, never written into values
 - Half-configured credentials rejected when the chart renders rather than at the first investigation
-- ServiceAccount and read-mostly ClusterRole created for cluster investigation, narrowable or replaceable
+- ServiceAccount and read-mostly ClusterRole created for cluster investigation, extendable with `rbac.extraRules` or replaceable entirely
 - Optional HPA
 - Ingress with optional TLS
 - Alerting rules that hold through a rollout
-- CRDs for scheduled and triggered health checks, from the upstream chart
+- CRDs for scheduled and triggered health checks, vendored under `crds/`
 
 ---
 
 ## Architecture
 
 The chart deploys:
-- The HolmesGPT API (Deployment), serving HTTP on 5050 behind a Service on port 80
-- A ServiceAccount with a ClusterRole and binding, used to read cluster state (dependency)
-- A ConfigMap holding the toolset and model configuration (dependency)
-- CRDs for health checks (dependency)
-- Optional MCP server deployments for integrations such as AWS, GCP, GitHub (dependency, off by default)
-- An Ingress and a PrometheusRule, added by this chart
+- The HolmesGPT API (Deployment), serving HTTP on 5050 behind a Service
+- A ConfigMap holding the toolset and model configuration, hashed into the pod template so a model change actually rolls the pods
+- A ServiceAccount, ClusterRole and binding used to read cluster state
+- Three `holmesgpt.dev` CRDs for health checks, vendored under `crds/`
+- Optionally an Ingress, an HPA, and a PrometheusRule
 
 A request to `/api/chat` is answered by the model in `modelList`, which
 Holmes calls with the toolsets it has available — reading Kubernetes
@@ -247,8 +252,7 @@ objects, logs and events, plus whatever external sources are configured.
 
 - LLM credentials supplied through an existing Secret and referenced with `envRef:`, so the key appears in no rendered manifest
 - A model referencing a credential with no Secret mounted is rejected at render time
-- The investigation ClusterRole is narrowable with `holmes.customClusterRoleRules`, or replaceable with your own ServiceAccount
-- MCP server integrations ship NetworkPolicies (dependency)
+- The investigation ClusterRole is narrowable with `rbac.extraRules`, or replaceable with your own ServiceAccount
 - Ingress TLS from an existing certificate secret
 
 Worth weighing before exposing this: `/api/chat` is unauthenticated by

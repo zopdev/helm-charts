@@ -17,24 +17,22 @@ half-configured case: it renders, deploys, and then fails on the first
 investigation with an authentication error naming the model rather than
 the missing credential.
 
-Upstream reads the environment from four separate values, and its own
-installation guide leads with `additionalEnvVars` rather than the
-`extraEnvVarsSecrets` shorthand. All four are accepted here: a guard
-recognising only one of them rejects the configuration upstream tells
-people to write, which is a worse failure than the one it set out to
-catch.
+Either source counts: a Secret named in `extraEnvVarsSecrets`, or a
+plain variable under `env`. A guard that recognised only one of them
+would reject a working configuration, which is a worse failure than the
+one it set out to catch.
 */}}
 {{- $usesEnvRef := false }}
-{{- range $model, $config := .Values.holmes.modelList }}
+{{- range $model, $config := .Values.modelList }}
 {{- range $field, $value := $config }}
 {{- if and (kindIs "string" $value) (hasPrefix "envRef:" $value) }}
 {{- $usesEnvRef = true }}
 {{- end }}
 {{- end }}
 {{- end }}
-{{- $hasEnvSource := or .Values.holmes.extraEnvVarsSecrets .Values.holmes.additionalEnvVars .Values.holmes.additional_env_vars .Values.holmes.additional_env_froms }}
+{{- $hasEnvSource := or .Values.extraEnvVarsSecrets .Values.env }}
 {{- if and $usesEnvRef (not $hasEnvSource) }}
-{{- fail "holmes.modelList references a credential with `envRef:`, but nothing supplies it to the pod. Name the Secret holding it in holmes.extraEnvVarsSecrets, or supply it through holmes.additionalEnvVars or holmes.additional_env_froms. Alternatively set the key inline instead of using envRef:." }}
+{{- fail "modelList references a credential with `envRef:`, but nothing supplies it to the pod. Name the Secret holding it in extraEnvVarsSecrets, or supply it through env. Alternatively set the key inline instead of using envRef:." }}
 {{- end }}
 
 {{- if and .Values.ingress.enabled (not .Values.ingress.host) }}

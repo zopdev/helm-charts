@@ -1,6 +1,0 @@
-dependencies:
-- name: holmes
-  repository: https://robusta-charts.storage.googleapis.com
-  version: 0.39.0
-digest: sha256:06f8001e94ef480adf6a597cd42e03959b8e853a86fd6f0c3da0dd45b1b228b4
-generated: "2026-08-11T16:43:37.622168+05:30"

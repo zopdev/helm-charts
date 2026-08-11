@@ -7,7 +7,7 @@ forwards to the container's 5050.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "holmesgpt.holmesFullname" . }}
+  name: {{ include "holmesgpt.fullname" . }}
   labels:
     {{- include "holmesgpt.labels" . | nindent 4 }}
   {{- with .Values.ingress.annotations }}
@@ -32,7 +32,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: {{ include "holmesgpt.holmesFullname" . }}
+                name: {{ include "holmesgpt.fullname" . }}
                 port:
-                  number: 80
+                  number: {{ .Values.service.port }}
 {{- end }}

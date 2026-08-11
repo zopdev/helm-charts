@@ -11,14 +11,5 @@ icon: "https://raw.githubusercontent.com/HolmesGPT/holmesgpt/a4b6eaf09b77c576533
 maintainers:
   - name: ZopDev
     url: zop.dev
-# HolmesGPT publishes a maintained chart that already owns the parts worth
-# not reimplementing: the CRDs, the ClusterRole it needs to read a cluster,
-# the operator, and the per-integration MCP servers. This chart wraps it and
-# adds what the zop.dev platform expects and upstream does not ship -- a
-# values.schema.json for the settings UI, an ingress, and alerts.
-dependencies:
-  - name: holmes
-    version: 0.39.0
-    repository: https://robusta-charts.storage.googleapis.com
 annotations:
   type: application

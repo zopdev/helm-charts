@@ -3,111 +3,211 @@
   "title": "HolmesGPT",
   "type": "object",
   "properties": {
-    "holmes": {
+    "image": {
       "category": "runtime",
-      "description": "Settings passed to the upstream HolmesGPT chart.",
+      "description": "Container image for the HolmesGPT API.",
       "type": "object",
       "properties": {
-        "modelList": {
-          "type": "object",
-          "description": "Models Holmes may use. Until this has an entry it cannot investigate anything. Prefix a credential with `envRef:` to read it from a mounted Secret.",
+        "repository": {
+          "type": "string",
+          "description": "Image repository.",
+          "default": "robustadev/holmes",
+          "editDisabled": true
+        },
+        "tag": {
+          "type": "string",
+          "description": "Image tag.",
+          "default": "0.39.0",
           "mutable": true
         },
-        "extraEnvVarsSecrets": {
-          "type": "array",
-          "description": "Names of existing Secrets mounted as environment variables, which is how an `envRef:` credential reaches the pod.",
-          "items": {
-            "type": "string"
-          },
+        "pullPolicy": {
+          "type": "string",
+          "description": "When the kubelet pulls the image.",
+          "enum": [
+            "Always",
+            "IfNotPresent",
+            "Never"
+          ],
+          "default": "IfNotPresent",
+          "mutable": true
+        }
+      }
+    },
+    "replicaCount": {
+      "type": "integer",
+      "description": "Number of API replicas. Ignored when autoscaling is enabled.",
+      "minimum": 1,
+      "default": 1,
+      "mutable": true,
+      "category": "compute"
+    },
+    "modelList": {
+      "type": "object",
+      "description": "Models Holmes may use. Empty means it cannot investigate. Prefix a credential with `envRef:` to read it from a mounted Secret.",
+      "mutable": true,
+      "category": "runtime"
+    },
+    "extraEnvVarsSecrets": {
+      "type": "array",
+      "description": "Existing Secrets loaded as environment variables, which is how an `envRef:` credential reaches the pod.",
+      "items": {
+        "type": "string"
+      },
+      "mutable": true,
+      "category": "environment"
+    },
+    "env": {
+      "type": "object",
+      "description": "Plain environment variables, for anything that is not a credential.",
+      "mutable": true,
+      "category": "environment"
+    },
+    "toolsets": {
+      "type": "object",
+      "description": "Data sources Holmes may use. Those beyond the defaults need credentials.",
+      "mutable": true,
+      "category": "runtime"
+    },
+    "logLevel": {
+      "type": "string",
+      "description": "Log verbosity.",
+      "enum": [
+        "DEBUG",
+        "INFO",
+        "WARNING",
+        "ERROR"
+      ],
+      "default": "INFO",
+      "mutable": true,
+      "category": "runtime"
+    },
+    "service": {
+      "category": "runtime",
+      "description": "Service fronting the API.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Kubernetes Service type.",
+          "enum": [
+            "ClusterIP",
+            "NodePort",
+            "LoadBalancer"
+          ],
+          "default": "ClusterIP",
           "mutable": true
         },
-        "replicas": {
+        "port": {
           "type": "integer",
-          "description": "Number of Holmes replicas.",
-          "minimum": 1,
-          "default": 1,
+          "description": "Port the API is served on.",
+          "default": 80,
           "mutable": true
-        },
-        "createServiceAccount": {
-          "type": "boolean",
-          "description": "Create the ServiceAccount and ClusterRole Holmes uses to read cluster state.",
-          "default": true,
-          "mutable": true
-        },
-        "resources": {
+        }
+      }
+    },
+    "resources": {
+      "category": "compute",
+      "description": "CPU and memory for the API pod.",
+      "type": "object",
+      "properties": {
+        "requests": {
           "type": "object",
-          "description": "CPU and memory for the Holmes pod.",
           "properties": {
-            "requests": {
-              "type": "object",
-              "properties": {
-                "cpu": {
-                  "type": "string",
-                  "description": "CPU request.",
-                  "pattern": "^[0-9]+m$",
-                  "default": "100m",
-                  "mutable": true
-                },
-                "memory": {
-                  "type": "string",
-                  "description": "Memory request.",
-                  "pattern": "^[0-9]+(Mi|Gi)$",
-                  "default": "2048Mi",
-                  "mutable": true
-                }
-              }
+            "cpu": {
+              "type": "string",
+              "description": "CPU request.",
+              "pattern": "^[0-9]+m$",
+              "default": "100m",
+              "mutable": true
             },
-            "limits": {
-              "type": "object",
-              "properties": {
-                "memory": {
-                  "type": "string",
-                  "description": "Memory limit.",
-                  "pattern": "^[0-9]+(Mi|Gi)$",
-                  "default": "2048Mi",
-                  "mutable": true
-                }
-              }
+            "memory": {
+              "type": "string",
+              "description": "Memory request.",
+              "pattern": "^[0-9]+(Mi|Gi)$",
+              "default": "2048Mi",
+              "mutable": true
             }
           }
         },
-        "autoscaling": {
+        "limits": {
           "type": "object",
-          "description": "Upstream HPA for the Holmes deployment.",
           "properties": {
-            "enabled": {
-              "type": "boolean",
-              "description": "Create a HorizontalPodAutoscaler.",
-              "default": false,
-              "mutable": true
-            },
-            "minReplicas": {
-              "type": "integer",
-              "description": "Lower bound.",
-              "minimum": 1,
-              "default": 1,
-              "mutable": true
-            },
-            "maxReplicas": {
-              "type": "integer",
-              "description": "Upper bound.",
-              "minimum": 1,
-              "default": 5,
-              "mutable": true
-            },
-            "targetCPU": {
+            "memory": {
               "type": "string",
-              "description": "Target CPU utilisation percentage.",
-              "default": "60",
+              "description": "Memory limit.",
+              "pattern": "^[0-9]+(Mi|Gi)$",
+              "default": "2048Mi",
               "mutable": true
             }
           }
         }
       }
     },
+    "autoscaling": {
+      "category": "compute",
+      "description": "Horizontal autoscaling for the API deployment.",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Create a HorizontalPodAutoscaler.",
+          "default": false,
+          "mutable": true
+        },
+        "minReplicas": {
+          "type": "integer",
+          "description": "Lower bound.",
+          "minimum": 1,
+          "default": 1,
+          "mutable": true
+        },
+        "maxReplicas": {
+          "type": "integer",
+          "description": "Upper bound.",
+          "minimum": 1,
+          "default": 5,
+          "mutable": true
+        },
+        "targetCPUUtilizationPercentage": {
+          "type": "integer",
+          "description": "Target CPU utilisation.",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 60,
+          "mutable": true
+        }
+      }
+    },
+    "rbac": {
+      "category": "advanced",
+      "description": "The ServiceAccount and ClusterRole Holmes reads cluster state with.",
+      "type": "object",
+      "properties": {
+        "create": {
+          "type": "boolean",
+          "description": "Create the ServiceAccount, ClusterRole and binding.",
+          "default": true,
+          "mutable": true
+        },
+        "serviceAccountName": {
+          "type": "string",
+          "description": "Existing ServiceAccount to use when create is false.",
+          "default": "",
+          "mutable": true
+        },
+        "extraRules": {
+          "type": "array",
+          "description": "Additional ClusterRole rules.",
+          "items": {
+            "type": "object"
+          },
+          "mutable": true
+        }
+      }
+    },
     "ingress": {
       "category": "runtime",
-      "description": "Ingress exposing the HTTP API outside the cluster.",
+      "description": "Ingress exposing the API outside the cluster.",
       "type": "object",
       "properties": {
         "enabled": {
@@ -124,7 +224,7 @@
         },
         "host": {
           "type": "string",
-          "description": "Hostname to serve on. Required when the ingress is enabled.",
+          "description": "Hostname. Required when the ingress is enabled.",
           "default": "",
           "mutable": true
         },

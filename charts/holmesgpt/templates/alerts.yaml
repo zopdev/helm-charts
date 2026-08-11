@@ -15,11 +15,11 @@ from an unset key produces a null label, which the PrometheusRule CRD
 rejects, and the rejection fails the whole release rather than the
 alert alone.
 */}}
-{{- $deployment := include "holmesgpt.holmesFullname" . }}
+{{- $deployment := include "holmesgpt.fullname" . }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
-  name: {{ include "holmesgpt.holmesFullname" . }}
+  name: {{ include "holmesgpt.fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
     app: kube-prometheus-stack

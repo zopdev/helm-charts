@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "holmesgpt.fullname" . }}
+  labels:
+    {{- include "holmesgpt.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "holmesgpt.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "holmesgpt.selectorLabels" . | nindent 8 }}
+      annotations:
+        # The model list and toolsets are read from a mounted ConfigMap
+        # at start, and a ConfigMap change alone does not restart a pod.
+        # Hashing them into the pod template makes `helm upgrade` roll
+        # the deployment, so a model change actually takes effect
+        # instead of appearing to.
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      serviceAccountName: {{ include "holmesgpt.serviceAccountName" . }}
+      containers:
+        - name: holmesgpt
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          # The image's default entrypoint is the interactive CLI, which
+          # exits immediately without a prompt argument. Serving the API
+          # is an explicit command.
+          command: ["python3", "-u", "server.py"]
+          lifecycle:
+            preStop:
+              # SIGINT lets an in-flight investigation finish rather
+              # than being cut off by the default SIGTERM.
+              exec:
+                command: ["bash", "-c", "kill -SIGINT 1"]
+          securityContext:
+            # Holmes writes only to /tmp, which is mounted separately.
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - name: http
+              containerPort: 5050
+              protocol: TCP
+          env:
+            - name: LOG_LEVEL
+              value: {{ .Values.logLevel | quote }}
+            {{- range $key, $value := .Values.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          {{- if .Values.extraEnvVarsSecrets }}
+          envFrom:
+            {{- range .Values.extraEnvVarsSecrets }}
+            - secretRef:
+                name: {{ . }}
+            {{- end }}
+          {{- end }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/holmes/config
+            # readOnlyRootFilesystem is on, and Holmes needs somewhere
+            # to write scratch files while investigating.
+            - name: tmp
+              mountPath: /tmp
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "holmesgpt.fullname" . }}
+        - name: tmp
+          emptyDir: {}
