@@ -19,7 +19,7 @@ spec:
             severity: critical
             servicealert: "true"
             namespace: {{ .Release.Namespace }}
-            service: {{ .Values.name }}
+            service: {{ .Values.name | default .Release.Name | quote }}
           annotations:
             summary: 'PostgreSQL instance {{ .Release.Name }} restarted'
             description: 'PostgreSQL instance {{ .Release.Name }} restarted < 1 minute ago'
@@ -31,7 +31,7 @@ spec:
             severity: warning
             servicealert: "true"
             namespace: {{ .Release.Namespace }}
-            service: {{ .Values.name }}
+            service: {{ .Values.name | default .Release.Name | quote }}
           annotations:
             summary: 'PostgreSQL instance {{ .Release.Name }} has too many connections (> 80%)'
             description: 'More than 80% of PostgreSQL connections of instance {{ .Release.Name }} are in use'
@@ -43,7 +43,7 @@ spec:
             severity: warning
             servicealert: "true"
             namespace: {{ .Release.Namespace }}
-            service: {{ .Values.name }}
+            service: {{ .Values.name | default .Release.Name | quote }}
           annotations:
             summary: 'PostgreSQL instance {{ .Release.Name }} has dead-locks'
             description: 'PostgreSQL instance {{ .Release.Name }} has dead-locks'
