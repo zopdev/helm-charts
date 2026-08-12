@@ -1,0 +1,123 @@
+# n8n is a workflow automation platform. This chart runs a single instance that
+# serves the editor UI, the REST API and the webhook endpoints, with PostgreSQL
+# holding workflows, credentials and execution history.
+#
+# Executions run in the same process as the editor (EXECUTIONS_MODE=regular).
+# Queue mode, which spreads executions across dedicated worker pods and needs
+# Redis, is not part of this chart.
+
+image:
+  repository: n8nio/n8n
+  # Empty falls back to .Chart.AppVersion, which is pinned to an immutable
+  # release tag. `latest` and `stable` both move, so naming either here would
+  # make two installs of this chart version run different code.
+  tag: ""
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  # The editor, the API, the webhook endpoints and /metrics all answer here.
+  port: 5678
+
+# Holds the config file n8n writes on first boot, any custom nodes, and binary
+# payloads. Turning this off switches binary storage into Postgres rather than
+# writing to a container filesystem that is lost on restart.
+persistence:
+  enabled: true
+  size: "10Gi"
+  # Empty uses the cluster's default StorageClass.
+  storageClass: ""
+  # Bind to a claim you already have instead of creating one.
+  existingClaim: ""
+
+# n8n writes its own hostname into every webhook it registers and into OAuth
+# callback URLs, so enabling the ingress is also what makes those URLs correct.
+ingress:
+  enabled: false
+  className: ""
+  host: ""
+  annotations: {}
+  # Set to serve the host over TLS from an existing certificate secret. Its
+  # presence is also what decides whether webhook URLs are https.
+  tlsSecretName: ""
+
+# Overrides the URL derived from ingress.host. Set this when something else
+# terminates traffic - a tunnel, or a proxy on another hostname - and n8n would
+# otherwise advertise an address callers cannot reach.
+webhookUrl: ""
+
+# Encrypts every credential stored in n8n. Generated on install and read back on
+# upgrade, so it stays stable for the life of the secret. It cannot be recovered
+# from the database: if it is lost, every stored credential must be re-entered.
+encryptionKey:
+  # Use a pre-created secret instead of generating one.
+  existingSecret: ""
+  secretKey: N8N_ENCRYPTION_KEY
+
+# Applied as both GENERIC_TIMEZONE and TZ. Cron-triggered workflows are
+# scheduled against this, so a wrong value silently shifts when they run.
+timezone: "UTC"
+
+# Renders a ServiceMonitor and sets N8N_METRICS, which is what makes n8n serve
+# /metrics at all. Needs the Prometheus Operator CRDs.
+metrics:
+  enabled: true
+  scrapeInterval: 30s
+
+# Renders a PrometheusRule. Needs the Prometheus Operator CRDs.
+alerts:
+  enabled: true
+
+resources:
+  requests:
+    cpu: "500m"
+    memory: "1Gi"
+  limits:
+    cpu: "1"
+    memory: "2Gi"
+
+# Extra plain environment variables, e.g.
+#   env:
+#     N8N_LOG_LEVEL: debug
+# Variables this chart derives from other values are rejected at render time
+# rather than silently overridden - see templates/validate.yaml.
+env: {}
+
+# Existing secrets mounted with envFrom, for values that should not sit in
+# values.yaml. Useful for SMTP credentials or an external storage key.
+extraEnvFrom: []
+#  - secretName: n8n-smtp
+
+# Blocks startup until the database accepts an authenticated connection. The
+# postgres chart creates the role from a Pod that sleeps first, so without this
+# n8n crash-loops through the first minute of a fresh install.
+waitForDatabase:
+  enabled: true
+  image:
+    # The same image the postgres chart runs, so this introduces no new registry.
+    # Keep the tag in step with postgres.version below.
+    repository: docker.io/bitnamilegacy/postgresql
+    tag: "17.4.0"
+    pullPolicy: IfNotPresent
+
+# The zopdev postgres chart. It provisions the database, a dedicated role, and
+# the secret this chart reads those credentials from.
+postgres:
+  enabled: true
+  # Used as the `service` label on the postgres alerts, attributing them to this
+  # release rather than to the datastore in isolation.
+  name: n8n
+  services:
+    - name: n8n
+      database: n8n
+
+# Point at a PostgreSQL server this release does not manage. Setting host turns
+# the subchart off; the two are mutually exclusive and setting both fails the
+# render. The password is only ever read from a secret.
+externalDatabase:
+  host: ""
+  port: 5432
+  database: n8n
+  user: ""
+  existingSecret: ""
+  passwordKey: password

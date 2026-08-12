@@ -1,0 +1,386 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "n8n Helm Chart Values",
+  "description": "Configuration values for the n8n workflow automation Helm chart",
+  "properties": {
+    "image": {
+      "type": "object",
+      "category": "runtime",
+      "description": "n8n container image",
+      "properties": {
+        "repository": {
+          "type": "string",
+          "description": "Image repository",
+          "default": "n8nio/n8n"
+        },
+        "tag": {
+          "type": "string",
+          "description": "Image tag; falls back to .Chart.AppVersion when empty",
+          "default": "",
+          "mutable": true
+        },
+        "pullPolicy": {
+          "type": "string",
+          "description": "Image pull policy",
+          "default": "IfNotPresent",
+          "mutable": true
+        }
+      },
+      "required": ["repository"]
+    },
+    "service": {
+      "type": "object",
+      "category": "runtime",
+      "description": "Kubernetes Service exposing the editor, API, webhooks and /metrics",
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Service type",
+          "default": "ClusterIP"
+        },
+        "port": {
+          "type": "integer",
+          "description": "Service port",
+          "default": 5678
+        }
+      },
+      "required": ["type", "port"]
+    },
+    "persistence": {
+      "type": "object",
+      "category": "compute",
+      "description": "Volume for /home/node/.n8n, holding the generated config, custom nodes and binary payloads",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Provision a volume; when false, binary data is stored in Postgres instead",
+          "default": true
+        },
+        "size": {
+          "type": "string",
+          "description": "Requested volume size",
+          "default": "10Gi",
+          "mutable": true
+        },
+        "storageClass": {
+          "type": "string",
+          "description": "StorageClass name; empty uses the cluster default",
+          "default": "",
+          "mutable": true
+        },
+        "existingClaim": {
+          "type": "string",
+          "description": "Bind an existing PersistentVolumeClaim instead of creating one",
+          "default": "",
+          "mutable": true
+        }
+      },
+      "required": ["enabled", "size"]
+    },
+    "ingress": {
+      "type": "object",
+      "category": "runtime",
+      "description": "Ingress exposing n8n. Also the source of the hostname n8n writes into webhook and OAuth callback URLs",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Render the Ingress",
+          "default": false,
+          "mutable": true
+        },
+        "className": {
+          "type": "string",
+          "description": "IngressClass name",
+          "default": "",
+          "mutable": true
+        },
+        "host": {
+          "type": "string",
+          "description": "Hostname to serve; required when enabled, and baked into webhook URLs",
+          "default": "",
+          "mutable": true
+        },
+        "annotations": {
+          "type": ["object", "null"],
+          "description": "Annotations applied to the Ingress",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "mutable": true
+        },
+        "tlsSecretName": {
+          "type": "string",
+          "description": "Existing TLS certificate secret; its presence also makes webhook URLs https",
+          "default": "",
+          "mutable": true
+        }
+      },
+      "required": ["enabled"]
+    },
+    "webhookUrl": {
+      "type": "string",
+      "category": "runtime",
+      "description": "Overrides the public URL derived from ingress.host, for tunnels or proxies terminating elsewhere",
+      "default": "",
+      "mutable": true
+    },
+    "encryptionKey": {
+      "type": "object",
+      "category": "environment",
+      "description": "Key encrypting every stored credential. Generated on install, read back on upgrade, and unrecoverable if lost",
+      "properties": {
+        "existingSecret": {
+          "type": "string",
+          "description": "Use a pre-created secret instead of generating one",
+          "default": "",
+          "mutable": true
+        },
+        "secretKey": {
+          "type": "string",
+          "description": "Key within the encryption secret",
+          "default": "N8N_ENCRYPTION_KEY"
+        }
+      },
+      "required": ["secretKey"]
+    },
+    "timezone": {
+      "type": "string",
+      "category": "runtime",
+      "description": "Timezone cron-triggered workflows are scheduled against (GENERIC_TIMEZONE and TZ)",
+      "default": "UTC",
+      "mutable": true
+    },
+    "metrics": {
+      "type": "object",
+      "category": "runtime",
+      "description": "Prometheus ServiceMonitor; also enables n8n's /metrics endpoint",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Serve /metrics and render the ServiceMonitor",
+          "default": true,
+          "mutable": true
+        },
+        "scrapeInterval": {
+          "type": "string",
+          "description": "ServiceMonitor scrape interval",
+          "default": "30s",
+          "mutable": true
+        }
+      },
+      "required": ["enabled"]
+    },
+    "alerts": {
+      "type": "object",
+      "category": "runtime",
+      "description": "PrometheusRule with the instance's availability alerts",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Render the PrometheusRule",
+          "default": true,
+          "mutable": true
+        }
+      },
+      "required": ["enabled"]
+    },
+    "resources": {
+      "type": "object",
+      "category": "compute",
+      "description": "CPU/memory requests and limits for the n8n container",
+      "properties": {
+        "requests": {
+          "type": "object",
+          "properties": {
+            "cpu": {
+              "type": "string",
+              "description": "CPU request",
+              "default": "500m",
+              "mutable": true
+            },
+            "memory": {
+              "type": "string",
+              "description": "Memory request",
+              "default": "1Gi",
+              "mutable": true
+            }
+          },
+          "required": ["cpu", "memory"]
+        },
+        "limits": {
+          "type": "object",
+          "properties": {
+            "cpu": {
+              "type": "string",
+              "description": "CPU limit",
+              "default": "1",
+              "mutable": true
+            },
+            "memory": {
+              "type": "string",
+              "description": "Memory limit",
+              "default": "2Gi",
+              "mutable": true
+            }
+          },
+          "required": ["cpu", "memory"]
+        }
+      },
+      "required": ["requests", "limits"]
+    },
+    "env": {
+      "type": ["object", "null"],
+      "category": "environment",
+      "description": "Extra plain environment variables. Variables the chart derives from other values are rejected at render time",
+      "additionalProperties": {
+        "type": ["string", "number", "boolean"]
+      },
+      "mutable": true
+    },
+    "extraEnvFrom": {
+      "type": ["array", "null"],
+      "category": "environment",
+      "description": "Existing secrets (by secretName) mounted via envFrom",
+      "items": {
+        "type": "object",
+        "properties": {
+          "secretName": {
+            "type": "string"
+          }
+        },
+        "required": ["secretName"]
+      },
+      "mutable": true
+    },
+    "waitForDatabase": {
+      "type": "object",
+      "category": "advanced",
+      "description": "Init container blocking startup until the database accepts an authenticated connection",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Wait for the database before starting n8n",
+          "default": true,
+          "mutable": true
+        },
+        "image": {
+          "type": "object",
+          "description": "Image providing psql for the wait loop",
+          "properties": {
+            "repository": {
+              "type": "string",
+              "description": "Image repository",
+              "default": "docker.io/bitnamilegacy/postgresql"
+            },
+            "tag": {
+              "type": "string",
+              "description": "Image tag; keep in step with the postgres chart version",
+              "default": "17.4.0",
+              "mutable": true
+            },
+            "pullPolicy": {
+              "type": "string",
+              "description": "Image pull policy",
+              "default": "IfNotPresent",
+              "mutable": true
+            }
+          },
+          "required": ["repository", "tag"]
+        }
+      },
+      "required": ["enabled", "image"]
+    },
+    "postgres": {
+      "type": "object",
+      "category": "advanced",
+      "description": "zopdev postgres chart providing the backing database",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Install PostgreSQL with this release",
+          "default": true
+        },
+        "name": {
+          "type": "string",
+          "description": "Owning service name, used as the service label on the postgres alerts",
+          "default": "n8n"
+        },
+        "services": {
+          "type": "array",
+          "description": "Databases to provision (name/database)",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "database": {
+                "type": "string"
+              }
+            },
+            "required": ["name", "database"]
+          }
+        }
+      },
+      "required": ["enabled", "services"]
+    },
+    "externalDatabase": {
+      "type": "object",
+      "category": "advanced",
+      "description": "Use an existing PostgreSQL server instead of the subchart. Mutually exclusive with postgres.enabled",
+      "properties": {
+        "host": {
+          "type": "string",
+          "description": "Server hostname; setting it selects the external database",
+          "default": "",
+          "mutable": true
+        },
+        "port": {
+          "type": "integer",
+          "description": "Server port",
+          "default": 5432,
+          "mutable": true
+        },
+        "database": {
+          "type": "string",
+          "description": "Database name",
+          "default": "n8n",
+          "mutable": true
+        },
+        "user": {
+          "type": "string",
+          "description": "Role n8n connects as",
+          "default": "",
+          "mutable": true
+        },
+        "existingSecret": {
+          "type": "string",
+          "description": "Secret holding the password; required with an external database",
+          "default": "",
+          "mutable": true
+        },
+        "passwordKey": {
+          "type": "string",
+          "description": "Key within that secret",
+          "default": "password",
+          "mutable": true
+        }
+      },
+      "required": ["port", "database", "passwordKey"]
+    }
+  },
+  "required": [
+    "image",
+    "service",
+    "persistence",
+    "ingress",
+    "encryptionKey",
+    "metrics",
+    "alerts",
+    "resources",
+    "waitForDatabase",
+    "postgres",
+    "externalDatabase"
+  ]
+}

@@ -1,0 +1,46 @@
+n8n is installed as release {{ .Release.Name }}.
+
+  database:    {{ if .Values.postgres.enabled }}installed by this release{{ else }}{{ .Values.externalDatabase.host }}{{ end }}
+  persistence: {{ if .Values.persistence.enabled }}{{ if .Values.persistence.existingClaim }}{{ .Values.persistence.existingClaim }}{{ else }}{{ .Values.persistence.size }} claim {{ include "n8n.fullname" . }}{{ end }}{{ else }}disabled - binary data is stored in Postgres{{ end }}
+
+Reach the editor:
+
+  kubectl port-forward -n {{ .Release.Namespace }} \
+    svc/{{ include "n8n.fullname" . }} 5678:{{ .Values.service.port }}
+
+  open http://localhost:5678
+{{- if .Values.ingress.enabled }}
+
+Or over the ingress at http{{ if .Values.ingress.tlsSecretName }}s{{ end }}://{{ .Values.ingress.host }}
+{{- end }}
+
+The first page asks you to create an owner account. That account is held in the
+database, not in this chart, so it survives upgrades and is not recoverable from
+the release - keep the password somewhere you can find it again.
+
+{{ if include "n8n.webhookUrl" . -}}
+Webhooks are registered under {{ include "n8n.webhookUrl" . }}
+{{- else -}}
+No public URL is configured, so n8n falls back to http://localhost:5678/ and
+every webhook it registers will carry that address. Before building anything
+webhook-triggered, set one:
+
+  --set ingress.enabled=true --set ingress.host=n8n.example.com
+
+or, if something else already terminates traffic for you:
+
+  --set webhookUrl=https://n8n.example.com/
+{{- end }}
+{{ if not .Values.encryptionKey.existingSecret }}
+The credential encryption key was generated into secret
+{{ include "n8n.encryptionSecretName" . }}. Every credential stored in n8n is
+encrypted with it, and it cannot be recovered from the database. Back it up now:
+
+  kubectl get secret -n {{ .Release.Namespace }} \
+    {{ include "n8n.encryptionSecretName" . }} \
+    -o jsonpath='{.data.{{ .Values.encryptionKey.secretKey }}}' | base64 -d
+
+Upgrades read the existing key back rather than generating a new one, so it is
+stable for as long as the secret exists. Deleting the secret, or reinstalling the
+release over a retained database, makes every stored credential undecryptable.
+{{- end }}

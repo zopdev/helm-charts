@@ -1,0 +1,50 @@
+{{/*
+Fail rendering on configurations that would install cleanly and then misbehave at
+runtime, where the symptom is a crash loop or silent data loss rather than a
+message pointing at the cause.
+*/}}
+
+{{- if and .Values.postgres.enabled .Values.externalDatabase.host }}
+{{- fail "postgres.enabled and externalDatabase.host are both set, so it is ambiguous which database n8n should use. Leave postgres.enabled=true to have this release install one, or set postgres.enabled=false to point at externalDatabase." }}
+{{- end }}
+
+{{- if and (not .Values.postgres.enabled) (not .Values.externalDatabase.host) }}
+{{- fail "n8n requires PostgreSQL: leave postgres.enabled=true to install it with this release, or set externalDatabase.host to use an existing server. Workflows, credentials and execution history all live there." }}
+{{- end }}
+
+{{- if .Values.postgres.enabled }}
+{{- if not .Values.postgres.services }}
+{{- fail "postgres.services must list one entry (name and database); it is what provisions the n8n database, its role, and the Secret holding those credentials." }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.externalDatabase.host }}
+{{- if not .Values.externalDatabase.user }}
+{{- fail "externalDatabase.host is set without externalDatabase.user. n8n does not fall back to a default role." }}
+{{- end }}
+{{- if not .Values.externalDatabase.existingSecret }}
+{{- fail "externalDatabase.host is set without externalDatabase.existingSecret. The password must come from a Secret; this chart will not take it as a plain value, because everything in values.yaml ends up readable in the release manifest." }}
+{{- end }}
+{{- end }}
+
+{{/*
+Variables the chart derives from other values. Setting them through `env` would
+leave the two disagreeing, with the override winning silently: a DB_POSTGRESDB_HOST
+pointing away from the provisioned database, or a binary data mode writing to a
+path no volume is mounted at.
+*/}}
+{{- $owned := list
+  "DB_TYPE"
+  "DB_POSTGRESDB_HOST"
+  "DB_POSTGRESDB_PORT"
+  "DB_POSTGRESDB_DATABASE"
+  "DB_POSTGRESDB_USER"
+  "DB_POSTGRESDB_PASSWORD"
+  "N8N_ENCRYPTION_KEY"
+  "N8N_DEFAULT_BINARY_DATA_MODE"
+}}
+{{- range $key := $owned }}
+{{- if hasKey $.Values.env $key }}
+{{- fail (printf "%s is set by the chart and cannot be overridden through `env`. See values.yaml for the value it is derived from." $key) }}
+{{- end }}
+{{- end }}

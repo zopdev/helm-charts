@@ -1,0 +1,56 @@
+{{- $db := include "n8n.db" . | fromYaml }}
+{{- $public := include "n8n.public" . | fromYaml }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "n8n.fullname" . }}-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "n8n.labels" . | nindent 4 }}
+data:
+  DB_TYPE: "postgresdb"
+  DB_POSTGRESDB_HOST: {{ $db.host | quote }}
+  DB_POSTGRESDB_PORT: {{ $db.port | quote }}
+  DB_POSTGRESDB_DATABASE: {{ $db.database | quote }}
+  DB_POSTGRESDB_SCHEMA: "public"
+
+  # Without queue mode there is one process, and it both serves the editor and
+  # runs the executions.
+  EXECUTIONS_MODE: "regular"
+
+  N8N_PORT: "5678"
+  # The container listens on all interfaces so the kubelet's probes and the
+  # Service can reach it; n8n's own default binds narrower than that.
+  N8N_LISTEN_ADDRESS: "0.0.0.0"
+
+  {{- if .Values.persistence.enabled }}
+  # Binary payloads go to the mounted volume, keeping them out of the execution
+  # rows in Postgres, which is what stops execution_data growing without bound.
+  N8N_DEFAULT_BINARY_DATA_MODE: "filesystem"
+  {{- else }}
+  # No volume to write to, so payloads are inlined into Postgres instead. Writing
+  # them to the container filesystem would lose them on every restart.
+  N8N_DEFAULT_BINARY_DATA_MODE: "default"
+  {{- end }}
+
+  # Self-hosted installs should not report usage back to n8n's servers unless
+  # the operator opts in.
+  N8N_DIAGNOSTICS_ENABLED: "false"
+
+  {{- if $public.url }}
+  # Baked into every registered webhook and OAuth callback URL. Derived from the
+  # ingress host unless webhookUrl overrides it. All three come from one value, so
+  # the protocol n8n advertises cannot contradict the URL it hands out.
+  WEBHOOK_URL: {{ $public.url | quote }}
+  N8N_HOST: {{ $public.host | quote }}
+  N8N_PROTOCOL: {{ $public.protocol | quote }}
+  {{- end }}
+
+  N8N_METRICS: {{ .Values.metrics.enabled | quote }}
+
+  GENERIC_TIMEZONE: {{ .Values.timezone | quote }}
+  TZ: {{ .Values.timezone | quote }}
+
+  {{- range $key, $value := .Values.env }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}

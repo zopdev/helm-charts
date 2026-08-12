@@ -1,0 +1,48 @@
+{{- if .Values.alerts.enabled }}
+{{/*
+Named after the chart's fullname, NOT .Release.Name. The postgres subchart's own
+alerts template already creates a PrometheusRule called {{ .Release.Name }}, and
+two objects of the same kind and name in one release make helm refuse to install.
+
+Every label value is quoted. An unquoted value from an unset key renders as null,
+which the PrometheusRule CRD rejects, and that rejection fails the whole release
+rather than just the alert.
+*/}}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "n8n.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: kube-prometheus-stack
+    release: prometheus
+    {{- include "n8n.labels" . | nindent 4 }}
+spec:
+  groups:
+    - name: {{ .Release.Namespace }}.{{ include "n8n.fullname" . }}.rules
+      rules:
+        - alert: N8nDown
+          expr: up{job="{{ include "n8n.fullname" . }}",namespace="{{ .Release.Namespace }}"} == 0
+          for: 5m
+          labels:
+            severity: "critical"
+            service: {{ include "n8n.fullname" . | quote }}
+            namespace: {{ .Release.Namespace | quote }}
+          annotations:
+            summary: "n8n is not responding"
+            description: "n8n in namespace {{ .Release.Namespace }} has been unreachable for 5 minutes. Scheduled workflows and webhook deliveries are not running."
+
+        # A restarting pod is worth alerting on here in a way it would not be for
+        # a stateless replica: this is a single instance, and every restart is a
+        # window where cron triggers do not fire and webhook calls get refused.
+        - alert: N8nRestarting
+          expr: increase(kube_pod_container_status_restarts_total{namespace="{{ .Release.Namespace }}",container="{{ .Chart.Name }}"}[15m]) > 2
+          for: 5m
+          labels:
+            severity: "warning"
+            service: {{ include "n8n.fullname" . | quote }}
+            namespace: {{ .Release.Namespace | quote }}
+          annotations:
+            summary: "n8n is restarting repeatedly"
+            description: "The n8n container in namespace {{ .Release.Namespace }} has restarted more than twice in 15 minutes."
+{{- end }}

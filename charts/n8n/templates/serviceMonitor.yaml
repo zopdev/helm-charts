@@ -1,0 +1,26 @@
+{{- if .Values.metrics.enabled }}
+{{/*
+n8n only serves /metrics when N8N_METRICS is set, which the ConfigMap derives
+from this same flag - so the endpoint and the scrape config can never disagree
+and leave a permanently failing target.
+*/}}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "n8n.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    release: prometheus
+    {{- include "n8n.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "n8n.selectorLabels" . | nindent 6 }}
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: {{ .Values.metrics.scrapeInterval }}
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+{{- end }}

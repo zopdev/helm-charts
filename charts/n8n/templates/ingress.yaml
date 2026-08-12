@@ -1,0 +1,43 @@
+{{- if .Values.ingress.enabled }}
+{{/*
+A hostless Ingress would render a catch-all rule, and the chart could not derive
+a webhook URL from it. n8n would fall back to its localhost default, leaving a
+working editor whose registered webhooks all point somewhere unreachable - the
+failure this chart is most concerned with preventing.
+*/}}
+{{- if not .Values.ingress.host }}
+{{- fail "ingress.enabled requires ingress.host; n8n bakes that hostname into every webhook it registers and into OAuth callback URLs." }}
+{{- end }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "n8n.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "n8n.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.ingress.className }}
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- end }}
+  {{- if .Values.ingress.tlsSecretName }}
+  tls:
+    - hosts:
+        - {{ .Values.ingress.host | quote }}
+      secretName: {{ .Values.ingress.tlsSecretName }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.ingress.host | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "n8n.fullname" . }}
+                port:
+                  number: {{ .Values.service.port }}
+{{- end }}
