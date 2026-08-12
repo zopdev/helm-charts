@@ -1,0 +1,12 @@
+apiVersion: v2
+appVersion: "0.32.9"
+description: Helm chart for deploying Ollama, a self-hosted LLM inference server
+name: ollama
+version: 0.0.1
+type: application
+icon: "https://ollama.com/public/ollama.png"
+maintainers:
+  - name: ZopDev
+    url: zop.dev
+annotations:
+  type: application

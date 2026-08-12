@@ -1,0 +1,175 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "Ollama",
+  "type": "object",
+  "properties": {
+    "image": {
+      "category": "runtime",
+      "type": "object",
+      "properties": {
+        "repository": {
+          "type": "string",
+          "default": "ollama/ollama",
+          "editDisabled": true,
+          "description": "Image repository."
+        },
+        "tag": {
+          "type": "string",
+          "default": "0.32.9",
+          "mutable": true,
+          "description": "Image tag."
+        },
+        "pullPolicy": {
+          "type": "string",
+          "enum": [
+            "Always",
+            "IfNotPresent",
+            "Never"
+          ],
+          "default": "IfNotPresent",
+          "mutable": true,
+          "description": "When the kubelet pulls the image."
+        }
+      },
+      "description": "Container image for the Ollama pod."
+    },
+    "service": {
+      "category": "runtime",
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "ClusterIP",
+            "NodePort",
+            "LoadBalancer"
+          ],
+          "default": "ClusterIP",
+          "mutable": true,
+          "description": "Kubernetes Service type."
+        },
+        "port": {
+          "type": "integer",
+          "default": 11434,
+          "mutable": true,
+          "description": "Port the API is served on."
+        }
+      },
+      "description": "Service fronting the API."
+    },
+    "diskSize": {
+      "category": "compute",
+      "type": "string",
+      "pattern": "^[0-9]+Gi$",
+      "default": "20Gi",
+      "mutable": true,
+      "editDisabled": true,
+      "description": "Size of the models volume."
+    },
+    "resources": {
+      "category": "compute",
+      "type": "object",
+      "properties": {
+        "requests": {
+          "type": "object",
+          "properties": {
+            "cpu": {
+              "type": "string",
+              "pattern": "^[0-9]+m$",
+              "default": "500m",
+              "mutable": true
+            },
+            "memory": {
+              "type": "string",
+              "pattern": "^[0-9]+(Mi|Gi)$",
+              "default": "2Gi",
+              "mutable": true
+            }
+          }
+        },
+        "limits": {
+          "type": "object",
+          "properties": {
+            "cpu": {
+              "type": "string",
+              "pattern": "^[0-9]+m$",
+              "default": "2000m",
+              "mutable": true
+            },
+            "memory": {
+              "type": "string",
+              "pattern": "^[0-9]+(Mi|Gi)$",
+              "default": "4Gi",
+              "mutable": true
+            }
+          }
+        }
+      },
+      "description": "CPU and memory for the Ollama pod."
+    },
+    "models": {
+      "category": "runtime",
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "mutable": true,
+      "description": "Models to pull automatically on first start, e.g. [\"llama3\"]. Empty means no init container is rendered."
+    },
+    "nodeSelector": {
+      "category": "advanced",
+      "type": "object",
+      "mutable": true,
+      "description": "Node labels to constrain scheduling, e.g. for GPU nodes."
+    },
+    "tolerations": {
+      "category": "advanced",
+      "type": "array",
+      "mutable": true,
+      "description": "Tolerations to allow scheduling onto tainted nodes, e.g. GPU node pools."
+    },
+    "env": {
+      "category": "environment",
+      "type": "object",
+      "mutable": true,
+      "description": "Extra environment variables applied to the Ollama container."
+    },
+    "ingress": {
+      "category": "runtime",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false,
+          "mutable": true,
+          "description": "Create an Ingress for the API."
+        },
+        "className": {
+          "type": "string",
+          "default": "",
+          "mutable": true,
+          "description": "IngressClass to use."
+        },
+        "host": {
+          "type": "string",
+          "default": "",
+          "mutable": true,
+          "description": "Hostname to serve on. Required when the ingress is enabled."
+        },
+        "annotations": {
+          "type": "object",
+          "mutable": true,
+          "description": "Annotations applied to the Ingress."
+        },
+        "tlsSecretName": {
+          "type": "string",
+          "default": "",
+          "mutable": true,
+          "description": "Existing TLS secret for the host."
+        }
+      },
+      "description": "Ingress exposing the API outside the cluster."
+    }
+  }
+}
