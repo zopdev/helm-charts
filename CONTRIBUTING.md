@@ -59,6 +59,27 @@ We use a simplified Git workflow:
   ```
 This annotation ensures that the chart is automatically reflected in the zop.dev Applications and Datasources section.
 
+#### Showing up on helm.zop.dev
+
+[helm.zop.dev](https://helm.zop.dev) builds its integrations grid from `docs/index.yaml`, so
+three fields in your `Chart.yaml` are the whole contract — there is no site list to edit:
+
+| Field | Why it matters |
+|---|---|
+| `annotations.type` | Decides whether the chart appears at all, and under which category. A chart with no `type` is deliberately hidden — that is how building blocks (`service`, `cron-job`) and operator charts stay off the grid. A new `type` value gets its own sidebar entry and section automatically. |
+| `icon` | The card image. Charts without one fall back to the zop.dev logo. |
+| `description` | The card text, so write it for a reader who is choosing an integration. |
+
+The card appears once the chart is packaged and the index is regenerated (Steps 4–6
+below) — the site reads released chart metadata, not `charts/`. Changing an existing
+chart's `icon` or `description` therefore needs a version bump to reach the site.
+
+A few of the launched integrations have their card wording and icon overridden in
+`docs/src/js/display.js`; that table is optional polish, and a chart with no entry in
+it simply uses its own `Chart.yaml` values. To preview the site locally, serve the
+folder (`cd docs && python3 -m http.server 8000`) — opening `index.html` straight from
+disk cannot fetch `index.yaml`.
+
 
 ### For Application Charts (using the **service** chart)
 - **Bundled Configurations:**  

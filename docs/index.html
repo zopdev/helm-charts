@@ -84,35 +84,12 @@
                            role="tabpanel"
                            aria-labelledby="tab-categories"
                        >
+                           <!-- Categories and cards are generated from ./index.yaml by src/js/script.js -->
                            <aside class="categories-sidebar" role="complementary" aria-label="Filter by category">
-                               <ul role="list" id="category-buttons">
-                                   <li>
-                                       <button class="category-btn" data-category="Applications" aria-pressed="false">
-                                           Applications
-                                       </button>
-                                   </li>
-                                   <li>
-                                       <button class="category-btn" data-category="Datastore" aria-pressed="false">
-                                           Datastore
-                                       </button>
-                                   </li>
-                               </ul>
+                               <ul role="list" id="category-buttons"></ul>
                            </aside>
-                          
-                           <div class="integration-sections">                               
-                               <section id="applications-section" class="category-section">
-                                   <h3 class="category-title">Applications</h3>
-                                   <div class="integration-cards" id="applications-cards" role="region" aria-live="polite" aria-label="Applications integration cards">
-                                   </div>
-                               </section>
-                              
-                               <section id="datastore-section" class="category-section">
-                                   <h3 class="category-title">Datastore</h3>
-                                   <div class="integration-cards" id="datastore-cards" role="region" aria-live="polite" aria-label="Datastore integration cards">
-                                   </div>
-                               </section>
-                              
-                           </div>
+
+                           <div class="integration-sections"></div>
                        </div>
                    </div>
                </div>

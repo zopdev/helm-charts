@@ -1,4 +1,3 @@
-import integrationsData from "./config.js";
 const urlParams = new URLSearchParams(window.location.search);
 const integrationId = urlParams.get('id');
 const readmeContentDiv = document.getElementById('readme-content');
@@ -45,9 +44,9 @@ async function fetchReadme() {
         const contributionUrl = 'https://raw.githubusercontent.com/zopdev/helm-charts/main/CONTRIBUTING.md';
         readmeMarkdown = await fetchMarkdown(contributionUrl);
     } else {
-        const integrationExists = Object.values(integrationsData.categories).flat().some(integration => integration.id === integrationId);
-
-        if (!integrationId || !integrationExists) {
+        // The README fetch below is the existence check: an id that has no chart
+        // in the repo falls through to the 404 state.
+        if (!integrationId) {
             document.body.innerHTML = `
                 <div style="text-align: center; padding: 20px;">
                     <img decoding="async" width="671" height="671" sizes="calc(min(100vw * 0.8867, 1064px) * 0.6)" srcset="https://framerusercontent.com/images/oG2yEHscd5VhHxwWhQzz7ygGVBU.svg?scale-down-to=512 512w,https://framerusercontent.com/images/oG2yEHscd5VhHxwWhQzz7ygGVBU.svg 761w" src="https://framerusercontent.com/images/oG2yEHscd5VhHxwWhQzz7ygGVBU.svg" alt="" style="display:block;border-radius:inherit;object-position:center;object-fit:cover; margin: 0 auto;">
