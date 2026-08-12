@@ -81,7 +81,26 @@ resources:
 #     N8N_LOG_LEVEL: debug
 # Variables this chart derives from other values are rejected at render time
 # rather than silently overridden - see templates/validate.yaml.
-env: {}
+#
+# The four defaults below are settings n8n warns it is about to change. Pinning
+# them here means an image bump cannot quietly alter how this release behaves;
+# override or remove any of them freely.
+env:
+  # Community nodes that have not been vetted. n8n's default becomes false in a
+  # future version and that is the safer position, so the chart starts there
+  # rather than inheriting a permissive default that later flips.
+  N8N_UNVERIFIED_PACKAGES_ENABLED: "false"
+  # Seconds a Code node may run. n8n plans to cut its default to 60, which would
+  # start killing legitimate long-running tasks on an image bump, so the current
+  # value is pinned instead. Lower it if you would rather bound them tightly.
+  N8N_RUNNERS_TASK_TIMEOUT: "300"
+  # Decompression bounds for the Compression node, taken from where n8n is
+  # heading rather than from today's much looser defaults: 2 GiB of
+  # decompressed output from an untrusted archive is a memory-exhaustion risk,
+  # and this chart has no existing behaviour to preserve. Raise them if you
+  # genuinely process large archives.
+  N8N_COMPRESSION_NODE_MAX_DECOMPRESSED_SIZE_BYTES: "268435456"
+  N8N_COMPRESSION_NODE_MAX_ZIP_ENTRIES: "1000"
 
 # Existing secrets mounted with envFrom, for values that should not sit in
 # values.yaml. Useful for SMTP credentials or an external storage key.
