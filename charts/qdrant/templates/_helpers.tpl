@@ -13,9 +13,10 @@ Name of the Secret holding the generated API key.
 {{- end -}}
 
 {{/*
-Selector labels — used by the StatefulSet, Services and ServiceMonitor.
+Selector labels. This feeds the StatefulSet's immutable spec.selector, so it is
+kept to the single flat `app` label the repo's datastore charts use — no
+app.kubernetes.io/* keys mixed in.
 */}}
 {{- define "qdrant.selectorLabels" -}}
-app.kubernetes.io/part-of: qdrant
 app: {{ .Release.Name }}-qdrant
 {{- end -}}

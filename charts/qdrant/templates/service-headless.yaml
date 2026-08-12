@@ -4,7 +4,11 @@ metadata:
   name: {{ .Release.Name }}-qdrant-headless
   namespace: {{ .Release.Namespace }}
   labels:
-    app: {{ .Release.Name }}-qdrant
+    # Distinct from the ClusterIP Service's label so the ServiceMonitor selects
+    # only that one — otherwise every metric is scraped twice, and the not-ready
+    # pod exposed here (publishNotReadyAddresses) would flap QdrantDown on every
+    # rollout. The pod selector below is unchanged, so DNS identity still works.
+    app: {{ .Release.Name }}-qdrant-headless
 spec:
   # Headless service backing the StatefulSet — gives the pod a stable DNS name
   # and is required for correct per-pod network identity.

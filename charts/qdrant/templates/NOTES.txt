@@ -1,0 +1,27 @@
+Qdrant is installed as release {{ .Release.Name }} in namespace {{ .Release.Namespace }}.
+
+  ────────────────────────────────────────────────────────────────
+  API KEY (generated for you, required on every data request)
+
+    kubectl get secret {{ include "qdrant.secretName" . }} \
+      -n {{ .Release.Namespace }} \
+      -o jsonpath='{.data.api-key}' | base64 --decode
+
+  Pass it in the "api-key" header (or "Authorization: Bearer <key>").
+  The health endpoints and /metrics stay reachable, but all data
+  operations are rejected without it.
+  ────────────────────────────────────────────────────────────────
+
+Connect from another pod in the cluster (values also in ConfigMap
+{{ .Release.Name }}-qdrant-configmap):
+
+  REST : http://{{ .Release.Name }}-qdrant.{{ .Release.Namespace }}.svc:6333
+  gRPC : {{ .Release.Name }}-qdrant.{{ .Release.Namespace }}.svc:6334
+
+Quick check (from a pod that has the key in $KEY):
+
+  curl -H "api-key: $KEY" http://{{ .Release.Name }}-qdrant:6333/collections
+
+Note: `helm uninstall {{ .Release.Name }}` deletes the API-key Secret but keeps
+the PersistentVolumeClaim, so a reinstall against the retained volume comes up
+with a new key. Delete the PVC manually to reclaim storage.

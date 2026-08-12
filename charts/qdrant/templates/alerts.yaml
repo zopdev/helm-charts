@@ -1,7 +1,10 @@
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
-  name: {{ .Release.Name }}
+  # Named after the chart (not the release) so it does not collide with the
+  # PrometheusRule of sibling datastore charts pulled into the same umbrella
+  # release (postgres, redis, mysql, ...), which would fail the install.
+  name: {{ include "qdrant.fullname" . }}
   namespace: {{ .Release.Namespace }}
   generation: 1
   labels:
@@ -14,7 +17,9 @@ spec:
       rules:
         - alert: QdrantDown
           expr: up{namespace="{{ .Release.Namespace }}", service="{{ .Release.Name }}-qdrant"} == 0
-          for: 0m
+          # 2m avoids a false page during the short not-ready window of a normal
+          # rolling upgrade.
+          for: 2m
           labels:
             severity: critical
             servicealert: "true"
@@ -24,14 +29,17 @@ spec:
             summary: 'Qdrant instance {{ .Release.Name }} is down'
             description: 'Qdrant instance {{ .Release.Name }} is not responding to metric scrapes'
 
-        - alert: QdrantHighRestResponseErrors
-          expr: increase(rest_responses_total{namespace="{{ .Release.Namespace }}", service="{{ .Release.Name }}-qdrant", status=~"5.."}[5m]) > 0
-          for: 5m
+        - alert: QdrantInRecoveryMode
+          # app_status_recovery_mode is a real gauge from Qdrant's /metrics; it
+          # flips to 1 when the node boots into recovery (e.g. after an OOM or
+          # WAL corruption) and cannot serve normally.
+          expr: app_status_recovery_mode{namespace="{{ .Release.Namespace }}", service="{{ .Release.Name }}-qdrant"} == 1
+          for: 2m
           labels:
             severity: warning
             servicealert: "true"
             namespace: {{ .Release.Namespace }}
             service: {{ .Release.Name }}-qdrant
           annotations:
-            summary: 'Qdrant instance {{ .Release.Name }} is returning REST 5xx errors'
-            description: 'Qdrant instance {{ .Release.Name }} has served 5xx REST responses in the last 5 minutes'
+            summary: 'Qdrant instance {{ .Release.Name }} is in recovery mode'
+            description: 'Qdrant instance {{ .Release.Name }} booted into recovery mode and is not serving normally'

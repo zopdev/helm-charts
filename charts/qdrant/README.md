@@ -6,6 +6,7 @@ The Qdrant Helm chart provides an easy way to deploy and manage a [Qdrant](https
 
 - Kubernetes 1.19+
 - Helm 3+
+- **Prometheus Operator CRDs** (`ServiceMonitor`, `PrometheusRule`) — required, not optional: the chart renders both unconditionally, so `helm install` fails on a cluster without them (`no matches for kind "ServiceMonitor" in version "monitoring.coreos.com/v1"`).
 - [Stakater Reloader](https://github.com/stakater/Reloader) (optional, recommended) — required only for the pod to restart automatically when `customConfig` changes.
 
 ## Add Helm Repository
@@ -56,7 +57,7 @@ You can customize the installation by providing a custom `values.yaml` file or o
 
 ## Authentication
 
-The chart generates a strong API key on install and stores it in a Kubernetes Secret named `<release-name>-qdrant-apikey-secret` under the key `api-key`. Qdrant is started with `QDRANT__SERVICE__API_KEY` set to this value, so all data requests must be authenticated. The health endpoints (`/livez`, `/readyz`, `/healthz`) and `/metrics` remain open, so probes and monitoring work without the key.
+The chart generates a strong API key on install and stores it in a Kubernetes Secret named `<release-name>-qdrant-apikey-secret` under the key `api-key`. Qdrant is started with `QDRANT__SERVICE__API_KEY` set to this value, so all data requests must be authenticated — **including `/metrics`** (401 without the key). Only the health endpoints (`/livez`, `/readyz`, `/healthz`) remain open, so the probes work without the key; the ServiceMonitor authenticates with a Bearer token (see [Monitoring](#monitoring)).
 
 The API key is **preserved across upgrades** — it is only generated once and re-used on subsequent `helm upgrade` runs.
 
@@ -115,4 +116,11 @@ Qdrant exposes a built-in Prometheus endpoint on the HTTP port (`6333`) at `/met
 helm uninstall [RELEASE_NAME]
 ```
 
-The PersistentVolumeClaim created by the StatefulSet is retained by default; delete it manually if you want to reclaim the storage.
+`helm uninstall` **deletes the API-key Secret but keeps the PersistentVolumeClaim** created by the StatefulSet. Two consequences:
+
+- Reinstalling against the retained volume comes up with a **new** API key (the old data is intact, but any client still using the old key must be updated).
+- If you want to reclaim the storage, delete the PVC manually:
+
+```bash
+kubectl delete pvc -l app=<release-name>-qdrant -n <namespace>
+```

@@ -43,9 +43,11 @@ spec:
               memory: {{ .Values.resources.limits.memory }}
               cpu: {{ .Values.resources.limits.cpu }}
           env:
-            # Enabling the API key makes Qdrant reject unauthenticated requests.
-            # The health and /metrics endpoints stay open, so probes and the
-            # ServiceMonitor keep working without the key.
+            # Enabling the API key makes Qdrant reject unauthenticated requests,
+            # including /metrics (verified: 401 without the key). Only the health
+            # endpoints (/livez, /readyz, /healthz) stay open, which is why the
+            # probes need no key — but the ServiceMonitor MUST send it as a Bearer
+            # token (see serviceMonitor.yaml), or metrics collection breaks.
             - name: QDRANT__SERVICE__API_KEY
               valueFrom:
                 secretKeyRef:
