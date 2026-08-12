@@ -1,0 +1,37 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+  generation: 1
+  labels:
+    app: kube-prometheus-stack
+    heritage: Helm
+    release: prometheus
+spec:
+  groups:
+    - name: {{ .Release.Namespace }}.{{ .Release.Name }}-qdrant.rules
+      rules:
+        - alert: QdrantDown
+          expr: up{namespace="{{ .Release.Namespace }}", service="{{ .Release.Name }}-qdrant"} == 0
+          for: 0m
+          labels:
+            severity: critical
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Release.Name }}-qdrant
+          annotations:
+            summary: 'Qdrant instance {{ .Release.Name }} is down'
+            description: 'Qdrant instance {{ .Release.Name }} is not responding to metric scrapes'
+
+        - alert: QdrantHighRestResponseErrors
+          expr: increase(rest_responses_total{namespace="{{ .Release.Namespace }}", service="{{ .Release.Name }}-qdrant", status=~"5.."}[5m]) > 0
+          for: 5m
+          labels:
+            severity: warning
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Release.Name }}-qdrant
+          annotations:
+            summary: 'Qdrant instance {{ .Release.Name }} is returning REST 5xx errors'
+            description: 'Qdrant instance {{ .Release.Name }} has served 5xx REST responses in the last 5 minutes'

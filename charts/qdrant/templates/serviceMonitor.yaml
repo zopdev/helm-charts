@@ -1,0 +1,24 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ .Release.Name }}-qdrant
+  labels:
+    app: {{ .Release.Name }}-qdrant
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-qdrant
+  endpoints:
+    # Qdrant exposes a built-in Prometheus endpoint on the HTTP port (6333) at
+    # /metrics — no exporter sidecar. With an API key set, /metrics requires
+    # authentication (only the health endpoints stay open), so the scrape sends
+    # the key as a Bearer token from the generated Secret.
+    - port: http
+      interval: 30s
+      path: /metrics
+      authorization:
+        type: Bearer
+        credentials:
+          name: {{ include "qdrant.secretName" . }}
+          key: api-key

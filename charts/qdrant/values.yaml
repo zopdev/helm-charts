@@ -1,0 +1,26 @@
+# Qdrant server image tag (qdrant/qdrant:<version>).
+version: "v1.19.0"
+
+# Size of the persistent volume claim (PVC) backing /qdrant/storage.
+diskSize: "10Gi"
+
+# Resource configuration
+resources:
+  requests:
+    cpu: "250m"
+    memory: "512Mi"
+  limits:
+    cpu: "1000m"
+    memory: "2Gi"
+
+# Extra Qdrant configuration, provided as a full YAML document. It is mounted at
+# /qdrant/config/local.yaml, which Qdrant layers on top of the built-in defaults
+# and production.yaml. Note: settings injected by this chart through QDRANT__*
+# environment variables (e.g. the API key) always take precedence over this file.
+# Leave empty to run Qdrant with defaults.
+#   Example:
+#     log_level: INFO
+#     storage:
+#       optimizers:
+#         default_segment_number: 4
+customConfig: ""

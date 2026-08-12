@@ -1,0 +1,11 @@
+apiVersion: v2
+appVersion: "1.0"
+description: Helm chart for deploying qdrant vector database datastore
+name: qdrant
+version: 0.0.1
+icon: "https://qdrant.tech/images/logo_with_text.svg"
+maintainers:
+  - name: ZopDev
+    url: zop.dev
+annotations:
+  type: datasource

@@ -1634,6 +1634,22 @@ entries:
     urls:
     - https://helm.zop.dev/postgres-v0.0.1.tgz
     version: v0.0.1
+  qdrant:
+  - annotations:
+      type: datasource
+    apiVersion: v2
+    appVersion: "1.0"
+    created: "2026-08-12T15:56:00.000000+05:30"
+    description: Helm chart for deploying qdrant vector database datastore
+    digest: 5b7934c4b02e637f60a5c8f5c8a30e6bd86ecd2244af7fbbe55cdce4c075f036
+    icon: https://qdrant.tech/images/logo_with_text.svg
+    maintainers:
+    - name: ZopDev
+      url: zop.dev
+    name: qdrant
+    urls:
+    - https://helm.zop.dev/qdrant-v0.0.1.tgz
+    version: v0.0.1
   redis:
   - annotations:
       type: datasource

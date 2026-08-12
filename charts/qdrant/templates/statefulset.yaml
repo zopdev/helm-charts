@@ -1,0 +1,107 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}-qdrant
+  namespace: {{ .Release.Namespace }}
+{{- if .Values.customConfig }}
+  annotations:
+    # Restart the pod when the mounted config changes. subPath mounts never
+    # receive live ConfigMap updates, so a restart is required to pick them up.
+    # Emitted only when customConfig exists, matching the ConfigMap's condition.
+    configmap.reloader.stakater.com/reload: "{{ .Release.Name }}-qdrant-custom-config"
+{{- end }}
+  labels:
+    {{- include "qdrant.selectorLabels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "qdrant.selectorLabels" . | nindent 6 }}
+  serviceName: "{{ .Release.Name }}-qdrant-headless"
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        {{- include "qdrant.selectorLabels" . | nindent 8 }}
+    spec:
+      securityContext:
+        # The qdrant/qdrant image can run as root by default; pin it to a
+        # non-root user and let fsGroup own the freshly provisioned data volume.
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 2000
+        fsGroup: 3000
+      containers:
+        - name: qdrant
+          image: qdrant/qdrant:{{ .Values.version }}
+          resources:
+            requests:
+              memory: {{ .Values.resources.requests.memory }}
+              cpu: {{ .Values.resources.requests.cpu }}
+            limits:
+              memory: {{ .Values.resources.limits.memory }}
+              cpu: {{ .Values.resources.limits.cpu }}
+          env:
+            # Enabling the API key makes Qdrant reject unauthenticated requests.
+            # The health and /metrics endpoints stay open, so probes and the
+            # ServiceMonitor keep working without the key.
+            - name: QDRANT__SERVICE__API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "qdrant.secretName" . }}
+                  key: api-key
+            # The container runs as non-root (uid 1000), so only the mounted PVC
+            # at /qdrant/storage is writable — the image's /qdrant/snapshots and
+            # working dir are root-owned. Keep everything Qdrant writes on the
+            # PVC: snapshots under it, and the init-file indicator inside it.
+            - name: QDRANT__STORAGE__SNAPSHOTS_PATH
+              value: "/qdrant/storage/snapshots"
+            - name: QDRANT_INIT_FILE_PATH
+              value: "/qdrant/storage/.qdrant-initialized"
+          ports:
+            - containerPort: 6333
+              name: http
+            - containerPort: 6334
+              name: grpc
+          livenessProbe:
+            httpGet:
+              path: /livez
+              port: 6333
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 6333
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: 6333
+            failureThreshold: 30
+            periodSeconds: 10
+          volumeMounts:
+            - name: {{ .Release.Name }}-qdrant-persistent-storage
+              mountPath: /qdrant/storage
+{{- if .Values.customConfig }}
+            - name: custom-config
+              mountPath: /qdrant/config/local.yaml
+              subPath: local.yaml
+{{- end }}
+{{- if .Values.customConfig }}
+      volumes:
+        - name: custom-config
+          configMap:
+            name: {{ .Release.Name }}-qdrant-custom-config
+{{- end }}
+  volumeClaimTemplates:
+    - metadata:
+        name: {{ .Release.Name }}-qdrant-persistent-storage
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: {{ .Values.diskSize }}
