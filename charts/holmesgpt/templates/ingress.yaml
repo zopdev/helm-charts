@@ -1,0 +1,38 @@
+{{- if .Values.ingress.enabled }}
+{{/*
+Upstream ships no ingress, so the API is only reachable in-cluster
+without this. It fronts the subchart's Service, which listens on 80 and
+forwards to the container's 5050.
+*/}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "holmesgpt.fullname" . }}
+  labels:
+    {{- include "holmesgpt.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.ingress.className }}
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- end }}
+  {{- if .Values.ingress.tlsSecretName }}
+  tls:
+    - hosts:
+        - {{ .Values.ingress.host | quote }}
+      secretName: {{ .Values.ingress.tlsSecretName }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.ingress.host | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "holmesgpt.fullname" . }}
+                port:
+                  number: {{ .Values.service.port }}
+{{- end }}

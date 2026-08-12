@@ -1,0 +1,12 @@
+apiVersion: v2
+appVersion: "0.39.0"
+description: Helm chart for deploying HolmesGPT, an AI agent for investigating production incidents
+name: holmesgpt
+version: 0.0.1
+type: application
+icon: "https://storage.googleapis.com/zopdev-blog-resources/1/files/originals/20260811/c7698462-dd25-47ee-ba64-c386c0055415-holmesgpt.png"
+maintainers:
+  - name: ZopDev
+    url: zop.dev
+annotations:
+  type: application

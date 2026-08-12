@@ -1,0 +1,305 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "HolmesGPT",
+  "type": "object",
+  "properties": {
+    "image": {
+      "category": "runtime",
+      "description": "Container image for the HolmesGPT API.",
+      "type": "object",
+      "properties": {
+        "repository": {
+          "type": "string",
+          "description": "Image repository.",
+          "default": "robustadev/holmes",
+          "editDisabled": true
+        },
+        "tag": {
+          "type": "string",
+          "description": "Image tag.",
+          "default": "0.39.0",
+          "mutable": true
+        },
+        "pullPolicy": {
+          "type": "string",
+          "description": "When the kubelet pulls the image.",
+          "enum": [
+            "Always",
+            "IfNotPresent",
+            "Never"
+          ],
+          "default": "IfNotPresent",
+          "mutable": true
+        }
+      }
+    },
+    "replicaCount": {
+      "type": "integer",
+      "description": "Number of API replicas. Ignored when autoscaling is enabled.",
+      "minimum": 1,
+      "default": 1,
+      "mutable": true,
+      "category": "compute"
+    },
+    "modelList": {
+      "type": "object",
+      "description": "Models Holmes may use. Empty means it cannot investigate. Prefix a credential with `envRef:` to read it from a mounted Secret.",
+      "mutable": true,
+      "category": "runtime"
+    },
+    "extraEnvVarsSecrets": {
+      "type": "array",
+      "description": "Existing Secrets loaded as environment variables, which is how an `envRef:` credential reaches the pod.",
+      "items": {
+        "type": "string"
+      },
+      "mutable": true,
+      "category": "environment"
+    },
+    "env": {
+      "type": "object",
+      "description": "Plain environment variables, for anything that is not a credential.",
+      "mutable": true,
+      "category": "environment"
+    },
+    "toolsets": {
+      "type": "object",
+      "description": "Data sources Holmes may use. Those beyond the defaults need credentials.",
+      "mutable": true,
+      "category": "runtime"
+    },
+    "logLevel": {
+      "type": "string",
+      "description": "Log verbosity.",
+      "enum": [
+        "DEBUG",
+        "INFO",
+        "WARNING",
+        "ERROR"
+      ],
+      "default": "INFO",
+      "mutable": true,
+      "category": "runtime"
+    },
+    "service": {
+      "category": "runtime",
+      "description": "Service fronting the API.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Kubernetes Service type.",
+          "enum": [
+            "ClusterIP",
+            "NodePort",
+            "LoadBalancer"
+          ],
+          "default": "ClusterIP",
+          "mutable": true
+        },
+        "port": {
+          "type": "integer",
+          "description": "Port the API is served on.",
+          "default": 80,
+          "mutable": true
+        }
+      }
+    },
+    "resources": {
+      "category": "compute",
+      "description": "CPU and memory for the API pod.",
+      "type": "object",
+      "properties": {
+        "requests": {
+          "type": "object",
+          "properties": {
+            "cpu": {
+              "type": "string",
+              "description": "CPU request.",
+              "pattern": "^[0-9]+m$",
+              "default": "100m",
+              "mutable": true
+            },
+            "memory": {
+              "type": "string",
+              "description": "Memory request.",
+              "pattern": "^[0-9]+(Mi|Gi)$",
+              "default": "2048Mi",
+              "mutable": true
+            }
+          }
+        },
+        "limits": {
+          "type": "object",
+          "properties": {
+            "memory": {
+              "type": "string",
+              "description": "Memory limit.",
+              "pattern": "^[0-9]+(Mi|Gi)$",
+              "default": "2048Mi",
+              "mutable": true
+            }
+          }
+        }
+      }
+    },
+    "autoscaling": {
+      "category": "compute",
+      "description": "Horizontal autoscaling for the API deployment.",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Create a HorizontalPodAutoscaler.",
+          "default": false,
+          "mutable": true
+        },
+        "minReplicas": {
+          "type": "integer",
+          "description": "Lower bound.",
+          "minimum": 1,
+          "default": 1,
+          "mutable": true
+        },
+        "maxReplicas": {
+          "type": "integer",
+          "description": "Upper bound.",
+          "minimum": 1,
+          "default": 5,
+          "mutable": true
+        },
+        "targetCPUUtilizationPercentage": {
+          "type": "integer",
+          "description": "Target CPU utilisation.",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 60,
+          "mutable": true
+        }
+      }
+    },
+    "rbac": {
+      "category": "advanced",
+      "description": "The ServiceAccount and ClusterRole Holmes reads cluster state with.",
+      "type": "object",
+      "properties": {
+        "create": {
+          "type": "boolean",
+          "description": "Create the ServiceAccount, ClusterRole and binding.",
+          "default": true,
+          "mutable": true
+        },
+        "serviceAccountName": {
+          "type": "string",
+          "description": "Existing ServiceAccount to use when create is false.",
+          "default": "",
+          "mutable": true
+        },
+        "extraRules": {
+          "type": "array",
+          "description": "Additional ClusterRole rules.",
+          "items": {
+            "type": "object"
+          },
+          "mutable": true
+        }
+      }
+    },
+    "ingress": {
+      "category": "runtime",
+      "description": "Ingress exposing the API outside the cluster.",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Create an Ingress.",
+          "default": false,
+          "mutable": true
+        },
+        "className": {
+          "type": "string",
+          "description": "IngressClass to use.",
+          "default": "",
+          "mutable": true
+        },
+        "host": {
+          "type": "string",
+          "description": "Hostname. Required when the ingress is enabled.",
+          "default": "",
+          "mutable": true
+        },
+        "annotations": {
+          "type": "object",
+          "description": "Annotations applied to the Ingress.",
+          "mutable": true
+        },
+        "tlsSecretName": {
+          "type": "string",
+          "description": "Existing TLS secret for the host.",
+          "default": "",
+          "mutable": true
+        }
+      }
+    },
+    "alerts": {
+      "category": "runtime",
+      "description": "Alerting rules built on kube-state-metrics. Needs the Prometheus Operator CRDs.",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Create the PrometheusRule.",
+          "default": true,
+          "mutable": true
+        },
+        "unavailableReplicasThreshold": {
+          "type": "integer",
+          "description": "Unavailable replicas tolerated before alerting.",
+          "minimum": 0,
+          "default": 0,
+          "mutable": true
+        },
+        "podRestartThreshold": {
+          "type": "integer",
+          "description": "Restarts tolerated in the window below.",
+          "minimum": 0,
+          "default": 3,
+          "mutable": true
+        },
+        "podRestartTimeWindow": {
+          "type": "string",
+          "description": "Window the restart count is measured over.",
+          "default": "10m",
+          "mutable": true
+        }
+      }
+    },
+    "telemetry": {
+      "category": "advanced",
+      "description": "Whether Holmes reports usage back to Robusta. Off by default here; upstream defaults it on.",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Send usage telemetry.",
+          "default": false,
+          "mutable": true
+        }
+      }
+    },
+    "jsonLogs": {
+      "category": "runtime",
+      "type": "boolean",
+      "description": "Emit structured JSON logs.",
+      "default": false,
+      "mutable": true
+    },
+    "sentryDsn": {
+      "category": "advanced",
+      "type": "string",
+      "description": "Sentry DSN for error reporting. Empty disables it.",
+      "default": "",
+      "mutable": true
+    }
+  }
+}

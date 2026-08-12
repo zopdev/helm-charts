@@ -1,0 +1,26 @@
+{{/*
+Holmes reads both files from /etc/holmes/config. They are separate
+because the toolsets describe what it may look at and the model list
+describes what it thinks with; the second contains credential
+references and the first does not.
+*/}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "holmesgpt.fullname" . }}
+  labels:
+    {{- include "holmesgpt.labels" . | nindent 4 }}
+data:
+  custom_toolset.yaml: |-
+    toolsets:
+      {{- toYaml .Values.toolsets | nindent 6 }}
+  model_list.yaml: |-
+    {{- range $model, $config := .Values.modelList }}
+    {{ $model }}:
+      {{- range $field, $value := $config }}
+      {{ $field }}: {{ include "holmesgpt.renderModelValue" (dict "value" $value "model" $model "field" $field) | quote }}
+      {{- end }}
+    {{- end }}
+    {{- if not .Values.modelList }}
+    {}
+    {{- end }}

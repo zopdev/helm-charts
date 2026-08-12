@@ -1,0 +1,128 @@
+# HolmesGPT is an AI agent that investigates production incidents. This
+# chart deploys it as an in-cluster HTTP API, which is what upstream
+# recommends its Kubernetes install for -- the CLI and UI are separate
+# front ends.
+#
+# It does nothing useful until it has a model. Nothing is configured by
+# default, deliberately: the model and the credential are yours to
+# choose, and a default pointing anywhere would be a guess. See
+# `modelList` below.
+
+image:
+  repository: robustadev/holmes
+  tag: "0.39.0"
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+# The models Holmes may use. Until this has an entry, the API starts and
+# answers /healthz but every investigation fails.
+#
+# A value prefixed with `envRef:` is rewritten to read that variable at
+# runtime, so the credential itself never appears in the rendered
+# manifest. Supply the variable through extraEnvVarsSecrets below.
+#
+#   modelList:
+#     claude-sonnet:
+#       model: anthropic/claude-sonnet-4-20250514
+#       api_key: envRef:ANTHROPIC_API_KEY
+#       temperature: 0
+#
+# Any OpenAI-compatible endpoint works, including one inside the cluster
+# -- the localai chart in this repo serves that API, which keeps prompts
+# containing cluster state off the public internet:
+#
+#   modelList:
+#     local:
+#       model: openai/qwen3-1.7b
+#       api_base: http://my-localai:8080/v1
+#       api_key: envRef:LOCALAI_API_KEY
+modelList: {}
+
+# Names of existing Secrets whose keys are loaded as environment
+# variables, which is how an `envRef:` credential reaches the pod.
+# Create the Secret yourself so the credential never passes through
+# values:
+#
+#   kubectl create secret generic holmes-llm-keys \
+#     --from-literal=ANTHROPIC_API_KEY=sk-ant-...
+#
+#   extraEnvVarsSecrets:
+#     - holmes-llm-keys
+extraEnvVarsSecrets: []
+
+# Plain environment variables, for anything that is not a credential.
+env: {}
+
+# Whether Holmes reports usage back to Robusta. Upstream defaults this
+# on; this chart turns it off, and states so rather than inheriting an
+# image default nothing here records. An agent with cluster-wide read
+# access phoning home should be something an operator switches on
+# deliberately, not something they discover.
+telemetry:
+  enabled: false
+
+# Structured JSON logs, for a collector that parses them.
+jsonLogs: false
+
+# Sentry error reporting. Empty disables it.
+sentryDsn: ""
+
+# Data sources Holmes may use. The defaults are the ones that work from
+# in-cluster access alone; the rest need credentials. See
+# https://holmesgpt.dev/data-sources/
+toolsets:
+  kubernetes/core:
+    enabled: true
+  kubernetes/logs:
+    enabled: true
+  internet:
+    enabled: true
+  prometheus/metrics:
+    enabled: true
+
+logLevel: INFO
+
+service:
+  type: ClusterIP
+  port: 80
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "2048Mi"
+  limits:
+    memory: "2048Mi"
+
+# An investigation is a long request rather than a steady stream of
+# short ones, so CPU is a poor scaling signal. Left off by default.
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 60
+
+# Holmes reads cluster state to investigate, so it needs a read-mostly
+# ClusterRole. That is a broad grant: `extraRules` adds to it, and
+# setting `create: false` with `serviceAccountName` lets you bind a
+# narrower role of your own.
+rbac:
+  create: true
+  serviceAccountName: ""
+  extraRules: []
+
+ingress:
+  enabled: false
+  className: ""
+  host: ""
+  annotations: {}
+  # Set to serve the host over TLS from an existing certificate secret.
+  tlsSecretName: ""
+
+# Alerting rules. These read kube-state-metrics rather than anything
+# Holmes exports, because it exposes no Prometheus endpoint of its own.
+alerts:
+  enabled: true
+  unavailableReplicasThreshold: 0
+  podRestartThreshold: 3
+  podRestartTimeWindow: 10m

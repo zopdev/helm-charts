@@ -1,0 +1,58 @@
+HolmesGPT is installed as release {{ .Release.Name }}.
+
+{{- if not .Values.modelList }}
+
+  ────────────────────────────────────────────────────────────────
+  No model is configured, so Holmes cannot investigate anything yet.
+  It starts and answers /healthz, and /readyz reports a model named
+  "Robusta" -- the hosted default, which needs Robusta credentials.
+  Until `modelList` has an entry, every investigation fails with:
+
+    You're trying to use ROBUSTA_AI, but Cannot get credentials
+    for ROBUSTA_AI. Store not initialized.
+
+  Give it a model, and the Secret holding the credential:
+
+    kubectl create secret generic holmes-llm-keys -n {{ .Release.Namespace }} \
+      --from-literal=ANTHROPIC_API_KEY=sk-ant-...
+
+    helm upgrade {{ .Release.Name }} zopdev/holmesgpt --reuse-values \
+      --set 'extraEnvVarsSecrets[0]=holmes-llm-keys' \
+      --set modelList.claude.model=anthropic/claude-sonnet-4-20250514 \
+      --set modelList.claude.api_key=envRef:ANTHROPIC_API_KEY
+
+  Or point it at an OpenAI-compatible endpoint inside the cluster,
+  such as the localai chart in this repo:
+
+    --set modelList.local.model=openai/qwen3-1.7b \
+    --set modelList.local.api_base=http://my-localai:8080/v1 \
+    --set modelList.local.api_key=envRef:LOCALAI_API_KEY
+  ────────────────────────────────────────────────────────────────
+{{- else }}
+
+Models configured: {{ keys .Values.modelList | sortAlpha | join ", " }}
+{{- end }}
+
+Reach the API:
+
+  kubectl port-forward -n {{ .Release.Namespace }} \
+    svc/{{ include "holmesgpt.fullname" . }} 8080:{{ .Values.service.port }}
+
+  curl http://localhost:8080/api/info
+  curl http://localhost:8080/api/model
+
+Ask it something:
+
+  curl -X POST http://localhost:8080/api/chat \
+    -H 'Content-Type: application/json' \
+    -d '{"ask": "what is failing in my cluster?"}'
+{{- if .Values.ingress.enabled }}
+
+Or over the ingress at http{{ if .Values.ingress.tlsSecretName }}s{{ end }}://{{ .Values.ingress.host }}
+{{- end }}
+{{- if .Values.rbac.create }}
+
+Holmes reads cluster state through a read-mostly ClusterRole created by
+this chart. Narrow it with `rbac.extraRules`, or set `rbac.create=false`
+with `rbac.serviceAccountName` to bind your own.
+{{- end }}
