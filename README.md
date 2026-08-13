@@ -126,6 +126,7 @@ Below is a list of available charts along with their links:
 | **Name**       | **Link**                                                   |
 |----------------|------------------------------------------------------------|
 | **HolmesGPT**  | [helm.zop.dev/holmesgpt](https://helm.zop.dev/holmesgpt)   |
+| **Immich**     | [helm.zop.dev/immich](https://helm.zop.dev/immich)         |
 | **JupyterHub** | [helm.zop.dev/jupyterhub](https://helm.zop.dev/jupyterhub) |
 | **LiteLLM**    | [helm.zop.dev/litellm](https://helm.zop.dev/litellm)       |
 | **LocalAI**    | [helm.zop.dev/localai](https://helm.zop.dev/localai)       |

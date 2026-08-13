@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "immich.serverFullname" . }}
+  labels:
+    {{- include "immich.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  serviceName: {{ include "immich.serverFullname" . }}-headless
+  selector:
+    matchLabels:
+      {{- include "immich.selectorLabels" (dict "context" $ "component" "server") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "immich.selectorLabels" (dict "context" $ "component" "server") | nindent 8 }}
+    spec:
+      containers:
+        - name: server
+          image: "{{ .Values.server.image.repository }}:{{ .Values.server.image.tag }}"
+          imagePullPolicy: {{ .Values.server.image.pullPolicy }}
+          env:
+            - name: DB_HOSTNAME
+              value: {{ include "immich.postgresFullname" . | quote }}
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_USERNAME
+              value: {{ .Values.postgres.username | quote }}
+            - name: DB_DATABASE_NAME
+              value: {{ .Values.postgres.database | quote }}
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "immich.postgresSecretName" . }}
+                  key: POSTGRES_PASSWORD
+            - name: REDIS_HOSTNAME
+              value: {{ include "immich.redisHost" . | quote }}
+            - name: REDIS_PORT
+              value: "6379"
+            - name: IMMICH_MACHINE_LEARNING_URL
+              value: {{ printf "http://%s:3003" (include "immich.mlFullname" .) | quote }}
+            {{- range $key, $value := .Values.server.env }}
+            - name: {{ $key | quote }}
+              value: {{ $value | quote }}
+            {{- end }}
+          ports:
+            - name: http
+              containerPort: 2283
+              protocol: TCP
+          volumeMounts:
+            - name: library
+              mountPath: /data
+          resources:
+            {{- toYaml .Values.server.resources | nindent 12 }}
+          startupProbe:
+            httpGet:
+              path: /api/server/ping
+              port: http
+            periodSeconds: 5
+            failureThreshold: 24
+          readinessProbe:
+            httpGet:
+              path: /api/server/ping
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /api/server/ping
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+  volumeClaimTemplates:
+    - metadata:
+        name: library
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: {{ .Values.server.diskSize }}
