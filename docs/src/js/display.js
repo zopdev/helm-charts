@@ -23,12 +23,10 @@ const CHART_DISPLAY = {
     name: "Cassandra",
     description:
       "Storing and managing large volumes of structured, semi-structured, and unstructured data.",
-    icon: "https://framerusercontent.com/images/hyQRAJJoXaCLvlAd8IqafkKPitE.svg",
   },
   chromadb: {
     name: "ChromaDB",
     description: "The AI-native embedding database",
-    icon: "https://framerusercontent.com/images/chCSrOajsbttAYyRnFvhNbRgBEQ.svg",
   },
   clickhouse: {
     name: "ClickHouse",
@@ -37,12 +35,10 @@ const CHART_DISPLAY = {
   cockroachdb: {
     name: "CockroachDB",
     description: "Source-available distributed SQL database management system",
-    icon: "https://framerusercontent.com/images/yYgMVdoJyroUzIpxfhPZkgzb0OA.svg",
   },
   dgraph: {
     name: "Dgraph",
     description: "The high-performance database for modern applications",
-    icon: "https://framerusercontent.com/images/PqVSCt2usAAIShQahcf90ovxXqI.svg",
   },
   holmesgpt: {
     name: "HolmesGPT",
@@ -51,13 +47,11 @@ const CHART_DISPLAY = {
   jupyterhub: {
     name: "Jupyterhub",
     description: "JupyterLab Is A Next-Generation Notebook Interface",
-    icon: "https://framerusercontent.com/images/hgWz13blJI6voMJlnl8LpCs7Cjs.svg",
   },
   kafka: {
     name: "Kafka",
     description:
       "A distributed event streaming platform for real-time data pipelines and stream processing.",
-    icon: "https://framerusercontent.com/images/T58vVQTZl0UnFlmzHJLYR7mpd8U.svg",
   },
   litellm: {
     name: "LiteLLM",
@@ -70,67 +64,54 @@ const CHART_DISPLAY = {
   mariadb: {
     name: "MariaDB",
     description: "The open source relational database",
-    icon: "https://framerusercontent.com/images/MrgrzzqL3aHPeAvXraV4W437EI.svg",
   },
   mysql: {
     name: "MySQL",
     description: "Deploy a MySQL database service",
-    icon: "https://framerusercontent.com/images/o9NXlQW93tQQ6v3jTjDOcwxCMaU.svg",
   },
   opentsdb: {
     name: "OpenTSDB",
     description: "A Distributed, Scalable Monitoring System",
-    icon: "https://framerusercontent.com/images/HMe9loL8PZLicwfLI1znIttA2g.png",
   },
   outline: {
     name: "Outline",
     description: "Beautiful, realtime collaborative, feature packed, and markdown compatible.",
-    icon: "https://framerusercontent.com/images/me3PE9f0sDhtHyIisE955ABYK3c.svg",
   },
   postgres: {
     name: "Postgres",
     description: "PostgreSQL database service",
-    icon: "https://framerusercontent.com/images/AaiB0a2xIUnIemm6V905ML5c.svg",
   },
   redis: {
     name: "Redis",
     description: "Redis key-value data store",
-    icon: "https://framerusercontent.com/images/8MWCYgdUmGTAMwJBrF8PdkFbfnI.svg",
   },
   redisdistributed: {
     name: "Redis (Distributed)",
     description: "Distributed Redis cluster for high availability and scalability",
-    icon: "https://framerusercontent.com/images/UijaNkqS0HW6UsMqM12w0Pg.png",
   },
   scylladb: {
     name: "ScyllaDB",
     description: "ScyllaDB is a source-available distributed NoSQL wide-column data store.",
-    icon: "https://framerusercontent.com/images/0MeJnJIpldPqz476W6rAWBSO4XE.svg",
   },
   solr: {
     name: "SOLR",
     description: "An open-source search platform built on Apache Lucene.",
-    icon: "https://framerusercontent.com/images/38xBPcJEGig795UQddhD41ra5xM.svg",
   },
   solrcloud: {
     name: "Solr Cloud",
     description: "Scalable, fault-tolerant Apache Solr for distributed search and indexing.",
-    icon: "https://framerusercontent.com/images/TF8qLyaVZCZ0P3IwWEqp9qfNH1A.svg",
   },
   superset: {
     name: "Superset",
     description: "Data Visualization and Data Exploration | Looker, Tableau alternative",
-    icon: "https://framerusercontent.com/images/j2PaA4EyjB3z8Te54CPtEl9G4pg.svg",
   },
   surrealdb: {
     name: "SurrealDB",
     description: "A scalable, distributed, collaborative, document-graph database",
-    icon: "https://framerusercontent.com/images/bRyFhCW7zQ6XoCJv18CxnK8uE.svg",
   },
   wordpress: {
     name: "WordPress",
     description: "A content management system (CMS) written in PHP",
-    icon: "https://framerusercontent.com/images/1tMwCNL8nyVYanLeO1YXCmyD8.svg",
   },
 }
 
