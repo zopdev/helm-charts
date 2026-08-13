@@ -1641,8 +1641,8 @@ entries:
     appVersion: "1.19.0"
     created: "2026-08-12T15:56:00.000000+05:30"
     description: Helm chart for deploying qdrant vector database datastore
-    digest: 688ca9905d29f52f1297ae8d0baad3c21aed9453ab33173edf6fc09207288f96
-    icon: https://zop.dev/logo.png
+    digest: 5aeea41b0b2e9cb005185491d0b7197985d78fa62fea2bc34edeb0c8f9f000f7
+    icon: https://storage.googleapis.com/zopdev-blog-resources/1/files/originals/20260813/a95c34e7-1888-4a94-8476-0ea91d710f53-qdrant.png
     maintainers:
     - name: ZopDev
       url: zop.dev
