@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ============================================================
+     ZopDev · animated favicon · full-color three-tile mark
+     ============================================================
+     Blue TL (Secure) · Orange TR (Speed) · Green BR (Savings).
+     Bottom-left empty on purpose — the void the product fills.
+
+     Animation mirrors the brand motion signature exactly:
+       · The green tile breathes 1.0 → 0.55 → 1.0 opacity over 2.8s.
+       · Same timing as the nav-brand mark pulse on the homepage.
+     One tile only — restraint. The blue + orange stay fixed so the
+     mark never "loses" its identity in the tab strip.
+
+     Browser support: Firefox + Chromium full. Safari renders the
+     static first frame. prefers-reduced-motion respected via
+     @media inside the SVG.
+     ============================================================ -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <style>
+    .tile-green{
+      animation: zop-breathe 2.8s ease-in-out infinite;
+      transform-origin: center;
+    }
+    @keyframes zop-breathe{
+       0%, 100% { opacity: 1;    }
+       50%      { opacity: 0.55; }
+    }
+    @media (prefers-reduced-motion: reduce){
+      .tile-green{ animation: none; }
+    }
+  </style>
+  <rect x="5"  y="5"  width="11" height="11" fill="#4A66D4"/>
+  <rect x="16" y="5"  width="11" height="11" fill="#F58549"/>
+  <rect x="16" y="16" width="11" height="11" fill="#7FB236" class="tile-green"/>
+</svg>
