@@ -1,15 +1,23 @@
-import integrationsData from './config.js'
+import { fetchIntegrations } from "./helm-index.js"
+import { groupByCategory } from "./display.js"
 
-const currentSearchTerm = ""
+// The grid is built from the Helm repository index, so a released chart that
+// declares annotations.type shows up here on its own.
+const HELM_INDEX_URL = "./index.yaml"
+
+let integrations = []
+let categoryGroups = []
+let sections = []
+let categoryButtons = []
+
 let searchOverlay
 let searchOverlayInput
 let searchSuggestions
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
  initializeElements()
  setupEventListeners()
- renderAllIntegrations()
- renderFAQ()
+ await loadIntegrations()
  setupAccessibility()
  updateActiveCategoryOnScroll()
 })
@@ -27,46 +35,120 @@ function setupEventListeners() {
  setupCategorySidebar()
  setupKeyboardShortcuts()
  setupSearchOverlay()
- setupFAQ()
  window.addEventListener("scroll", updateActiveCategoryOnScroll)
 }
 
 
-function renderAllIntegrations() {
- renderCategoryIntegrations("Applications")
- renderCategoryIntegrations("Datastore")
+async function loadIntegrations() {
+ const container = document.querySelector(".integration-sections")
+
+ try {
+   integrations = await fetchIntegrations(HELM_INDEX_URL)
+   categoryGroups = groupByCategory(integrations)
+   integrations = categoryGroups.flatMap((group) => group.items)
+
+   renderCategories(categoryGroups)
+ } catch (error) {
+   console.error("Failed to load integrations from the Helm index:", error)
+
+   if (container) {
+     container.innerHTML = `
+       <div class="no-results" role="status">
+         <h3>Couldn't load integrations</h3>
+         <p>Please refresh the page to try again.</p>
+       </div>
+     `
+   }
+ }
 }
 
 
-function renderCategoryIntegrations(category) {
- const container = document.getElementById(`${category.toLowerCase()}-cards`)
- if (!container) return
+// Sidebar entries and category sections are both generated from the categories
+// discovered in the index, so a brand-new annotations.type needs no edit here.
+function renderCategories(groups) {
+ const sidebar = document.getElementById("category-buttons")
+ const container = document.querySelector(".integration-sections")
+ if (!sidebar || !container) return
 
+ sidebar.innerHTML = ""
+ container.innerHTML = ""
 
- let categoryIntegrations = integrationsData.categories[category] || []
-
-
- if (currentSearchTerm) {
-   categoryIntegrations = categoryIntegrations.filter(
-     (integration) =>
-       integration.name.toLowerCase().includes(currentSearchTerm) ||
-       integration.description.toLowerCase().includes(currentSearchTerm),
-   )
+ if (groups.length === 0) {
+   container.innerHTML = `
+     <div class="no-results" role="status">
+       <h3>No integrations found</h3>
+       <p>No published chart declares a type annotation yet.</p>
+     </div>
+   `
+   return
  }
 
+ groups.forEach((group) => {
+   sidebar.appendChild(createCategoryButton(group))
+   container.appendChild(createCategorySection(group))
+ })
 
- renderIntegrationCards(container, categoryIntegrations)
+ cacheCategoryElements()
 }
 
 
-function renderIntegrationCards(container, integrations) {
+function createCategoryButton(group) {
+ const item = document.createElement("li")
+
+ const button = document.createElement("button")
+ button.className = "category-btn"
+ button.setAttribute("data-category", group.label)
+ button.setAttribute("data-section-id", group.sectionId)
+ button.setAttribute("aria-pressed", "false")
+ button.textContent = group.label
+
+ item.appendChild(button)
+
+ return item
+}
+
+
+function createCategorySection(group) {
+ const section = document.createElement("section")
+ section.id = group.sectionId
+ section.className = "category-section"
+
+ const title = document.createElement("h3")
+ title.className = "category-title"
+ title.textContent = group.label
+
+ const cards = document.createElement("div")
+ cards.className = "integration-cards"
+ cards.id = `${group.sectionId.replace(/-section$/, "")}-cards`
+ cards.setAttribute("role", "region")
+ cards.setAttribute("aria-live", "polite")
+ cards.setAttribute("aria-label", `${group.label} integration cards`)
+
+ section.appendChild(title)
+ section.appendChild(cards)
+
+ renderIntegrationCards(cards, group.items)
+
+ return section
+}
+
+
+// Re-read the generated nodes: the sidebar buttons and sections only exist once
+// the index has been fetched and rendered.
+function cacheCategoryElements() {
+ sections = Array.from(document.querySelectorAll(".category-section"))
+ categoryButtons = Array.from(document.querySelectorAll(".category-btn"))
+}
+
+
+function renderIntegrationCards(container, cards) {
  if (!container) return
 
 
  container.innerHTML = ""
 
 
- if (integrations.length === 0) {
+ if (cards.length === 0) {
    container.innerHTML = `
      <div class="no-results" role="status">
        <h3>No integrations found</h3>
@@ -77,13 +159,13 @@ function renderIntegrationCards(container, integrations) {
  }
 
 
- integrations.forEach((integration, index) => {
-   const card = createIntegrationCard(integration, index)
+ cards.forEach((integration) => {
+   const card = createIntegrationCard(integration)
    container.appendChild(card)
  })
 }
 
-function createIntegrationCard(integration, index) {
+function createIntegrationCard(integration) {
   const card = document.createElement("article");
   card.className = "integration-card";
   card.setAttribute("tabindex", "0");
@@ -91,28 +173,27 @@ function createIntegrationCard(integration, index) {
   card.setAttribute("aria-label", `${integration.name} integration. ${integration.description}`);
   card.setAttribute("data-integration-id", integration.id);
   card.setAttribute("title", integration.description);
-  card.setAttribute("data-card-index", index);
 
   card.innerHTML = `
     <div class="integration-card-header">
       <img
-        src="${integration.icon}"
+        src="${escapeHtml(integration.icon)}"
         alt=""
         class="integration-card-icon"
+        width="40"
+        height="40"
+        loading="lazy"
+        decoding="async"
         aria-hidden="true"
-        title="${integration.title}"
+        title="${escapeHtml(integration.name)}"
       >
       <h3 class="integration-card-title">${escapeHtml(integration.name)}</h3>
     </div>
     <p class="integration-card-description">${escapeHtml(integration.description)}</p>
   `;
 
-  card.addEventListener("click", () => {
-    const url = `./src/readme.html?id=${encodeURIComponent(integration.id)}`;
-    window.location.href = url;
-  });
-
-  card.addEventListener("keydown", (e) => handleCardKeydown(e, integration, index));
+  card.addEventListener("click", () => handleCardInteraction(integration));
+  card.addEventListener("keydown", (e) => handleCardKeydown(e, integration));
 
   return card;
 }
@@ -122,7 +203,7 @@ function handleCardInteraction(integration) {
   window.location.href = url;
 }
 
-function handleCardKeydown(e, integration, index) {
+function handleCardKeydown(e, integration) {
   switch (e.key) {
     case "Enter":
     case " ":
@@ -132,12 +213,12 @@ function handleCardKeydown(e, integration, index) {
     case "ArrowRight":
     case "ArrowDown":
       e.preventDefault();
-      focusNextCard(index);
+      focusNextCard(currentCardIndex(e.currentTarget));
       break;
     case "ArrowLeft":
     case "ArrowUp":
       e.preventDefault();
-      focusPreviousCard(index);
+      focusPreviousCard(currentCardIndex(e.currentTarget));
       break;
     case "Home":
       e.preventDefault();
@@ -150,8 +231,16 @@ function handleCardKeydown(e, integration, index) {
   }
 }
 
+// Arrow-key navigation walks every rendered card, so the index has to come from
+// the document order rather than the card's position within its own category.
+function currentCardIndex(card) {
+ const cards = Array.from(document.querySelectorAll(".integration-card"))
+ return cards.indexOf(card)
+}
+
 function focusNextCard(currentIndex) {
  const cards = document.querySelectorAll(".integration-card")
+ if (cards.length === 0) return
  const nextIndex = (currentIndex + 1) % cards.length
  cards[nextIndex]?.focus()
 }
@@ -159,7 +248,8 @@ function focusNextCard(currentIndex) {
 
 function focusPreviousCard(currentIndex) {
  const cards = document.querySelectorAll(".integration-card")
- const prevIndex = currentIndex === 0 ? cards.length - 1 : currentIndex - 1
+ if (cards.length === 0) return
+ const prevIndex = currentIndex <= 0 ? cards.length - 1 : currentIndex - 1
  cards[prevIndex]?.focus()
 }
 
@@ -197,21 +287,18 @@ function setupCategorySidebar() {
 
 
 function handleCategoryClick(button) {
- const categoryButtons = document.querySelectorAll(".category-btn");
  const category = button.getAttribute("data-category");
+ const sectionId = button.getAttribute("data-section-id");
 
 
- categoryButtons.forEach((btn) => {
-   btn.setAttribute("aria-pressed", "false");
-   btn.classList.remove("active");
- });
+ clearCategoryHighlights();
 
 
  button.setAttribute("aria-pressed", "true");
  button.classList.add("active");
 
 
- const targetSection = document.getElementById(`${category.toLowerCase()}-section`);
+ const targetSection = document.getElementById(sectionId);
  if (targetSection) {
    targetSection.scrollIntoView({
      behavior: "smooth",
@@ -226,20 +313,15 @@ function handleCategoryClick(button) {
 
 
 function clearCategoryHighlights() {
- const categoryButtons = document.querySelectorAll(".category-btn");
- categoryButtons.forEach((btn) => {
+ document.querySelectorAll(".category-btn").forEach((btn) => {
    btn.setAttribute("aria-pressed", "false");
    btn.classList.remove("active");
  });
 }
 
 
-const sections = document.querySelectorAll(".category-section");
-const categoryButtons = document.querySelectorAll(".category-btn");
-
-
 function updateActiveCategoryOnScroll() {
- let currentActiveCategory = null;
+ let activeSectionId = null;
 
 
  sections.forEach((section) => {
@@ -248,7 +330,7 @@ function updateActiveCategoryOnScroll() {
 
 
    if (window.scrollY + 150 >= sectionTop && window.scrollY + 150 < sectionTop + sectionHeight) {
-     currentActiveCategory = section.id.replace("-section", "");
+     activeSectionId = section.id;
    }
  });
 
@@ -259,8 +341,10 @@ function updateActiveCategoryOnScroll() {
  });
 
 
- if (currentActiveCategory) {
-   const activeButton = document.querySelector(`.category-btn[data-category="${currentActiveCategory.charAt(0).toUpperCase() + currentActiveCategory.slice(1)}"]`);
+ if (activeSectionId) {
+   const activeButton = categoryButtons.find(
+     (btn) => btn.getAttribute("data-section-id") === activeSectionId
+   );
    if (activeButton) {
      activeButton.setAttribute("aria-pressed", "true");
      activeButton.classList.add("active");
@@ -380,13 +464,7 @@ function showSearchSuggestions(searchTerm) {
  }
 
 
- const allIntegrations = [
-   ...integrationsData.categories.Applications,
-   ...integrationsData.categories.Datastore,
- ]
-
-
- const filteredIntegrations = allIntegrations.filter(
+ const filteredIntegrations = integrations.filter(
    (integration) =>
      integration.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
      integration.description.toLowerCase().includes(searchTerm.toLowerCase())
@@ -404,7 +482,7 @@ function showSearchSuggestions(searchTerm) {
 
 
  searchSuggestions.innerHTML = filteredIntegrations
-   .map((integration, index) => createSearchSuggestion(integration, index))
+   .map((integration) => createSearchSuggestion(integration))
    .join("")
 
 
@@ -420,16 +498,16 @@ function showSearchSuggestions(searchTerm) {
 }
 
 
-function createSearchSuggestion(integration, index) {
+function createSearchSuggestion(integration) {
  return `
  <a href="./src/readme.html?id=${encodeURIComponent(integration.id)}" class="integration-card-link">
-   <div class="search-suggestion" tabindex="0" role="option" aria-label="${integration.name} integration">
+   <div class="search-suggestion" tabindex="0" role="option" aria-label="${escapeHtml(integration.name)} integration">
      <img
-       src="${integration.icon}"
+       src="${escapeHtml(integration.icon)}"
        alt=""
        class="search-suggestion-icon"
        aria-hidden="true"
-       title="${integration.description}"
+       title="${escapeHtml(integration.description)}"
      >
      <div class="search-suggestion-content">
        <div class="search-suggestion-title">${escapeHtml(integration.name)}</div>
@@ -437,7 +515,7 @@ function createSearchSuggestion(integration, index) {
      </div>
      <span class="search-suggestion-category">${escapeHtml(integration.category)}</span>
    </div>
- <a/>
+ </a>
  `
 }
 
@@ -446,7 +524,7 @@ function handleSuggestionClick(integration) {
  closeSearchOverlay()
 
 
- const targetSection = document.getElementById(`${integration.category.toLowerCase()}-section`)
+ const targetSection = document.getElementById(integration.sectionId)
  if (targetSection) {
    targetSection.scrollIntoView({
      behavior: "smooth",
@@ -501,24 +579,6 @@ function handleSuggestionKeydown(e, index, totalSuggestions) {
 }
 
 
-function setupFAQ() {
- document.addEventListener("click", (e) => {
-   if (e.target.classList.contains("faq-question")) {
-     handleFAQClick(e.target)
-   }
- })
-}
-
-
-function renderFAQ() {
- const faqContainer = document.getElementById("faq-container")
- if (!faqContainer) return
-
-
- faqContainer.innerHTML = faqData.map((faq) => createFAQItem(faq)).join("")
-}
-
-
 function setupAccessibility() {
  if (!document.getElementById("sr-announcements")) {
    const announcements = document.createElement("div")
@@ -550,7 +610,7 @@ function escapeHtml(text) {
    '"': "&quot;",
    "'": "&#039;",
  }
- return text.replace(/[&<>"']/g, (m) => map[m])
+ return String(text).replace(/[&<>"']/g, (m) => map[m])
 }
 
 
@@ -564,6 +624,3 @@ function isInputFocused() {
      activeElement.isContentEditable)
  )
 }
-
-
-

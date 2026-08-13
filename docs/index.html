@@ -9,8 +9,11 @@
 
    <link rel="stylesheet" href="./src/css/style.css">
 
-   <link href="https://framerusercontent.com/images/gpe79icBMRFSfapAeW1fColQyw.png" rel="icon" media="(prefers-color-scheme: dark)">
-   <link rel="icon" type="image/png" href="https://framerusercontent.com/images/gpe79icBMRFSfapAeW1fColQyw.png">
+   <!-- favicon.svg and favicon.ico are copied byte-for-byte from what zop.dev serves,
+        comment headers included. Re-copy them if the brand mark changes; editing them
+        here would fork the mark from the product. -->
+   <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+   <link rel="icon" sizes="any" href="./favicon.ico">
 
    <meta name="google-site-verification" content="6OKK0i1wXPc8sYwuorvFOL9a_MQffGeaJutAb5M04nQ">
 
@@ -84,35 +87,12 @@
                            role="tabpanel"
                            aria-labelledby="tab-categories"
                        >
+                           <!-- Categories and cards are generated from ./index.yaml by src/js/script.js -->
                            <aside class="categories-sidebar" role="complementary" aria-label="Filter by category">
-                               <ul role="list" id="category-buttons">
-                                   <li>
-                                       <button class="category-btn" data-category="Applications" aria-pressed="false">
-                                           Applications
-                                       </button>
-                                   </li>
-                                   <li>
-                                       <button class="category-btn" data-category="Datastore" aria-pressed="false">
-                                           Datastore
-                                       </button>
-                                   </li>
-                               </ul>
+                               <ul role="list" id="category-buttons"></ul>
                            </aside>
-                          
-                           <div class="integration-sections">                               
-                               <section id="applications-section" class="category-section">
-                                   <h3 class="category-title">Applications</h3>
-                                   <div class="integration-cards" id="applications-cards" role="region" aria-live="polite" aria-label="Applications integration cards">
-                                   </div>
-                               </section>
-                              
-                               <section id="datastore-section" class="category-section">
-                                   <h3 class="category-title">Datastore</h3>
-                                   <div class="integration-cards" id="datastore-cards" role="region" aria-live="polite" aria-label="Datastore integration cards">
-                                   </div>
-                               </section>
-                              
-                           </div>
+
+                           <div class="integration-sections"></div>
                        </div>
                    </div>
                </div>
