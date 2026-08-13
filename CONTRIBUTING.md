@@ -67,7 +67,7 @@ three fields in your `Chart.yaml` are the whole contract — there is no site li
 | Field | Why it matters |
 |---|---|
 | `annotations.type` | Decides whether the chart appears at all, and under which category. A chart with no `type` is deliberately hidden — that is how building blocks (`service`, `cron-job`) and operator charts stay off the grid. A new `type` value gets its own sidebar entry and section automatically. |
-| `icon` | The card image. Host it on a zopdev-controlled bucket, as every chart here does. A chart with no `icon` falls back to the zop.dev logo. |
+| `icon` | The card image — drawn at 40×40 on the grid and 32×32 in the search overlay. Host it on a zopdev-controlled bucket, as the shipped charts do, and keep it small: 128–256 px square is plenty at those sizes, and the biggest icon in the repo today is 1024×1024 / ~900 KB, which every visitor pays to paint a thumbnail. A chart with no `icon` falls back to the site's placeholder illustration (`docs/src/assets/logo.png`). |
 | `description` | The card text, unless the chart has a description override in `docs/src/js/display.js` (see below). Write it for a reader who is choosing an integration. |
 
 The card appears once the chart is packaged and the index is regenerated (Steps 4–6

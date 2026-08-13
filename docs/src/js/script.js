@@ -180,6 +180,10 @@ function createIntegrationCard(integration) {
         src="${escapeHtml(integration.icon)}"
         alt=""
         class="integration-card-icon"
+        width="40"
+        height="40"
+        loading="lazy"
+        decoding="async"
         aria-hidden="true"
         title="${escapeHtml(integration.name)}"
       >
