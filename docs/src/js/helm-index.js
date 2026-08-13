@@ -42,14 +42,22 @@ function applyField(entry, line) {
 
   if (value === "") return { block: key }
 
-  // `description: |-` and friends put the text on the following lines.
+  // `description: |-` and friends put the text on the following lines. Block
+  // content is already literal, so it is recorded here and skipped by
+  // finishEntry — a quote in that text is part of the text.
   if (BLOCK_SCALAR.test(value)) {
-    if (WANTED_FIELDS.includes(key)) entry[key] = ""
+    if (WANTED_FIELDS.includes(key)) {
+      entry[key] = ""
+      entry.blockFields.add(key)
+    }
     return { folded: key }
   }
 
+  // Stored raw: a quoted value that wraps carries its opening quote here and its
+  // closing quote on a continuation line, so quotes can only be stripped once the
+  // whole value has been assembled. See finishEntry().
   if (WANTED_FIELDS.includes(key)) {
-    entry[key] = unquote(rawValue)
+    entry[key] = value
     return { folded: key }
   }
 
@@ -63,6 +71,18 @@ function appendContinuation(entry, key, text) {
 
   const existing = entry[key]
   entry[key] = existing ? `${existing} ${text.trim()}` : text.trim()
+}
+
+// Strips quotes once every continuation line has been folded in.
+function finishEntry(entry) {
+  if (!entry) return
+
+  WANTED_FIELDS.forEach((key) => {
+    if (entry.blockFields.has(key)) return
+    if (typeof entry[key] === "string") entry[key] = unquote(entry[key])
+  })
+
+  delete entry.blockFields
 }
 
 // Parses index.yaml into { chartName: [entry, entry, ...] }, one entry per
@@ -102,7 +122,7 @@ export function parseHelmIndex(text) {
 
     const entryStart = ENTRY_START.exec(line)
     if (entryStart) {
-      entry = { annotations: {} }
+      entry = { annotations: {}, blockFields: new Set() }
       versions.push(entry)
       ;({ block: nestedBlock = null, folded: foldedKey = null } = applyField(entry, entryStart[1]))
       continue
@@ -131,6 +151,8 @@ export function parseHelmIndex(text) {
     }
   }
 
+  charts.forEach((versions) => versions.forEach(finishEntry))
+
   return charts
 }
 
@@ -142,6 +164,8 @@ export function compareVersionsDesc(a, b) {
       .replace(/^v/i, "")
       .split(/[.\-+]/)
 
+  const isNumeric = (part) => /^\d+$/.test(part)
+
   const left = parts(a)
   const right = parts(b)
 
@@ -149,8 +173,11 @@ export function compareVersionsDesc(a, b) {
     const l = left[i]
     const r = right[i]
 
-    if (l === undefined) return 1
-    if (r === undefined) return -1
+    // One version ran out of parts. A trailing numeric part means the longer
+    // version is higher (1.2.3 > 1.2); a non-numeric one means it is a
+    // prerelease, and 1.2.3 outranks 1.2.3-rc1.
+    if (l === undefined) return isNumeric(r) ? 1 : -1
+    if (r === undefined) return isNumeric(l) ? -1 : 1
 
     const ln = Number(l)
     const rn = Number(r)
@@ -160,7 +187,9 @@ export function compareVersionsDesc(a, b) {
       continue
     }
 
-    if (l !== r) return l < r ? -1 : 1
+    // Non-numeric parts (prerelease tags) compare as text, newest first, so
+    // rc2 outranks rc1 and beta outranks alpha.
+    if (l !== r) return l < r ? 1 : -1
   }
 
   return 0

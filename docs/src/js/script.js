@@ -18,7 +18,6 @@ document.addEventListener("DOMContentLoaded", async () => {
  initializeElements()
  setupEventListeners()
  await loadIntegrations()
- renderFAQ()
  setupAccessibility()
  updateActiveCategoryOnScroll()
 })
@@ -36,7 +35,6 @@ function setupEventListeners() {
  setupCategorySidebar()
  setupKeyboardShortcuts()
  setupSearchOverlay()
- setupFAQ()
  window.addEventListener("scroll", updateActiveCategoryOnScroll)
 }
 
@@ -574,24 +572,6 @@ function handleSuggestionKeydown(e, index, totalSuggestions) {
      closeSearchOverlay()
      break
  }
-}
-
-
-function setupFAQ() {
- document.addEventListener("click", (e) => {
-   if (e.target.classList.contains("faq-question")) {
-     handleFAQClick(e.target)
-   }
- })
-}
-
-
-function renderFAQ() {
- const faqContainer = document.getElementById("faq-container")
- if (!faqContainer) return
-
-
- faqContainer.innerHTML = faqData.map((faq) => createFAQItem(faq)).join("")
 }
 
 
