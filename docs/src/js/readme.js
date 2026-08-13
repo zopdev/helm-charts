@@ -1,4 +1,9 @@
-import integrationsData from "./config.js";
+// The id is interpolated into the raw.githubusercontent.com URL below, so it has to
+// look like a chart directory name. Without this, `..` segments normalise away and the
+// id can walk out of this repo to fetch arbitrary markdown, which is then rendered as
+// HTML on this origin. Every chart in charts/ matches this shape.
+const CHART_ID = /^[a-z0-9][a-z0-9-]*$/;
+
 const urlParams = new URLSearchParams(window.location.search);
 const integrationId = urlParams.get('id');
 const readmeContentDiv = document.getElementById('readme-content');
@@ -45,9 +50,9 @@ async function fetchReadme() {
         const contributionUrl = 'https://raw.githubusercontent.com/zopdev/helm-charts/main/CONTRIBUTING.md';
         readmeMarkdown = await fetchMarkdown(contributionUrl);
     } else {
-        const integrationExists = Object.values(integrationsData.categories).flat().some(integration => integration.id === integrationId);
-
-        if (!integrationId || !integrationExists) {
+        // A well-formed id that has no chart in the repo falls through to the 404
+        // state when the README fetch below returns 404.
+        if (!integrationId || !CHART_ID.test(integrationId)) {
             document.body.innerHTML = `
                 <div style="text-align: center; padding: 20px;">
                     <img decoding="async" width="671" height="671" sizes="calc(min(100vw * 0.8867, 1064px) * 0.6)" srcset="https://framerusercontent.com/images/oG2yEHscd5VhHxwWhQzz7ygGVBU.svg?scale-down-to=512 512w,https://framerusercontent.com/images/oG2yEHscd5VhHxwWhQzz7ygGVBU.svg 761w" src="https://framerusercontent.com/images/oG2yEHscd5VhHxwWhQzz7ygGVBU.svg" alt="" style="display:block;border-radius:inherit;object-position:center;object-fit:cover; margin: 0 auto;">
