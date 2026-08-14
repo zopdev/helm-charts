@@ -22,7 +22,7 @@ pulls in the zopdev `postgres` chart as a subchart for the backing database.
 
 | Chart      | Version   | Repository               | Purpose                                            |
 |------------|-----------|--------------------------|----------------------------------------------------|
-| `postgres` | `0.0.12`  | `https://helm.zop.dev`   | Stores virtual keys, spend, and UI/API-added models |
+| `postgres` | `0.0.14`  | `https://helm.zop.dev`   | Stores virtual keys, spend, and UI/API-added models |
 
 The `ghcr.io/berriai/litellm-database` image bundles Prisma and runs the database
 migrations automatically on container start, so no separate migration Job is needed.
