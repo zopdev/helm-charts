@@ -49,17 +49,39 @@ data:
   DB_PASSWORD: {{ $password | b64enc }}
   DATABASE_URL: {{ printf "postgres://%s:%s@%s-postgres:5432/%s" $username $password $.Release.Name $service.database | b64enc }}
 ---
+{{/* The name carries a hash of everything that shapes the pod: a Job's
+     spec.template is immutable, so changing the image version or the
+     credentials must produce a NEW Job (helm prunes the old one) rather than
+     an "field is immutable" patch failure on upgrade. */}}
+{{- $sig := printf "%s|%s|%s|%s|%s" $.Chart.Version $.Values.version $username $password $service.database | sha256sum | trunc 8 }}
+{{- $initName := printf "postgres-%s-%s-init" $.Release.Name $service.name | trunc 54 | trimSuffix "-" }}
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: postgres-{{ $.Release.Name }}-{{ $service.name }}-init-job
+  name: {{ $initName }}-{{ $sig }}
   namespace: {{ $.Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/component: db-init
+    helm.sh/chart: {{ include "postgresql.chart" $ }}
 spec:
-  # A Job, not a bare Pod: a finished Pod is permanently
-  # Ready=False (reason=PodCompleted), so `helm --wait` could never be
-  # satisfied by it. Helm counts a Job ready at .status.succeeded >= 1.
-  backoffLimit: 20
+  # A Job, not a bare Pod: a finished Pod is permanently Ready=False
+  # (reason=PodCompleted), so `helm --wait` could never be satisfied by it.
+  # Helm counts a Job ready at .status.succeeded >= 1.
+  #
+  # Default backoffLimit (6) with OnFailure gives ~10 min of retries while
+  # postgres schedules; activeDeadlineSeconds caps the pathological case, which
+  # matters because `--wait-for-jobs` would otherwise sit on it.
+  activeDeadlineSeconds: 1800
+  ttlSecondsAfterFinished: 600
   template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: postgres
+        app.kubernetes.io/instance: {{ $.Release.Name }}
+        app.kubernetes.io/component: db-init
     spec:
       containers:
         - name: postgres-init-role
@@ -68,6 +90,7 @@ spec:
           args:
             - "-c"
             - |
+              set -euo pipefail
               sleep 20
               POSTGRES_PASSWORD="$PGPASSWORD"
               psql -h {{ $.Release.Name }}-postgres -U postgres -c "
