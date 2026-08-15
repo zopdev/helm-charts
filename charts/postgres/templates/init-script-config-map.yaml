@@ -49,11 +49,16 @@ data:
   DB_PASSWORD: {{ $password | b64enc }}
   DATABASE_URL: {{ printf "postgres://%s:%s@%s-postgres:5432/%s" $username $password $.Release.Name $service.database | b64enc }}
 ---
-{{/* The name carries a hash of everything that shapes the pod: a Job's
-     spec.template is immutable, so changing the image version or the
-     credentials must produce a NEW Job (helm prunes the old one) rather than
-     an "field is immutable" patch failure on upgrade. */}}
-{{- $sig := printf "%s|%s|%s|%s|%s" $.Chart.Version $.Values.version $username $password $service.database | sha256sum | trunc 8 }}
+{{/* The name carries a hash of what shapes the pod: a Job's spec.template is
+     immutable, so a changed image version or rotated credential must produce a
+     NEW Job (helm prunes the old one) rather than a "field is immutable" patch
+     failure on upgrade. The password is deliberately NOT in the hash — a Job
+     name is readable by anyone who can list jobs, and $username rotates with it
+     (same lookup below) while already being public in the ConfigMap.
+     $.Chart.Version stands in for "the script changed", which holds because
+     CONTRIBUTING requires a version bump to release: edit the SQL without
+     bumping it and the name would wrongly stay stable. */}}
+{{- $sig := printf "%s|%s|%s|%s" $.Chart.Version $.Values.version $username $service.database | sha256sum | trunc 8 }}
 {{- $initName := printf "postgres-%s-%s-init" $.Release.Name $service.name | trunc 54 | trimSuffix "-" }}
 apiVersion: batch/v1
 kind: Job
@@ -75,7 +80,6 @@ spec:
   # postgres schedules; activeDeadlineSeconds caps the pathological case, which
   # matters because `--wait-for-jobs` would otherwise sit on it.
   activeDeadlineSeconds: 1800
-  ttlSecondsAfterFinished: 600
   template:
     metadata:
       labels:
