@@ -6,6 +6,11 @@ metadata:
   labels:
     {{- include "litellm.labels" . | nindent 4 }}
 spec:
+  {{/* Derived from the startup budget, never below it: the Kubernetes default
+       is 600s, which the budget alone can reach, and a Deployment that trips
+       ProgressDeadlineExceeded reads as Degraded to ArgoCD/Flux even though
+       helm's own readiness check ignores that condition. */}}
+  progressDeadlineSeconds: {{ add (mul .Values.probes.startup.periodSeconds .Values.probes.startup.failureThreshold) 300 }}
 {{- if not .Values.autoscaling.enabled }}
   replicas: 1
 {{- end }}
@@ -67,20 +72,24 @@ spec:
             httpGet:
               path: /health/liveliness
               port: http
-            periodSeconds: 15
-            failureThreshold: 5
+            periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
+            failureThreshold: {{ .Values.probes.liveness.failureThreshold }}
           readinessProbe:
             httpGet:
               path: /health/readiness
               port: http
-            periodSeconds: 10
-            failureThreshold: 3
+            periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
+            failureThreshold: {{ .Values.probes.readiness.failureThreshold }}
+          {{/* Holds the other two off until the proxy first answers, so a slow
+               boot is not read as a crash. periodSeconds x failureThreshold is
+               the entire budget: exceed it and the kubelet kills the container,
+               which restarts the boot from zero rather than waiting longer. */}}
           startupProbe:
             httpGet:
               path: /health/readiness
               port: http
-            periodSeconds: 10
-            failureThreshold: 30
+            periodSeconds: {{ .Values.probes.startup.periodSeconds }}
+            failureThreshold: {{ .Values.probes.startup.failureThreshold }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:

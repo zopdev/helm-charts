@@ -22,7 +22,7 @@ pulls in the zopdev `postgres` chart as a subchart for the backing database.
 
 | Chart      | Version   | Repository               | Purpose                                            |
 |------------|-----------|--------------------------|----------------------------------------------------|
-| `postgres` | `0.0.12`  | `https://helm.zop.dev`   | Stores virtual keys, spend, and UI/API-added models |
+| `postgres` | `0.0.14`  | `https://helm.zop.dev`   | Stores virtual keys, spend, and UI/API-added models |
 
 The `ghcr.io/berriai/litellm-database` image bundles Prisma and runs the database
 migrations automatically on container start, so no separate migration Job is needed.
@@ -43,6 +43,11 @@ helm repo update
 helm install litellm zop/litellm
 ```
 
+The proxy takes roughly 3–7 minutes to become Ready — it loads litellm, runs
+`prisma migrate deploy`, then initialises the app. If you install or upgrade
+with `--wait`, raise the timeout past helm's 5-minute default, e.g.
+`--wait --timeout 15m`, or the client gives up on a boot that is still healthy.
+
 The release name `litellm` is recommended: the chart wires the proxy to the postgres
 subchart's per-database secret (`<release>-litellm-litellm-postgres-database-secret`),
 and using `litellm` keeps names predictable.
@@ -58,7 +63,7 @@ helm install litellm zop/litellm -f my-values.yaml
 ## Verify
 
 ```bash
-# Proxy pod becomes Ready (DB init Pod completes first, then Prisma migrate runs on boot)
+# Proxy pod becomes Ready (DB init Job completes first, then Prisma migrate runs on boot)
 kubectl get pods -l app=litellm
 
 # Health endpoints
@@ -135,6 +140,12 @@ Kubernetes; delete them manually if you want a clean slate.
 | `extraEnv`                   | `object`  | Extra plain environment variables.                                    | `{}`                                 |
 | `proxy_config.model_list`    | `array`   | Models exposed by the proxy (≥1 required to boot).                    | one `placeholder` model              |
 | `resources`                  | `object`  | CPU/memory requests and limits.                                       | `250m`/`512Mi` … `1`/`1Gi`           |
+| `probes.startup.periodSeconds` | `integer` | Seconds between startup checks.                                     | `10`                                 |
+| `probes.startup.failureThreshold` | `integer` | Failed startup checks before the container is killed; x period is the whole boot budget (600s). | `60`            |
+| `probes.readiness.periodSeconds` | `integer` | Seconds between readiness checks.                                   | `10`                                 |
+| `probes.readiness.failureThreshold` | `integer` | Failed checks before the pod leaves the Service.                 | `3`                                  |
+| `probes.liveness.periodSeconds` | `integer` | Seconds between liveness checks.                                     | `15`                                 |
+| `probes.liveness.failureThreshold` | `integer` | Failed checks before the container is restarted.                  | `5`                                  |
 | `autoscaling.enabled`        | `boolean` | Enable a HorizontalPodAutoscaler.                                     | `false`                              |
 | `postgres.enabled`           | `boolean` | Deploy the postgres subchart. When `false`, supply `DATABASE_URL` yourself via `extraEnvFrom`. | `true`              |
 | `postgres.services`          | `array`   | Databases to create (`name`/`database`).                              | `[{name: litellm, database: litellm}]` |
