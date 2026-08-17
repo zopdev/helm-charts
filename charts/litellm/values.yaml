@@ -56,6 +56,24 @@ proxy_config:
   general_settings:
     master_key: os.environ/PROXY_MASTER_KEY
 
+# Startup is dominated by the image, not by the database. Measured on a healthy
+# cluster: ~100s loading litellm before it even reaches the schema check, ~25s
+# in `prisma migrate deploy`, then ~55s of app init — about 180s in total, and
+# 380s observed during an upgrade, when the database restarts underneath it.
+# Size startup.periodSeconds x failureThreshold for the upgrade case: exceeding
+# it kills the container, so a slow node turns a working boot into a restart
+# loop rather than a slower success.
+probes:
+  startup:
+    periodSeconds: 10
+    failureThreshold: 60
+  readiness:
+    periodSeconds: 10
+    failureThreshold: 3
+  liveness:
+    periodSeconds: 15
+    failureThreshold: 5
+
 resources:
   requests:
     cpu: 250m

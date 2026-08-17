@@ -154,6 +154,77 @@
       },
       "mutable": true
     },
+    "probes": {
+      "type": "object",
+      "category": "advanced",
+      "description": "Probe timings. The startup budget (periodSeconds x failureThreshold) must clear the proxy's boot: about 180s on a first boot, and 380s observed during an upgrade — size it for the upgrade case, or the kubelet kills a container that was still starting",
+      "properties": {
+        "startup": {
+          "type": "object",
+          "description": "Holds the other probes off until the proxy first answers",
+          "properties": {
+            "periodSeconds": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Seconds between startup checks",
+              "default": 10,
+              "mutable": true
+            },
+            "failureThreshold": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Failed checks tolerated before the container is killed; multiplied by periodSeconds this is the whole boot budget",
+              "default": 60,
+              "mutable": true
+            }
+          },
+          "required": ["periodSeconds", "failureThreshold"]
+        },
+        "readiness": {
+          "type": "object",
+          "description": "Whether a running proxy should receive traffic",
+          "properties": {
+            "periodSeconds": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Seconds between readiness checks",
+              "default": 10,
+              "mutable": true
+            },
+            "failureThreshold": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Failed checks before the pod leaves the Service",
+              "default": 3,
+              "mutable": true
+            }
+          },
+          "required": ["periodSeconds", "failureThreshold"]
+        },
+        "liveness": {
+          "type": "object",
+          "description": "Whether a running proxy should be restarted",
+          "properties": {
+            "periodSeconds": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Seconds between liveness checks",
+              "default": 15,
+              "mutable": true
+            },
+            "failureThreshold": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Failed checks before the container is restarted",
+              "default": 5,
+              "mutable": true
+            }
+          },
+          "required": ["periodSeconds", "failureThreshold"]
+        }
+      },
+      "required": ["startup", "readiness", "liveness"]
+    },
     "resources": {
       "type": "object",
       "category": "compute",
@@ -260,5 +331,5 @@
       "required": ["enabled", "services"]
     }
   },
-  "required": ["image", "service", "proxy_config", "resources", "postgres"]
+  "required": ["image", "service", "probes", "proxy_config", "resources", "postgres"]
 }
