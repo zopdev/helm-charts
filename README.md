@@ -119,6 +119,7 @@ Below is a list of available charts along with their links:
 | **Kafka**            | [helm.zop.dev/kafka](https://helm.zop.dev/kafka)                       | ✅           |
 | **RedisDistributed** | [helm.zop.dev/redisdistributed](https://helm.zop.dev/redisdistributed) | ✅           |
 | **SolrCloud**        | [helm.zop.dev/solrcloud](https://helm.zop.dev/solrcloud)               |             |
+| **Qdrant**           | [helm.zop.dev/qdrant](https://helm.zop.dev/qdrant)                     | ✅           |
 
 
 2. **APPLICATIONS**
