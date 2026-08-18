@@ -2,6 +2,8 @@
 
 The Qdrant Helm chart provides an easy way to deploy and manage a [Qdrant](https://qdrant.tech/) vector database in your Kubernetes environment. Qdrant is a high-performance vector search engine for AI applications — semantic search, recommendations, and retrieval-augmented generation (RAG). This chart includes persistence, resource management, built-in Prometheus metrics, and API-key authentication.
 
+> **Single node.** This chart deploys one Qdrant node (`replicas: 1`, distributed mode off) — there is no high-availability or clustering. It is intended as an application datastore rather than a multi-node Qdrant cluster.
+
 ## Prerequisites
 
 - Kubernetes 1.19+

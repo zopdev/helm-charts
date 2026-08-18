@@ -1,4 +1,9 @@
-# Qdrant server image tag (qdrant/qdrant:<version>).
+# This chart runs a single Qdrant node (replicas: 1, distributed mode off) — no
+# HA or clustering. It is intended as an application datastore, not a
+# multi-node cluster.
+
+# Qdrant server image tag (qdrant/qdrant:<version>). Keep in step with
+# appVersion in Chart.yaml.
 version: "v1.19.0"
 
 # Size of the persistent volume claim (PVC) backing /qdrant/storage.

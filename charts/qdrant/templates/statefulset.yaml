@@ -66,17 +66,17 @@ spec:
               name: http
             - containerPort: 6334
               name: grpc
+          # No initialDelaySeconds on liveness/readiness: the startupProbe below
+          # gates both, so the kubelet does not run them until startup succeeds.
           livenessProbe:
             httpGet:
               path: /livez
               port: 6333
-            initialDelaySeconds: 30
             periodSeconds: 10
           readinessProbe:
             httpGet:
               path: /readyz
               port: 6333
-            initialDelaySeconds: 5
             periodSeconds: 10
           startupProbe:
             httpGet:
