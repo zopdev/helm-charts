@@ -63,6 +63,16 @@ postgres:
     pullPolicy: IfNotPresent
   database: immich
   username: immich
+  # Left empty, a password is generated and stored in a Secret this
+  # chart manages (kept across `helm uninstall` so a reinstall against
+  # the same retained PVC still authenticates -- see README). Set this
+  # to pin a known password instead, e.g. to restore into a fresh
+  # volume from a backup taken under a specific password.
+  password: ""
+  # Name of an existing Secret carrying a POSTGRES_PASSWORD key, used
+  # as-is instead of the chart managing one. Takes precedence over
+  # `password` above.
+  existingSecret: ""
   diskSize: "10Gi"
   resources:
     requests:

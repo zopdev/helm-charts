@@ -31,6 +31,13 @@ spec:
               value: {{ .Values.postgres.database | quote }}
             - name: POSTGRES_INITDB_ARGS
               value: "--data-checksums"
+            # Points PGDATA at a subdirectory of the mount rather than the
+            # mount root. Real block storage (EBS, GCE PD) formats a
+            # filesystem with a lost+found directory already present, and
+            # initdb refuses to initialize a non-empty directory -- the
+            # official postgres image's own docs prescribe exactly this.
+            - name: PGDATA
+              value: "/var/lib/postgresql/data/pgdata"
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:

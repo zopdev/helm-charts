@@ -47,7 +47,11 @@ app.kubernetes.io/component: {{ .component }}
 {{- end }}
 
 {{- define "immich.postgresSecretName" -}}
+{{- if .Values.postgres.existingSecret }}
+{{- .Values.postgres.existingSecret }}
+{{- else }}
 {{- printf "%s-postgres-secret" (include "immich.fullname" .) }}
+{{- end }}
 {{- end }}
 
 {{/*

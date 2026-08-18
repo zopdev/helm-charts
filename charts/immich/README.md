@@ -13,6 +13,10 @@ needs), and Redis.
 
 - Kubernetes 1.19+
 - Helm 3+
+- Prometheus Operator CRDs (`monitoring.coreos.com`) installed on the
+  cluster. The redis dependency renders a `PrometheusRule` and a
+  `ServiceMonitor` unconditionally — there's no flag to opt out — so
+  `helm install` fails outright without them.
 
 ---
 
@@ -43,12 +47,27 @@ helm uninstall my-immich
 ```
 
 PersistentVolumeClaims created from volume templates outlive the
-release. Delete them separately to reclaim the disks:
+release. Delete **all four** separately to reclaim the disks:
 
 ```bash
 kubectl delete pvc library-my-immich-immich-server-0 \
   cache-my-immich-immich-ml-0 \
-  data-my-immich-immich-postgres-0
+  data-my-immich-immich-postgres-0 \
+  my-immich-redis-persistent-storage-my-immich-redis-0
+```
+
+**If you're keeping the volumes to reinstall later, leave the postgres
+password Secret alone too.** It's annotated `helm.sh/resource-policy:
+keep` specifically so `helm uninstall` doesn't remove it — the
+database volume is initialized with that password baked in, and a
+reinstall that generates a *new* random password (because the old
+Secret was deleted along with the volume being kept) can never
+authenticate against it again. Delete the Secret and the postgres PVC
+together, or keep both together — never split them. To reclaim
+*everything*, including that Secret:
+
+```bash
+kubectl delete secret my-immich-immich-postgres-secret
 ```
 
 ---
@@ -68,8 +87,11 @@ kubectl delete pvc library-my-immich-immich-server-0 \
 | `machineLearning.resources` | `object` | CPU and memory for the ML pod. | 1000m/2Gi – 4000m/4Gi |
 | `postgres.database` | `string` | Database name. | `"immich"` |
 | `postgres.username` | `string` | Database user. | `"immich"` |
+| `postgres.password` | `string` | Pin a known database password instead of generating one. See *Database password* below. | `""` |
+| `postgres.existingSecret` | `string` | Name of an existing Secret carrying `POSTGRES_PASSWORD`, used instead of one this chart manages. | `""` |
 | `postgres.diskSize` | `string` | Size of the database volume. | `"10Gi"` |
 | `postgres.resources` | `object` | CPU and memory for the database pod. | 500m/1Gi – 2000m/2Gi |
+| `redis.name` | `string` | Service name labelled on the redis subchart's alerts. Required — see *Redis* below. | `"immich"` |
 | `ingress.enabled` | `bool` | Create an Ingress for the web UI/API. | `false` |
 | `ingress.className` | `string` | IngressClass name. | `""` |
 | `ingress.host` | `string` | Hostname. Required when the ingress is enabled. | `""` |
@@ -95,6 +117,32 @@ its own.
 
 Reuses the zopdev `redis` chart as the job queue backing Immich's
 background workers (thumbnail generation, metadata extraction, etc.).
+
+`redis.name` labels the subchart's own `PrometheusRule` — it has no
+default of its own, and an unset value renders a null label the CRD
+rejects, failing the whole install. This chart sets it for you; there
+should be no need to change it.
+
+### Database password
+
+Left unset, `postgres.password` is auto-generated and stored in a
+Secret annotated `helm.sh/resource-policy: keep`, so it survives
+`helm uninstall` alongside the postgres PVC (see *Uninstall* above) —
+a reinstall against that same retained volume still authenticates.
+
+Set `postgres.password` to pin a known password instead — e.g. to
+restore into a fresh volume from a backup taken under a specific
+password. Set `postgres.existingSecret` (name of a Secret you manage,
+carrying a `POSTGRES_PASSWORD` key) to skip this chart's own Secret
+entirely; it takes precedence over `postgres.password`.
+
+### Minimum node size
+
+Summed across all four components, the defaults request **2.5 CPU /
+4.3Gi** and allow bursting to **9.5 CPU / 11.1Gi** — machine learning
+alone requests 1 CPU / 2Gi. A 2-CPU node cannot schedule this
+release. Size accordingly, or lower `machineLearning.resources` if
+inference latency isn't a concern.
 
 ---
 

@@ -15,6 +15,29 @@ spec:
       labels:
         {{- include "immich.selectorLabels" (dict "context" $ "component" "server") | nindent 8 }}
     spec:
+      # The redis subchart's headless Service has no A record until it has
+      # a ready endpoint (it doesn't set publishNotReadyAddresses), so a
+      # server started at the same time as redis gets NXDOMAIN rather than
+      # a connection refusal -- ioredis treats that as fatal and the
+      # container exits. Waiting for both dependencies to actually accept
+      # a connection first avoids the crash-loop on a fresh install.
+      initContainers:
+        - name: wait-for-deps
+          image: busybox:1.36
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              i=0
+              until nc -z -w2 {{ include "immich.redisHost" . }} 6379 && nc -z -w2 {{ include "immich.postgresFullname" . }} 5432; do
+                i=$((i + 1))
+                if [ "$i" -ge 60 ]; then
+                  echo "timed out waiting for redis/postgres to become reachable" >&2
+                  exit 1
+                fi
+                sleep 2
+              done
       containers:
         - name: server
           image: "{{ .Values.server.image.repository }}:{{ .Values.server.image.tag }}"

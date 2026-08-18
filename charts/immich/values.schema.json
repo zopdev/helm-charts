@@ -58,7 +58,6 @@
           }
         },
         "diskSize": {
-          "category": "compute",
           "type": "string",
           "pattern": "^[0-9]+Gi$",
           "default": "20Gi",
@@ -67,7 +66,6 @@
           "description": "Size of the photo/video library volume."
         },
         "resources": {
-          "category": "compute",
           "type": "object",
           "properties": {
             "requests": {
@@ -77,13 +75,15 @@
                   "type": "string",
                   "pattern": "^[0-9]+m$",
                   "default": "500m",
-                  "mutable": true
+                  "mutable": true,
+                  "description": "CPU request."
                 },
                 "memory": {
                   "type": "string",
                   "pattern": "^[0-9]+(Mi|Gi)$",
                   "default": "1Gi",
-                  "mutable": true
+                  "mutable": true,
+                  "description": "Memory request."
                 }
               }
             },
@@ -94,20 +94,21 @@
                   "type": "string",
                   "pattern": "^[0-9]+m$",
                   "default": "2000m",
-                  "mutable": true
+                  "mutable": true,
+                  "description": "CPU limit."
                 },
                 "memory": {
                   "type": "string",
                   "pattern": "^[0-9]+(Mi|Gi)$",
                   "default": "4Gi",
-                  "mutable": true
+                  "mutable": true,
+                  "description": "Memory limit."
                 }
               }
             }
           }
         },
         "env": {
-          "category": "environment",
           "type": "object",
           "mutable": true,
           "description": "Extra environment variables applied to the server container."
@@ -148,7 +149,6 @@
           }
         },
         "diskSize": {
-          "category": "compute",
           "type": "string",
           "pattern": "^[0-9]+Gi$",
           "default": "5Gi",
@@ -157,7 +157,6 @@
           "description": "Size of the ML model cache volume."
         },
         "resources": {
-          "category": "compute",
           "type": "object",
           "properties": {
             "requests": {
@@ -167,13 +166,15 @@
                   "type": "string",
                   "pattern": "^[0-9]+m$",
                   "default": "1000m",
-                  "mutable": true
+                  "mutable": true,
+                  "description": "CPU request."
                 },
                 "memory": {
                   "type": "string",
                   "pattern": "^[0-9]+(Mi|Gi)$",
                   "default": "2Gi",
-                  "mutable": true
+                  "mutable": true,
+                  "description": "Memory request."
                 }
               }
             },
@@ -184,13 +185,15 @@
                   "type": "string",
                   "pattern": "^[0-9]+m$",
                   "default": "4000m",
-                  "mutable": true
+                  "mutable": true,
+                  "description": "CPU limit."
                 },
                 "memory": {
                   "type": "string",
                   "pattern": "^[0-9]+(Mi|Gi)$",
                   "default": "4Gi",
-                  "mutable": true
+                  "mutable": true,
+                  "description": "Memory limit."
                 }
               }
             }
@@ -227,7 +230,8 @@
                 "Never"
               ],
               "default": "IfNotPresent",
-              "mutable": true
+              "mutable": true,
+              "description": "When the kubelet pulls the image."
             }
           }
         },
@@ -245,8 +249,19 @@
           "editDisabled": true,
           "description": "Database user."
         },
+        "password": {
+          "type": "string",
+          "default": "",
+          "mutable": true,
+          "description": "Pin a known database password instead of the chart generating one. Ignored if existingSecret is set."
+        },
+        "existingSecret": {
+          "type": "string",
+          "default": "",
+          "mutable": true,
+          "description": "Name of an existing Secret carrying a POSTGRES_PASSWORD key, used instead of one this chart manages."
+        },
         "diskSize": {
-          "category": "compute",
           "type": "string",
           "pattern": "^[0-9]+Gi$",
           "default": "10Gi",
@@ -255,7 +270,6 @@
           "description": "Size of the database volume."
         },
         "resources": {
-          "category": "compute",
           "type": "object",
           "properties": {
             "requests": {
@@ -265,13 +279,15 @@
                   "type": "string",
                   "pattern": "^[0-9]+m$",
                   "default": "500m",
-                  "mutable": true
+                  "mutable": true,
+                  "description": "CPU request."
                 },
                 "memory": {
                   "type": "string",
                   "pattern": "^[0-9]+(Mi|Gi)$",
                   "default": "1Gi",
-                  "mutable": true
+                  "mutable": true,
+                  "description": "Memory request."
                 }
               }
             },
@@ -282,13 +298,15 @@
                   "type": "string",
                   "pattern": "^[0-9]+m$",
                   "default": "2000m",
-                  "mutable": true
+                  "mutable": true,
+                  "description": "CPU limit."
                 },
                 "memory": {
                   "type": "string",
                   "pattern": "^[0-9]+(Mi|Gi)$",
                   "default": "2Gi",
-                  "mutable": true
+                  "mutable": true,
+                  "description": "Memory limit."
                 }
               }
             }
@@ -296,6 +314,20 @@
         }
       },
       "description": "Immich's own postgres image, with the vector extension its search features need."
+    },
+    "redis": {
+      "category": "advanced",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "default": "immich",
+          "mutable": true,
+          "editDisabled": true,
+          "description": "Service name labelled on the redis subchart's alerts. Required by the subchart's PrometheusRule -- left unset, it renders a null label the CRD rejects and the release fails to install."
+        }
+      },
+      "description": "Job queue backing the server's background workers. Installed with the release via the redis subchart."
     },
     "ingress": {
       "category": "runtime",
