@@ -22,6 +22,14 @@ spec:
     type: RollingUpdate
   template:
     metadata:
+{{- if .Values.customConfig }}
+      annotations:
+        # Roll the pod when customConfig changes. subPath mounts don't receive
+        # live ConfigMap updates, and Reloader is optional — this checksum
+        # changes the pod template so an upgrade rolls the pod without any
+        # cluster add-on. (Complements the Reloader annotation on the workload.)
+        checksum/custom-config: {{ include (print $.Template.BasePath "/custom-config-configmap.yaml") . | sha256sum }}
+{{- end }}
       labels:
         {{- include "qdrant.selectorLabels" . | nindent 8 }}
     spec:
@@ -61,6 +69,19 @@ spec:
               value: "/qdrant/storage/snapshots"
             - name: QDRANT_INIT_FILE_PATH
               value: "/qdrant/storage/.qdrant-initialized"
+            # On an abnormal exit (e.g. OOM while loading collections) boot into
+            # recovery mode instead of crash-looping, so an operator can drop a
+            # collection to get back under the limit. This is also what makes the
+            # QdrantInRecoveryMode alert reachable and gives the init-file
+            # handshake above a consumer.
+            - name: QDRANT_ALLOW_RECOVERY_MODE
+              value: "true"
+            # Disable Qdrant's anonymous usage telemetry (hourly POST to
+            # telemetry.qdrant.io), matching the sibling chromadb chart and
+            # avoiding third-party egress from a customer namespace. Set via env
+            # so customConfig cannot re-enable it, same as the API key.
+            - name: QDRANT__TELEMETRY_DISABLED
+              value: "true"
           ports:
             - containerPort: 6333
               name: http
