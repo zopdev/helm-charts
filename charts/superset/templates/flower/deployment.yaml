@@ -22,7 +22,8 @@ spec:
         release: {{ .Release.Name }}
     spec:
       securityContext:
-        runAsUser: 0
+        runAsNonRoot: true
+        runAsUser: 1000
       initContainers:
         - name: wait-for-postgres-redis
           image: apache/superset:dockerize
