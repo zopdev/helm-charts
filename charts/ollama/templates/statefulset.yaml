@@ -56,9 +56,18 @@ spec:
               {{- range .Values.models }}
               ollama pull {{ . }}
               {{- end }}
+          {{- if .Values.env }}
+          env:
+            {{- range $key, $value := .Values.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          {{- end }}
           volumeMounts:
             - name: models
               mountPath: /root/.ollama
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
       {{- end }}
       containers:
         - name: ollama
