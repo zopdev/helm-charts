@@ -86,9 +86,13 @@ kubectl delete pvc models-my-ollama-ollama-0
 When it's non-empty, an init container starts a throwaway Ollama server
 against the same volume the main container uses, pulls each model in
 order, then exits — the main container only starts once every model is
-already on disk. Pulling several large models can take a while on first
-install; there's no per-model timeout, so a stuck pull blocks the pod
-from becoming Ready rather than serving a half-downloaded model.
+already on disk. The init container fails (rather than reporting
+success) if the server doesn't come up within 60s, or if any model
+name is invalid or fails to pull — so a typo in `models` shows up as a
+failed release instead of a healthy-looking pod silently serving no
+model. Pulling several large models can still take a while; only the
+server's own startup is time-bounded, not the pull itself, so a slow
+but working pull is not killed.
 
 Changing `models` on an existing release and running `helm upgrade`
 pulls any newly-added models but does not remove ones taken off the
@@ -109,6 +113,21 @@ helm install my-ollama zopdev/ollama \
 
 Requires the appropriate device plugin (e.g. NVIDIA's) already installed
 on the cluster.
+
+### Security
+
+Ollama has no built-in authentication — upstream ships no auth
+mechanism at all, so `GET /api/tags` and every other endpoint answer
+any caller with no credentials. That's fine reachable only inside the
+cluster, but turning on `ingress.enabled` publishes an inference API
+(and `POST /api/pull`, which downloads arbitrary models onto the
+volume) to anyone who can resolve the host. Pair an ingress with
+authentication at the proxy/gateway layer, or restrict it to trusted
+networks.
+
+The container also runs as root, matching the upstream image's own
+default — `/root/.ollama` is where it expects to write, so this is a
+deliberate fit rather than an oversight.
 
 ---
 

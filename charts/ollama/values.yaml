@@ -1,6 +1,10 @@
 # Ollama serves a REST API for running LLMs locally (llama3, mistral,
 # etc). One pod runs the server and holds the pulled models on its own
 # volume -- there is no distributed/multi-node topology in this chart.
+#
+# No securityContext is set: the upstream image runs as root by
+# default and expects to own /root/.ollama, so this chart leaves that
+# as-is rather than fighting it.
 
 image:
   repository: ollama/ollama

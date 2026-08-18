@@ -40,15 +40,22 @@ spec:
             - /bin/sh
             - -c
             - |
+              set -e
               ollama serve &
               pid=$!
+              trap 'kill $pid' EXIT
+              tries=0
               until ollama list >/dev/null 2>&1; do
+                tries=$((tries + 1))
+                if [ "$tries" -ge 60 ]; then
+                  echo "ollama serve did not become ready within 60s" >&2
+                  exit 1
+                fi
                 sleep 1
               done
               {{- range .Values.models }}
               ollama pull {{ . }}
               {{- end }}
-              kill $pid
           volumeMounts:
             - name: models
               mountPath: /root/.ollama
