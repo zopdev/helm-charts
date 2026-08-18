@@ -131,6 +131,13 @@ spec:
       channel: cluster
   labels:
     env: dev
+  # Required in practice. The CRD does not mark `disks` as required and has no
+  # default, but GCE rejects every instance create without it:
+  #   Error 400: Invalid value for field 'resource.disks': ''. No disks are specified.
+  disks:
+    - boot: true
+      category: pd-balanced
+      sizeGiB: 100
 ```
 #### NodePool
 
@@ -214,6 +221,12 @@ the minimal custom role in [Prerequisites](#prerequisites), and scope
 **Legacy bootstrap pools.** Karpenter no longer creates `karpenter-default`,
 `karpenter-ubuntu`, `karpenter-cos-arm64`, or `karpenter-ubuntu-arm64`. It discovers an
 existing RUNNING pool instead. Once provisioning works, delete the legacy pools at your pace.
+
+**`disks` is now effectively mandatory on GCENodeClass.** The CRD neither requires it
+nor supplies a default, but GCE rejects instance creation without it
+(`Error 400: Invalid value for field 'resource.disks': ''`). Add a boot disk to every
+node class before upgrading, or provisioning fails silently at the NodeClaim level while
+the NodePool still reports Ready.
 
 **Node rotation.** The GCENodeClass hash version bumps, so Karpenter triggers one controlled
 rolling replacement of every node it manages after the upgrade.
