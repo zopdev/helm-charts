@@ -26,6 +26,9 @@ spec:
           for: 5m
           labels:
             severity: "critical"
+            # Every alert rule in this repo carries servicealert; the zop.dev
+            # pipeline routes on it, so a rule without it renders but goes nowhere.
+            servicealert: "true"
             service: {{ include "n8n.fullname" . | quote }}
             namespace: {{ .Release.Namespace | quote }}
           annotations:
@@ -36,10 +39,11 @@ spec:
         # a stateless replica: this is a single instance, and every restart is a
         # window where cron triggers do not fire and webhook calls get refused.
         - alert: N8nRestarting
-          expr: increase(kube_pod_container_status_restarts_total{namespace="{{ .Release.Namespace }}",container="{{ .Chart.Name }}"}[15m]) > 2
+          expr: sum(increase(kube_pod_container_status_restarts_total{namespace="{{ .Release.Namespace }}",pod=~"{{ include "n8n.fullname" . }}-.*"}[15m])) > 2
           for: 5m
           labels:
             severity: "warning"
+            servicealert: "true"
             service: {{ include "n8n.fullname" . | quote }}
             namespace: {{ .Release.Namespace | quote }}
           annotations:

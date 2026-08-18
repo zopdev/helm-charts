@@ -20,8 +20,11 @@ service:
   port: 5678
 
 # Holds the config file n8n writes on first boot, any custom nodes, and binary
-# payloads. Turning this off switches binary storage into Postgres rather than
-# writing to a container filesystem that is lost on restart.
+# payloads. Turning this off switches binary storage into Postgres (n8n's
+# `database` mode) rather than writing to a container filesystem that is lost on
+# restart. The chart never selects n8n's `default` mode: despite the name it
+# keeps payloads in the process heap, which OOMKills the pod against its memory
+# limit, and it is removed in n8n 3.x.
 persistence:
   enabled: true
   size: "10Gi"
@@ -108,13 +111,13 @@ extraEnvFrom: []
 #  - secretName: n8n-smtp
 
 # Blocks startup until the database accepts an authenticated connection. The
-# postgres chart creates the role from a Pod that sleeps first, so without this
-# n8n crash-loops through the first minute of a fresh install.
+# postgres chart provisions the role from a Job that sleeps before it runs, so
+# without this n8n crash-loops through the first minute of a fresh install.
 waitForDatabase:
   enabled: true
   image:
     # The same image the postgres chart runs, so this introduces no new registry.
-    # Keep the tag in step with postgres.version below.
+    # Keep the tag in step with the postgres subchart's own `version`.
     repository: docker.io/bitnamilegacy/postgresql
     tag: "17.4.0"
     pullPolicy: IfNotPresent

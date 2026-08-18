@@ -42,7 +42,7 @@ kubectl apply --server-side -f $BASE/monitoring.coreos.com_prometheusrules.yaml
 
 | Chart      | Version  | Repository             | Purpose                                              |
 |------------|----------|------------------------|------------------------------------------------------|
-| `postgres` | `0.0.13` | `https://helm.zop.dev` | Stores workflows, credentials and execution history  |
+| `postgres` | `0.0.14` | `https://helm.zop.dev` | Stores workflows, credentials and execution history  |
 
 Build the dependencies before installing from a local checkout:
 
@@ -94,7 +94,7 @@ callback URLs. With no public URL configured it uses `http://localhost:5678/`,
 which leaves a perfectly working editor whose webhooks nothing outside the
 cluster can call.
 
-Enabling the ingress is what fixes this — `WEBHOOK_URL`, `N8N_HOST` and
+Enabling the ingress is what fixes this — `N8N_WEBHOOK_URL`, `N8N_HOST` and
 `N8N_PROTOCOL` are all derived from `ingress.host`, and `tlsSecretName` decides
 whether that is `https`:
 
@@ -104,6 +104,13 @@ ingress:
   host: n8n.example.com
   tlsSecretName: n8n-tls
 ```
+
+**Serving the host over plain http needs one concession.** n8n marks its auth
+cookie `Secure` by default and browsers will not send a `Secure` cookie over
+http, so the editor would load and login would fail. When the derived protocol is
+`http` the chart sets `N8N_SECURE_COOKIE: "false"` so the instance is usable;
+setting `ingress.tlsSecretName` restores the secure cookie, and is what you want
+for anything reachable beyond your laptop.
 
 If something else terminates traffic — a tunnel, or a proxy on another hostname —
 set the URL directly instead. It overrides the derivation, and host and protocol
@@ -182,8 +189,11 @@ binary payloads. With it enabled the chart sets
 `N8N_DEFAULT_BINARY_DATA_MODE=filesystem`, keeping uploaded files and HTTP
 response bodies out of the execution rows in Postgres — which is what stops the
 `execution_data` table growing without bound. Disabling it switches binary
-storage into Postgres rather than writing to a container filesystem that is lost
-on restart.
+storage into Postgres (`N8N_DEFAULT_BINARY_DATA_MODE=database`) rather than
+writing to a container filesystem that is lost on restart. The chart never
+selects n8n's `default` mode, which despite the name keeps payloads in the
+process heap — that would be an OOMKill against the memory limit, and it is
+removed in n8n 3.x.
 
 The claim carries `helm.sh/resource-policy: keep`, so `helm uninstall` leaves the
 data behind.
@@ -295,8 +305,43 @@ outage rather than a rolling handover.
 helm uninstall n8n
 ```
 
-The data volume is retained by policy. Remove it deliberately:
+Three things deliberately survive an uninstall, because together they are the
+instance:
+
+| Object | Why it stays |
+|---|---|
+| `pvc/n8n-n8n` | `helm.sh/resource-policy: keep` — binary data and custom nodes |
+| `pvc/n8n-persistent-storage-n8n-postgres-0` | a `volumeClaimTemplates` claim; Kubernetes never deletes these |
+| `secret/n8n-n8n-encryption` | `helm.sh/resource-policy: keep` — the only key that can decrypt the credentials in that database |
+
+The encryption secret is kept for the same reason as the volumes: deleting it
+while the database survives would leave workflows intact and every stored
+credential undecryptable.
+
+**Uninstall is not reversible, though — verified, not assumed.** Reinstalling the
+same release over those retained volumes fails, and not because of anything this
+chart does. The postgres subchart's `<release>-postgres-root-secret` is *not*
+retained, so a reinstall generates a new superuser password while the retained
+data directory still expects the old one. Postgres then refuses its own init Job
+(`password authentication failed for user "postgres"`), the n8n role is never
+created, and this chart's `wait-for-db` init container blocks — which is the
+correct outcome, since the alternative is n8n starting against a database it
+cannot read.
+
+So: to keep an instance alive, use `helm upgrade`, never uninstall-and-reinstall.
+If you must uninstall and later restore, back up **both** secrets first:
 
 ```bash
-kubectl delete pvc n8n-n8n
+kubectl get secret n8n-n8n-encryption -o yaml > n8n-encryption.backup.yaml
+kubectl get secret n8n-postgres-root-secret -o yaml > n8n-postgres-root.backup.yaml
+```
+
+Restoring both before reinstalling is what makes the retained volumes usable
+again.
+
+To remove the instance completely, delete all three deliberately:
+
+```bash
+kubectl delete pvc n8n-n8n n8n-persistent-storage-n8n-postgres-0
+kubectl delete secret n8n-n8n-encryption
 ```

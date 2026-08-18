@@ -112,3 +112,17 @@ configured, leaving n8n on its own defaults.
     {{- dict | toYaml -}}
   {{- end -}}
 {{- end -}}
+
+{{/*
+Every environment variable the chart derives from other values, as a comma
+separated list. validate.yaml rejects `env` overrides of these, and configmap.yaml
+skips them defensively - two consumers, one definition, so the guard cannot fall
+behind the ConfigMap the way a hand-maintained list does.
+
+Overriding any of them through `env` would not win cleanly anyway: the ConfigMap
+would carry the key twice and last-one-wins, leaving n8n advertising one value
+while a related variable still described the other.
+*/}}
+{{- define "n8n.ownedEnv" -}}
+DB_TYPE,DB_POSTGRESDB_HOST,DB_POSTGRESDB_PORT,DB_POSTGRESDB_DATABASE,DB_POSTGRESDB_SCHEMA,DB_POSTGRESDB_USER,DB_POSTGRESDB_PASSWORD,EXECUTIONS_MODE,N8N_PORT,N8N_LISTEN_ADDRESS,N8N_DEFAULT_BINARY_DATA_MODE,N8N_DIAGNOSTICS_ENABLED,N8N_WEBHOOK_URL,WEBHOOK_URL,N8N_HOST,N8N_PROTOCOL,N8N_SECURE_COOKIE,N8N_METRICS,GENERIC_TIMEZONE,TZ,N8N_ENCRYPTION_KEY
+{{- end -}}

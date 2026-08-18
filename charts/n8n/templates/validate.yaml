@@ -33,16 +33,7 @@ leave the two disagreeing, with the override winning silently: a DB_POSTGRESDB_H
 pointing away from the provisioned database, or a binary data mode writing to a
 path no volume is mounted at.
 */}}
-{{- $owned := list
-  "DB_TYPE"
-  "DB_POSTGRESDB_HOST"
-  "DB_POSTGRESDB_PORT"
-  "DB_POSTGRESDB_DATABASE"
-  "DB_POSTGRESDB_USER"
-  "DB_POSTGRESDB_PASSWORD"
-  "N8N_ENCRYPTION_KEY"
-  "N8N_DEFAULT_BINARY_DATA_MODE"
-}}
+{{- $owned := splitList "," (include "n8n.ownedEnv" .) }}
 {{- range $key := $owned }}
 {{- if hasKey $.Values.env $key }}
 {{- fail (printf "%s is set by the chart and cannot be overridden through `env`. See values.yaml for the value it is derived from." $key) }}

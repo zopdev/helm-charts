@@ -2,7 +2,7 @@ apiVersion: v2
 # Pinned to the semver tag that `stable` and `latest` currently resolve to.
 # Both of those are moving tags, so naming one of them here would make two
 # installs of the same chart version run different code.
-appVersion: "2.34.5"
+appVersion: "2.35.3"
 description: Helm chart for deploying n8n, a workflow automation platform
 name: n8n
 version: 0.0.1
@@ -16,10 +16,12 @@ maintainers:
 # existing server with externalDatabase instead of turning this off.
 dependencies:
   - name: postgres
-    # 0.0.13, not the 0.0.12 the older charts use: from 0.0.13 the alerts
-    # template defaults its `service` label instead of rendering it null, which
-    # the PrometheusRule CRD rejects and which fails the whole release.
-    version: 0.0.13
+    # 0.0.14 or later is required, not merely preferred. Up to 0.0.13 the
+    # database init ran as a bare Pod, and a completed Pod never reports
+    # Ready - so `helm install --wait` blocked until it timed out. 0.0.14
+    # runs it as a Job. 0.0.13 also fixed the alerts template rendering a
+    # null `service` label that the PrometheusRule CRD rejects.
+    version: 0.0.14
     repository: https://helm.zop.dev
     condition: postgres.enabled
 annotations:

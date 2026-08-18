@@ -28,9 +28,11 @@ data:
   # rows in Postgres, which is what stops execution_data growing without bound.
   N8N_DEFAULT_BINARY_DATA_MODE: "filesystem"
   {{- else }}
-  # No volume to write to, so payloads are inlined into Postgres instead. Writing
-  # them to the container filesystem would lose them on every restart.
-  N8N_DEFAULT_BINARY_DATA_MODE: "default"
+  # No volume, so payloads go into Postgres. NOT "default": that mode keeps
+  # binary data in the process heap, which would OOMKill the pod against its
+  # memory limit and is removed in n8n 3.x. "database" is the Postgres-backed
+  # mode. Payloads are capped by N8N_BINARY_DATA_DATABASE_MAX_FILE_SIZE.
+  N8N_DEFAULT_BINARY_DATA_MODE: "database"
   {{- end }}
 
   # Self-hosted installs should not report usage back to n8n's servers unless
@@ -41,9 +43,21 @@ data:
   # Baked into every registered webhook and OAuth callback URL. Derived from the
   # ingress host unless webhookUrl overrides it. All three come from one value, so
   # the protocol n8n advertises cannot contradict the URL it hands out.
-  WEBHOOK_URL: {{ $public.url | quote }}
+  #
+  # N8N_WEBHOOK_URL, not WEBHOOK_URL: the latter is deprecated and, unlike the
+  # four variables this chart pins deliberately, it warns whenever it is SET
+  # rather than when it is unset.
+  N8N_WEBHOOK_URL: {{ $public.url | quote }}
   N8N_HOST: {{ $public.host | quote }}
   N8N_PROTOCOL: {{ $public.protocol | quote }}
+  {{- if eq $public.protocol "http" }}
+  # n8n marks its auth cookie Secure by default, and a browser will not send a
+  # Secure cookie over plain http - the editor loads and login then fails in
+  # every browser. Serving this host over http is already a choice; refusing to
+  # send the cookie on top of it just breaks the instance. Configure
+  # ingress.tlsSecretName to get the secure cookie back.
+  N8N_SECURE_COOKIE: "false"
+  {{- end }}
   {{- end }}
 
   N8N_METRICS: {{ .Values.metrics.enabled | quote }}
@@ -51,6 +65,15 @@ data:
   GENERIC_TIMEZONE: {{ .Values.timezone | quote }}
   TZ: {{ .Values.timezone | quote }}
 
+  {{/*
+  Chart-owned keys are skipped rather than emitted a second time. validate.yaml
+  already fails the render on them, so this is unreachable in practice - but it
+  means no ordering of templates can produce a ConfigMap carrying the same key
+  twice, where the last one silently wins.
+  */}}
+  {{- $owned := splitList "," (include "n8n.ownedEnv" .) }}
   {{- range $key, $value := .Values.env }}
+  {{- if not (has $key $owned) }}
   {{ $key }}: {{ $value | quote }}
+  {{- end }}
   {{- end }}

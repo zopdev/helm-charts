@@ -54,7 +54,7 @@
       "properties": {
         "enabled": {
           "type": "boolean",
-          "description": "Provision a volume; when false, binary data is stored in Postgres instead",
+          "description": "Provision a volume; when false, binary data is stored in Postgres (database mode) instead",
           "default": true
         },
         "size": {

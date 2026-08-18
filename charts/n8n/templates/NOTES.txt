@@ -1,7 +1,7 @@
 n8n is installed as release {{ .Release.Name }}.
 
   database:    {{ if .Values.postgres.enabled }}installed by this release{{ else }}{{ .Values.externalDatabase.host }}{{ end }}
-  persistence: {{ if .Values.persistence.enabled }}{{ if .Values.persistence.existingClaim }}{{ .Values.persistence.existingClaim }}{{ else }}{{ .Values.persistence.size }} claim {{ include "n8n.fullname" . }}{{ end }}{{ else }}disabled - binary data is stored in Postgres{{ end }}
+  persistence: {{ if .Values.persistence.enabled }}{{ if .Values.persistence.existingClaim }}{{ .Values.persistence.existingClaim }}{{ else }}{{ .Values.persistence.size }} claim {{ include "n8n.fullname" . }}{{ end }}{{ else }}disabled - binary data is stored in Postgres (database mode){{ end }}
 
 Reach the editor:
 
@@ -40,7 +40,11 @@ encrypted with it, and it cannot be recovered from the database. Back it up now:
     {{ include "n8n.encryptionSecretName" . }} \
     -o jsonpath='{.data.{{ .Values.encryptionKey.secretKey }}}' | base64 -d
 
-Upgrades read the existing key back rather than generating a new one, so it is
-stable for as long as the secret exists. Deleting the secret, or reinstalling the
-release over a retained database, makes every stored credential undecryptable.
+Upgrades read the existing key back rather than generating a new one, and the
+secret carries helm.sh/resource-policy: keep so `helm uninstall` leaves it behind.
+
+Use `helm upgrade` to keep an instance alive. Uninstall-and-reinstall does NOT
+work over the retained volumes: the postgres root secret is not retained, so the
+new one will not match the existing data directory. Back up this secret and
+{{ .Release.Name }}-postgres-root-secret together if you ever intend to restore.
 {{- end }}
