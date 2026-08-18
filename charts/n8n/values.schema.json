@@ -27,7 +27,9 @@
           "mutable": true
         }
       },
-      "required": ["repository"]
+      "required": [
+        "repository"
+      ]
     },
     "service": {
       "type": "object",
@@ -45,7 +47,10 @@
           "default": 5678
         }
       },
-      "required": ["type", "port"]
+      "required": [
+        "type",
+        "port"
+      ]
     },
     "persistence": {
       "type": "object",
@@ -76,7 +81,10 @@
           "mutable": true
         }
       },
-      "required": ["enabled", "size"]
+      "required": [
+        "enabled",
+        "size"
+      ]
     },
     "ingress": {
       "type": "object",
@@ -102,7 +110,10 @@
           "mutable": true
         },
         "annotations": {
-          "type": ["object", "null"],
+          "type": [
+            "object",
+            "null"
+          ],
           "description": "Annotations applied to the Ingress",
           "additionalProperties": {
             "type": "string"
@@ -116,13 +127,22 @@
           "mutable": true
         }
       },
-      "required": ["enabled"]
+      "required": [
+        "enabled"
+      ]
     },
     "webhookUrl": {
       "type": "string",
       "category": "runtime",
       "description": "Overrides the public URL derived from ingress.host, for tunnels or proxies terminating elsewhere",
       "default": "",
+      "mutable": true
+    },
+    "insecureCookie": {
+      "type": "boolean",
+      "category": "runtime",
+      "description": "Send the auth cookie without the Secure flag; required for a plain-http instance, since browsers will not return a Secure cookie over http",
+      "default": false,
       "mutable": true
     },
     "encryptionKey": {
@@ -142,7 +162,9 @@
           "default": "N8N_ENCRYPTION_KEY"
         }
       },
-      "required": ["secretKey"]
+      "required": [
+        "secretKey"
+      ]
     },
     "timezone": {
       "type": "string",
@@ -169,7 +191,9 @@
           "mutable": true
         }
       },
-      "required": ["enabled"]
+      "required": [
+        "enabled"
+      ]
     },
     "alerts": {
       "type": "object",
@@ -183,7 +207,9 @@
           "mutable": true
         }
       },
-      "required": ["enabled"]
+      "required": [
+        "enabled"
+      ]
     },
     "resources": {
       "type": "object",
@@ -206,7 +232,10 @@
               "mutable": true
             }
           },
-          "required": ["cpu", "memory"]
+          "required": [
+            "cpu",
+            "memory"
+          ]
         },
         "limits": {
           "type": "object",
@@ -224,22 +253,38 @@
               "mutable": true
             }
           },
-          "required": ["cpu", "memory"]
+          "required": [
+            "cpu",
+            "memory"
+          ]
         }
       },
-      "required": ["requests", "limits"]
+      "required": [
+        "requests",
+        "limits"
+      ]
     },
     "env": {
-      "type": ["object", "null"],
+      "type": [
+        "object",
+        "null"
+      ],
       "category": "environment",
       "description": "Extra plain environment variables. Variables the chart derives from other values are rejected at render time",
       "additionalProperties": {
-        "type": ["string", "number", "boolean"]
+        "type": [
+          "string",
+          "number",
+          "boolean"
+        ]
       },
       "mutable": true
     },
     "extraEnvFrom": {
-      "type": ["array", "null"],
+      "type": [
+        "array",
+        "null"
+      ],
       "category": "environment",
       "description": "Existing secrets (by secretName) mounted via envFrom",
       "items": {
@@ -249,7 +294,9 @@
             "type": "string"
           }
         },
-        "required": ["secretName"]
+        "required": [
+          "secretName"
+        ]
       },
       "mutable": true
     },
@@ -286,10 +333,16 @@
               "mutable": true
             }
           },
-          "required": ["repository", "tag"]
+          "required": [
+            "repository",
+            "tag"
+          ]
         }
       },
-      "required": ["enabled", "image"]
+      "required": [
+        "enabled",
+        "image"
+      ]
     },
     "postgres": {
       "type": "object",
@@ -319,11 +372,17 @@
                 "type": "string"
               }
             },
-            "required": ["name", "database"]
+            "required": [
+              "name",
+              "database"
+            ]
           }
         }
       },
-      "required": ["enabled", "services"]
+      "required": [
+        "enabled",
+        "services"
+      ]
     },
     "externalDatabase": {
       "type": "object",
@@ -367,7 +426,11 @@
           "mutable": true
         }
       },
-      "required": ["port", "database", "passwordKey"]
+      "required": [
+        "port",
+        "database",
+        "passwordKey"
+      ]
     }
   },
   "required": [

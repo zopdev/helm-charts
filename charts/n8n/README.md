@@ -105,12 +105,34 @@ ingress:
   tlsSecretName: n8n-tls
 ```
 
-**Serving the host over plain http needs one concession.** n8n marks its auth
-cookie `Secure` by default and browsers will not send a `Secure` cookie over
-http, so the editor would load and login would fail. When the derived protocol is
-`http` the chart sets `N8N_SECURE_COOKIE: "false"` so the instance is usable;
-setting `ingress.tlsSecretName` restores the secure cookie, and is what you want
-for anything reachable beyond your laptop.
+**If TLS is terminated upstream, say so — the chart cannot tell.** `tlsSecretName`
+is only one way a site becomes HTTPS. An ALB with an ACM certificate, a GKE
+managed certificate and a `cert-manager.io/cluster-issuer` annotation all serve
+HTTPS while rendering no `tls:` block at all, and the chart would otherwise
+advertise `http://` for a site that only answers on `https://`. Point
+`webhookUrl` at the real address in that case:
+
+```yaml
+ingress:
+  enabled: true
+  className: alb
+  host: n8n.example.com
+  annotations:
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:...
+webhookUrl: https://n8n.example.com/    # the scheme the world actually sees
+```
+
+**Serving the host over genuinely plain http needs one concession.** n8n marks
+its auth cookie `Secure` by default and browsers will not return a `Secure`
+cookie over http, so the editor loads and every login fails. Set
+`insecureCookie: true` to accept that, and NOTES will remind you it is on.
+
+The chart does **not** infer this from a missing `tlsSecretName`. Guessing
+"insecure" from an absent field would silently drop `Secure` on the
+annotation-terminated HTTPS deployments above — a security downgrade nobody
+asked for is worse than an instance that refuses to log in and tells you why. A
+port-forward to `localhost` needs none of this: browsers treat localhost as a
+secure context.
 
 If something else terminates traffic — a tunnel, or a proxy on another hostname —
 set the URL directly instead. It overrides the derivation, and host and protocol
@@ -173,7 +195,8 @@ code.
 | `ingress.host`          | Hostname to serve; required when enabled                        | `""`        |
 | `ingress.annotations`   | Annotations applied to the Ingress                              | `{}`        |
 | `ingress.tlsSecretName` | Existing TLS certificate secret                                 | `""`        |
-| `webhookUrl`            | Overrides the public URL derived from `ingress.host`            | `""`        |
+| `webhookUrl`            | Overrides the public URL derived from `ingress.host`; must include the scheme | `""`        |
+| `insecureCookie`        | Send the auth cookie without `Secure`; needed for plain http     | `false`     |
 
 ### Persistence
 

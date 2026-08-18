@@ -31,6 +31,26 @@ or, if something else already terminates traffic for you:
 
   --set webhookUrl=https://n8n.example.com/
 {{- end }}
+{{- $public := include "n8n.public" . | fromYaml }}
+{{- if .Values.insecureCookie }}
+
+WARNING: insecureCookie is set, so the session cookie is sent without the Secure
+flag and travels in clear over http. Set ingress.tlsSecretName, or terminate TLS
+upstream and point webhookUrl at the https address, then turn this back off.
+{{- else if and $public.url (eq $public.protocol "http") }}
+
+WARNING: this release advertises {{ $public.url }} over plain http, and n8n marks
+its session cookie Secure - so the editor will load and every login will fail.
+Pick one:
+
+  * serve TLS from the ingress:   --set ingress.tlsSecretName=<secret>
+  * TLS terminated upstream (ALB/ACM, GKE managed cert, cert-manager annotation)?
+    tell n8n the real scheme:     --set webhookUrl=https://{{ $public.host }}/
+  * genuinely plain http, accept the risk: --set insecureCookie=true
+
+A port-forward to localhost is unaffected; browsers treat localhost as secure.
+{{- end }}
+
 {{ if not .Values.encryptionKey.existingSecret }}
 The credential encryption key was generated into secret
 {{ include "n8n.encryptionSecretName" . }}. Every credential stored in n8n is

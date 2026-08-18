@@ -27,6 +27,12 @@ message pointing at the cause.
 {{- end }}
 {{- end }}
 
+{{- if .Values.webhookUrl }}
+{{- if not (or (hasPrefix "http://" .Values.webhookUrl) (hasPrefix "https://" .Values.webhookUrl)) }}
+{{- fail (printf "webhookUrl must start with http:// or https:// - got %q. n8n advertises this verbatim in every registered webhook, so a schemeless value produces URLs no caller can resolve, and the scheme is also what tells the chart whether the site is https." .Values.webhookUrl) }}
+{{- end }}
+{{- end }}
+
 {{/*
 Variables the chart derives from other values. Setting them through `env` would
 leave the two disagreeing, with the override winning silently: a DB_POSTGRESDB_HOST

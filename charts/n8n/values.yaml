@@ -45,9 +45,23 @@ ingress:
   tlsSecretName: ""
 
 # Overrides the URL derived from ingress.host. Set this when something else
-# terminates traffic - a tunnel, or a proxy on another hostname - and n8n would
-# otherwise advertise an address callers cannot reach.
+# terminates traffic - a tunnel, a proxy on another hostname, or TLS terminated
+# by the load balancer - and n8n would otherwise advertise an address callers
+# cannot reach. Must include the scheme; a schemeless value fails the render.
 webhookUrl: ""
+
+# Sends the auth cookie without the Secure flag (N8N_SECURE_COOKIE=false).
+#
+# Required for a genuinely plain-http instance: n8n marks the cookie Secure by
+# default, no browser returns a Secure cookie over http, and the result is an
+# editor that loads and then refuses every login. localhost is exempt - browsers
+# treat it as a secure context - so a port-forward works without this.
+#
+# It is an explicit opt-in rather than something the chart infers from a missing
+# ingress.tlsSecretName, because TLS is frequently terminated upstream (ALB with
+# an ACM certificate, GKE managed certificate, cert-manager annotation) and those
+# render no tls: block at all. Guessing would drop Secure on HTTPS-only sites.
+insecureCookie: false
 
 # Encrypts every credential stored in n8n. Generated on install and read back on
 # upgrade, so it stays stable for the life of the secret. It cannot be recovered

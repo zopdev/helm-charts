@@ -50,14 +50,20 @@ data:
   N8N_WEBHOOK_URL: {{ $public.url | quote }}
   N8N_HOST: {{ $public.host | quote }}
   N8N_PROTOCOL: {{ $public.protocol | quote }}
-  {{- if eq $public.protocol "http" }}
-  # n8n marks its auth cookie Secure by default, and a browser will not send a
-  # Secure cookie over plain http - the editor loads and login then fails in
-  # every browser. Serving this host over http is already a choice; refusing to
-  # send the cookie on top of it just breaks the instance. Configure
-  # ingress.tlsSecretName to get the secure cookie back.
-  N8N_SECURE_COOKIE: "false"
   {{- end }}
+
+  {{- if .Values.insecureCookie }}
+  # Explicitly opted in. n8n marks its auth cookie Secure by default and no
+  # browser sends a Secure cookie over plain http, so a genuinely http instance
+  # needs this or nobody can log in.
+  #
+  # Deliberately NOT inferred from "no ingress.tlsSecretName". TLS is often
+  # terminated upstream - an ALB with an ACM certificate, a GKE managed
+  # certificate, a cert-manager annotation - and those render no tls: block at
+  # all. Inferring insecurity from a missing field would drop Secure on sites
+  # that are HTTPS-only, silently, which is worse than an instance that refuses
+  # to log in and says why.
+  N8N_SECURE_COOKIE: "false"
   {{- end }}
 
   N8N_METRICS: {{ .Values.metrics.enabled | quote }}
