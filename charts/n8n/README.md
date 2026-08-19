@@ -172,6 +172,15 @@ encryptionKey:
 
 ## Configuration
 
+`values.schema.json` deliberately describes only the handful of fields the
+zop.dev configuration form should offer — image, ingress, persistence, timezone
+and resources. Everything else documented below is still settable in a values
+file or with `--set`; it simply is not rendered as a form field, because it is
+either plumbing or only relevant to a specific topology. The chart's own
+`templates/validate.yaml` guards those values at render time regardless of
+whether the schema describes them.
+
+
 ### Image
 
 | Key                | Description                                            | Default      |
