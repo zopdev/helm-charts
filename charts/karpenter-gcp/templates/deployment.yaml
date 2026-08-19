@@ -1,7 +1,11 @@
+{{- if and .Values.controller.featureGates.capacityBuffer (not (.Capabilities.APIVersions.Has "autoscaling.x-k8s.io/v1beta1/CapacityBuffer")) }}
+{{- fail "controller.featureGates.capacityBuffer is enabled but the CapacityBuffer CRD (autoscaling.x-k8s.io/v1beta1) is not installed on this cluster. This chart does not install it." }}
+{{- end }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "karpenter.fullname" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "karpenter.labels" . | nindent 4 }}
   {{- with .Values.additionalAnnotations }}
@@ -11,9 +15,10 @@ metadata:
 spec:
   replicas: {{ .Values.controller.replicaCount }}
   revisionHistoryLimit: {{ .Values.controller.revisionHistoryLimit }}
+  {{- with .Values.controller.strategy }}
   strategy:
-    rollingUpdate:
-      maxUnavailable: 1
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   selector:
     matchLabels:
       {{- include "karpenter.selectorLabels" . | nindent 6 }}
@@ -30,19 +35,39 @@ spec:
         {{- end }}
     spec:
       serviceAccountName: {{ include "karpenter.serviceAccountName" . }}
-      priorityClassName: gmp-critical
-      terminationGracePeriodSeconds: 30
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.controller.priorityClassName }}
+      priorityClassName: {{ . | quote }}
+      {{- end }}
+      {{- with .Values.controller.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ . }}
+      {{- end }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: karpenter
-          image: "public.ecr.aws/cloudpilotai/gcp/karpenter:{{ .Values.controller.image.tag }}"
-          imagePullPolicy: IfNotPresent
+          image: "{{ .Values.controller.image.repository }}:{{ default .Chart.AppVersion .Values.controller.image.tag }}"
+          imagePullPolicy: {{ .Values.controller.image.pullPolicy }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           env:
             - name: HEALTH_PROBE_PORT
-              value: "8001"
+              value: "{{ .Values.controller.healthProbe.port }}"
             - name: PROJECT_ID
               value: {{ .Values.controller.settings.projectID }}
-            - name: LOCATION
-              value: {{ .Values.controller.settings.location }}
+            - name: CLUSTER_LOCATION
+              value: {{ .Values.controller.settings.clusterLocation }}
+            {{- if .Values.controller.settings.nodeLocation }}
+            - name: NODE_LOCATION
+              value: {{ .Values.controller.settings.nodeLocation }}
+            {{- end }}
             - name: CLUSTER_NAME
               value: {{ .Values.controller.settings.clusterName }}
             {{- if .Values.credentials.enabled }}
@@ -78,7 +103,9 @@ spec:
                   divisor: "0"
                   resource: limits.memory
             - name: FEATURE_GATES
-              value: "SpotToSpotConsolidation=true"
+              value: "NodeRepair={{ .Values.controller.featureGates.nodeRepair }},ReservedCapacity={{ .Values.controller.featureGates.reservedCapacity }},SpotToSpotConsolidation={{ .Values.controller.featureGates.spotToSpotConsolidation }},NodeOverlay={{ .Values.controller.featureGates.nodeOverlay }},StaticCapacity={{ .Values.controller.featureGates.staticCapacity }},CapacityBuffer={{ .Values.controller.featureGates.capacityBuffer }}"
+            - name: DISABLE_CONTROLLER_WARMUP
+              value: "{{ .Values.controller.disableControllerWarmup }}"
             {{- with .Values.controller.settings.batchMaxDuration }}
             - name: BATCH_MAX_DURATION
               value: "{{ . }}"
@@ -87,8 +114,18 @@ spec:
             - name: BATCH_IDLE_DURATION
               value: "{{ . }}"
             {{- end }}
+            - name: IGNORE_DRA_REQUESTS
+              value: "{{ .Values.controller.settings.ignoreDRARequests }}"
             {{- with .Values.controller.settings.vmMemoryOverheadPercent }}
             - name: VM_MEMORY_OVERHEAD_PERCENT
+              value: "{{ . }}"
+            {{- end }}
+            {{- with .Values.controller.settings.defaultNodePoolTemplateName }}
+            - name: DEFAULT_NODEPOOL_TEMPLATE_NAME
+              value: "{{ . }}"
+            {{- end }}
+            {{- with .Values.controller.settings.defaultNodepoolServiceAccount }}
+            - name: DEFAULT_NODEPOOL_SERVICE_ACCOUNT
               value: "{{ . }}"
             {{- end }}
             - name: METRICS_PORT
@@ -100,7 +137,7 @@ spec:
             {{- end }}
           ports:
             - name: http
-              containerPort: 8001
+              containerPort: {{ .Values.controller.healthProbe.port }}
               protocol: TCP
             - name: http-metrics
               containerPort: {{ .Values.controller.metrics.port }}
@@ -125,14 +162,22 @@ spec:
               readOnly: true
               name: gcp-secret
           {{- end }}
+      {{- with .Values.controller.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- else }}
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
                 matchLabels:
-                  app.kubernetes.io/name: karpenter
+                  {{- include "karpenter.selectorLabels" . | nindent 18 }}
               topologyKey: kubernetes.io/hostname
-      tolerations: []
+      {{- end }}
+      {{- with .Values.controller.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- if .Values.credentials.enabled }}
       volumes:
         - name: gcp-secret

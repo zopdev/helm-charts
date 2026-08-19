@@ -33,7 +33,7 @@ rules:
     resources: ["gcenodeclasses"]
     verbs: ["get", "list", "watch"]
   - apiGroups: [ "karpenter.sh" ]
-    resources: [ "nodepools", "nodepools/status", "nodeclaims", "nodeclaims/status" ]
+    resources: [ "nodepools", "nodepools/status", "nodeclaims", "nodeclaims/status", "nodeoverlays", "nodeoverlays/status" ]
     verbs: [ "get", "list", "watch" ]
   # Write
   - apiGroups: ["karpenter.k8s.gcp"]
@@ -44,4 +44,7 @@ rules:
     verbs: [ "create", "delete", "update", "patch" ]
   - apiGroups: [ "karpenter.sh" ]
     resources: [ "nodepools", "nodepools/status" ]
+    verbs: [ "update", "patch" ]
+  - apiGroups: [ "karpenter.sh" ]
+    resources: [ "nodeoverlays", "nodeoverlays/status" ]
     verbs: [ "update", "patch" ]

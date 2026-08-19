@@ -3,412 +3,679 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.4
+    controller-gen.kubebuilder.io/version: v0.21.0
   name: gcenodeclasses.karpenter.k8s.gcp
 spec:
   group: karpenter.k8s.gcp
   names:
     categories:
-      - karpenter
+    - karpenter
     kind: GCENodeClass
     listKind: GCENodeClassList
     plural: gcenodeclasses
     shortNames:
-      - gcenc
-      - gcencs
+    - gcenc
+    - gcencs
     singular: gcenodeclass
   scope: Cluster
   versions:
-    - additionalPrinterColumns:
-        - jsonPath: .status.conditions[?(@.type=="Ready")].status
-          name: Ready
-          type: string
-        - jsonPath: .metadata.creationTimestamp
-          name: Age
-          type: date
-      name: v1alpha1
-      schema:
-        openAPIV3Schema:
-          description: GCENodeClass is the Schema for the GCENodeClass API
-          properties:
-            apiVersion:
-              description: |-
-                APIVersion defines the versioned schema of this representation of an object.
-                Servers should convert recognized schemas to the latest internal value, and
-                may reject unrecognized values.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-              type: string
-            kind:
-              description: |-
-                Kind is a string value representing the REST resource this object represents.
-                Servers may infer this from the endpoint the client submits requests to.
-                Cannot be updated.
-                In CamelCase.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-              type: string
-            metadata:
-              type: object
-            spec:
-              description: |-
-                GCENodeClassSpec is the top level specification for the GCP Karpenter Provider.
-                This will contain the configuration necessary to launch instances in GCP.
-              properties:
-                disks:
-                  description: Disk defines the disks to attach to the provisioned instance.
-                  items:
-                    properties:
-                      boot:
-                        description: Indicates that this is a boot disk
-                        type: boolean
-                      category:
-                        description: The category of the disk (e.g., pd-standard, pd-balanced,
-                          pd-ssd, pd-extreme).
-                        enum:
-                          - hyperdisk-balanced
-                          - hyperdisk-balanced-high-availability
-                          - hyperdisk-extreme
-                          - hyperdisk-ml
-                          - hyperdisk-throughput
-                          - local-ssd
-                          - pd-balanced
-                          - pd-extreme
-                          - pd-ssd
-                          - pd-standard
-                        type: string
-                      sizeGiB:
-                        description: 'SizeGiB is the size of the disk. Unit: GiB'
-                        format: int32
-                        type: integer
-                        x-kubernetes-validations:
-                          - message: size invalid
-                            rule: self >= 10
-                    type: object
-                  maxItems: 10
-                  type: array
-                imageFamily:
-                  description: |-
-                    ImageFamily dictates the instance template used when generating launch templates.
-                    If no ImageSelectorTerms alias is specified, this field is required.
-                  enum:
-                    - Ubuntu
-                    - ContainerOptimizedOS
-                  type: string
-                imageSelectorTerms:
-                  description: |-
-                    ImageSelectorTerms is a list of or image selector terms. The terms are ORed.
-                    Remove or adjust mutual exclusivity rules since there's only one field
-                  items:
-                    description: |-
-                      ImageSelectorTerm defines selection logic for an image used by Karpenter to launch nodes.
-                      If multiple fields are used for selection, the requirements are ANDed.
-                    properties:
-                      alias:
-                        description: |-
-                          Alias specifies which GKE image to select.
-                          Valid families include: ContainerOptimizedOS,Ubuntu
-                        maxLength: 60
-                        type: string
-                        x-kubernetes-validations:
-                          - message: '''alias'' is improperly formatted, must match the
-                          format ''family@version'''
-                            rule: self.matches('^[a-zA-Z0-9]+@.+$')
-                          - message: 'family is not supported, must be one of the following:
-                          ''ContainerOptimizedOS,Ubuntu'''
-                            rule: self.find('^[^@]+') in ['ContainerOptimizedOS', 'Ubuntu']
-                      id:
-                        description: ID specifies which GKE image to select.
-                        maxLength: 160
-                        type: string
-                        x-kubernetes-validations:
-                          - message: '''id'' is improperly formatted, must match the format
-                          ''id'''
-                            rule: self.matches('^.*$')
-                    type: object
-                  maxItems: 30
-                  minItems: 1
-                  type: array
-                  x-kubernetes-validations:
-                    - message: '''alias'' is improperly formatted, must match the format
-                    ''family'''
-                      rule: self.all(x, has(x.alias) || has(x.id))
-                kubeletConfiguration:
-                  description: |-
-                    KubeletConfiguration defines args to be used when configuring kubelet on provisioned nodes.
-                    They are a vswitch of the upstream types, recognizing not all options may be supported.
-                    Wherever possible, the types and names should reflect the upstream kubelet types.
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=="Ready")].status
+      name: Ready
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: GCENodeClass is the Schema for the GCENodeClass API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: |-
+              GCENodeClassSpec is the top level specification for the GCP Karpenter Provider.
+              This will contain the configuration necessary to launch instances in GCP.
+            properties:
+              autoGPUTaint:
+                description: |-
+                  AutoGPUTaint, when true, automatically applies nvidia.com/gpu=present:NoSchedule
+                  to any GPU node at provisioning time, regardless of the NodePool configuration.
+                  Disabled by default to preserve backward compatibility.
+                type: boolean
+              confidentialInstanceType:
+                description: |-
+                  ConfidentialInstanceType enables Confidential VM for provisioned nodes using the
+                  named technology (AMD SEV / SEV-SNP or Intel TDX), providing in-use memory
+                  encryption. Leave unset to disable. Only supported on specific machine families.
+                enum:
+                - SEV
+                - SEV_SNP
+                - TDX
+                type: string
+              disks:
+                description: Disk defines the disks to attach to the provisioned instance.
+                items:
                   properties:
-                    clusterDNS:
-                      description: |-
-                        clusterDNS is a list of IP addresses for the cluster DNS server.
-                        Note that not all providers may use all addresses.
-                      items:
-                        type: string
-                      type: array
-                    cpuCFSQuota:
-                      description: CPUCFSQuota enables CPU CFS quota enforcement for
-                        containers that specify CPU limits.
+                    boot:
+                      description: Indicates that this is a boot disk.
                       type: boolean
-                    evictionHard:
-                      additionalProperties:
-                        type: string
-                      description: EvictionHard is the map of signal names to quantities
-                        that define hard eviction thresholds
-                      type: object
-                      x-kubernetes-validations:
-                        - message: valid keys for evictionHard are ['memory.available','nodefs.available','nodefs.inodesFree','imagefs.available','imagefs.inodesFree','pid.available']
-                          rule: self.all(x, x in ['memory.available','nodefs.available','nodefs.inodesFree','imagefs.available','imagefs.inodesFree','pid.available'])
-                    evictionMaxPodGracePeriod:
+                    category:
+                      description: The category of the disk (e.g., pd-standard, pd-balanced,
+                        pd-ssd, pd-extreme).
+                      enum:
+                      - hyperdisk-balanced
+                      - hyperdisk-balanced-high-availability
+                      - hyperdisk-extreme
+                      - hyperdisk-ml
+                      - hyperdisk-throughput
+                      - local-ssd
+                      - pd-balanced
+                      - pd-extreme
+                      - pd-ssd
+                      - pd-standard
+                      type: string
+                    kmsKeyName:
                       description: |-
-                        EvictionMaxPodGracePeriod is the maximum allowed grace period (in seconds) to use when terminating pods in
-                        response to soft eviction thresholds being met.
+                        KMSKeyName is the Cloud KMS key to use for disk encryption.
+                        Format: projects/{project}/locations/{region}/keyRings/{keyring}/cryptoKeys/{key}
+                        Optionally, you can specify a version: projects/{project}/locations/{region}/keyRings/{keyring}/cryptoKeys/{key}/cryptoKeyVersions/{version}
+                      pattern: ^projects/[^/]+/locations/[^/]+/keyRings/[^/]+/cryptoKeys/[^/]+(/cryptoKeyVersions/[^/]+)?$
+                      type: string
+                    kmsKeyServiceAccount:
+                      description: |-
+                        KMSKeyServiceAccount is the service account to use for accessing the KMS key.
+                        If not specified, the Compute Engine default service account will be used.
+                      pattern: ^[^@]+@(developer\.gserviceaccount\.com|[^@]+\.iam\.gserviceaccount\.com)$
+                      type: string
+                    provisionedIOPS:
+                      description: |-
+                        ProvisionedIOPS is the number of I/O operations per second to provision for the disk.
+                        Applicable for: pd-extreme (2,500–120,000), hyperdisk-balanced (3,000–160,000),
+                        hyperdisk-balanced-high-availability (up to 100,000), and hyperdisk-extreme (up to 350,000).
+                      format: int64
+                      type: integer
+                    provisionedThroughput:
+                      description: |-
+                        ProvisionedThroughput is the throughput in MiB/s to provision for the disk.
+                        Applicable for: hyperdisk-balanced (140–2,400 MiB/s), hyperdisk-balanced-high-availability (up to 1,200 MiB/s),
+                        hyperdisk-throughput (up to 2,400 MiB/s), and hyperdisk-ml (up to 1,200,000 MiB/s).
+                      format: int64
+                      type: integer
+                    secondaryBootImage:
+                      description: SecondaryBootImage is the secondary boot disk image
+                        name (e.g. global/images/DISK_IMAGE_NAME).
+                      type: string
+                    secondaryBootMode:
+                      description: SecondaryBootMode is the secondary boot disk mode
+                        (e.g. CONTAINER_IMAGE_CACHE).
+                      enum:
+                      - MODE_UNSPECIFIED
+                      - CONTAINER_IMAGE_CACHE
+                      type: string
+                    sizeGiB:
+                      description: 'SizeGiB is the size of the disk. Unit: GiB'
                       format: int32
                       type: integer
-                    evictionSoft:
-                      additionalProperties:
-                        type: string
-                      description: EvictionSoft is the map of signal names to quantities
-                        that define soft eviction thresholds
-                      type: object
                       x-kubernetes-validations:
-                        - message: valid keys for evictionSoft are ['memory.available','nodefs.available','nodefs.inodesFree','imagefs.available','imagefs.inodesFree','pid.available']
-                          rule: self.all(x, x in ['memory.available','nodefs.available','nodefs.inodesFree','imagefs.available','imagefs.inodesFree','pid.available'])
-                    evictionSoftGracePeriod:
-                      additionalProperties:
-                        type: string
-                      description: EvictionSoftGracePeriod is the map of signal names
-                        to quantities that define grace periods for each eviction signal
-                      type: object
-                      x-kubernetes-validations:
-                        - message: valid keys for evictionSoftGracePeriod are ['memory.available','nodefs.available','nodefs.inodesFree','imagefs.available','imagefs.inodesFree','pid.available']
-                          rule: self.all(x, x in ['memory.available','nodefs.available','nodefs.inodesFree','imagefs.available','imagefs.inodesFree','pid.available'])
-                    imageGCHighThresholdPercent:
-                      description: |-
-                        ImageGCHighThresholdPercent is the percent of disk usage after which image
-                        garbage collection is always run. The percent is calculated by dividing this
-                        field value by 100, so this field must be between 0 and 100, inclusive.
-                        When specified, the value must be greater than ImageGCLowThresholdPercent.
-                      format: int32
-                      maximum: 100
-                      minimum: 0
-                      type: integer
-                    imageGCLowThresholdPercent:
-                      description: |-
-                        ImageGCLowThresholdPercent is the percent of disk usage before which image
-                        garbage collection is never run. Lowest disk usage to garbage collect to.
-                        The percent is calculated by dividing this field value by 100,
-                        so the field value must be between 0 and 100, inclusive.
-                        When specified, the value must be less than imageGCHighThresholdPercent
-                      format: int32
-                      maximum: 100
-                      minimum: 0
-                      type: integer
-                    kubeReserved:
-                      additionalProperties:
-                        type: string
-                      description: KubeReserved contains resources reserved for Kubernetes
-                        system components.
-                      type: object
-                      x-kubernetes-validations:
-                        - message: valid keys for kubeReserved are ['cpu','memory','ephemeral-storage','pid']
-                          rule: self.all(x, x=='cpu' || x=='memory' || x=='ephemeral-storage'
-                            || x=='pid')
-                        - message: kubeReserved value cannot be a negative resource quantity
-                          rule: self.all(x, !self[x].startsWith('-'))
-                    maxPods:
-                      description: |-
-                        MaxPods is an override for the maximum number of pods that can run on
-                        a worker node instance.
-                      format: int32
-                      minimum: 0
-                      type: integer
-                    podsPerCore:
-                      description: |-
-                        PodsPerCore is an override for the number of pods that can run on a worker node
-                        instance based on the number of cpu cores. This value cannot exceed MaxPods, so, if
-                        MaxPods is a lower value, that value will be used.
-                      format: int32
-                      minimum: 0
-                      type: integer
-                    systemReserved:
-                      additionalProperties:
-                        type: string
-                      description: SystemReserved contains resources reserved for OS
-                        system daemons and kernel memory.
-                      type: object
-                      x-kubernetes-validations:
-                        - message: valid keys for systemReserved are ['cpu','memory','ephemeral-storage','pid']
-                          rule: self.all(x, x=='cpu' || x=='memory' || x=='ephemeral-storage'
-                            || x=='pid')
-                        - message: systemReserved value cannot be a negative resource
-                            quantity
-                          rule: self.all(x, !self[x].startsWith('-'))
+                      - message: size invalid
+                        rule: self >= 10
                   type: object
                   x-kubernetes-validations:
-                    - message: imageGCHighThresholdPercent must be greater than imageGCLowThresholdPercent
-                      rule: 'has(self.imageGCHighThresholdPercent) && has(self.imageGCLowThresholdPercent)
+                  - message: provisionedIOPS is only applicable for pd-extreme, hyperdisk-balanced,
+                      hyperdisk-balanced-high-availability, and hyperdisk-extreme
+                    rule: '!has(self.provisionedIOPS) || self.category in [''pd-extreme'',
+                      ''hyperdisk-balanced'', ''hyperdisk-balanced-high-availability'',
+                      ''hyperdisk-extreme'']'
+                  - message: provisionedThroughput is only applicable for hyperdisk-balanced,
+                      hyperdisk-balanced-high-availability, hyperdisk-throughput,
+                      and hyperdisk-ml
+                    rule: '!has(self.provisionedThroughput) || self.category in [''hyperdisk-balanced'',
+                      ''hyperdisk-balanced-high-availability'', ''hyperdisk-throughput'',
+                      ''hyperdisk-ml'']'
+                  - message: provisionedIOPS and provisionedThroughput must both be
+                      set or both be unset for hyperdisk-balanced and hyperdisk-balanced-high-availability
+                    rule: '!(self.category in [''hyperdisk-balanced'', ''hyperdisk-balanced-high-availability''])
+                      || (has(self.provisionedIOPS) == has(self.provisionedThroughput))'
+                maxItems: 10
+                type: array
+              gpuDriverVersion:
+                default: default
+                description: |-
+                  GPUDriverVersion controls which NVIDIA driver version GKE installs on GPU nodes.
+                  Mirrors the GKE node pool gpu_driver_installation_config.gpu_driver_version field.
+                  Valid values: "default" (GKE-recommended stable), "latest" (newest, COS only),
+                  "disabled" (skip automatic installation).
+                  Ignored for non-GPU instance types.
+                enum:
+                - default
+                - latest
+                - disabled
+                type: string
+              imageFamily:
+                description: |-
+                  ImageFamily dictates the instance template used when generating launch templates.
+                  If no ImageSelectorTerms alias is specified, this field is required.
+                enum:
+                - Ubuntu
+                - ContainerOptimizedOS
+                type: string
+              imageSelectorTerms:
+                description: ImageSelectorTerms is a list of or image selector terms.
+                  The terms are ORed.
+                items:
+                  description: |-
+                    ImageSelectorTerm defines selection logic for an image used by Karpenter to launch nodes.
+                    Exactly one of alias, id, or family (with channel or version) must be set.
+                  properties:
+                    alias:
+                      description: |-
+                        Deprecated: use Family with Channel or Version instead.
+                        Alias specifies which GKE image to select.
+                        Valid families include: ContainerOptimizedOS, Ubuntu
+                      maxLength: 60
+                      type: string
+                      x-kubernetes-validations:
+                      - message: '''alias'' is improperly formatted, must match the
+                          format ''family@version'''
+                        rule: self.matches('^[a-zA-Z0-9]+@.+$')
+                      - message: 'family is not supported, must be one of the following:
+                          ''ContainerOptimizedOS,Ubuntu'''
+                        rule: self.find('^[^@]+') in ['ContainerOptimizedOS', 'Ubuntu']
+                      - message: ContainerOptimizedOS version must be 'latest' or
+                          'milestone.build.build.build' (e.g. '125.19216.104.126')
+                        rule: '!self.startsWith(''ContainerOptimizedOS@'') || self.matches(''^ContainerOptimizedOS@(latest|[0-9]+[.][0-9]+[.][0-9]+[.][0-9]+)$'')'
+                      - message: Ubuntu version must be 'latest' or 'vYYYYMMDD' (e.g.
+                          'v20260416')
+                        rule: '!self.startsWith(''Ubuntu@'') || self.matches(''^Ubuntu@(latest|v[0-9]{8})$'')'
+                    channel:
+                      description: |-
+                        Channel specifies the GKE release channel to follow. Only valid when Family is ContainerOptimizedOS.
+                        Use "cluster" to track the channel the cluster is enrolled in.
+                      enum:
+                      - rapid
+                      - regular
+                      - stable
+                      - extended
+                      - cluster
+                      type: string
+                    family:
+                      description: |-
+                        Family specifies the OS image family. Required when using Channel or Version.
+                        Valid values: ContainerOptimizedOS, Ubuntu2404, Ubuntu2204.
+                      enum:
+                      - ContainerOptimizedOS
+                      - Ubuntu2404
+                      - Ubuntu2204
+                      type: string
+                    id:
+                      description: ID specifies a GKE image by its full resource URL.
+                      maxLength: 160
+                      type: string
+                      x-kubernetes-validations:
+                      - message: '''id'' is improperly formatted, must match the format
+                          ''id'''
+                        rule: self.matches('^.*$')
+                    version:
+                      description: |-
+                        Version pins the image to a specific version or "latest".
+                        For ContainerOptimizedOS: "latest" or "milestone.build.build.build" (e.g. "125.19216.104.126").
+                        For Ubuntu2404/Ubuntu2204: "latest" or "vYYYYMMDD" (e.g. "v20260416").
+                      maxLength: 32
+                      type: string
+                  type: object
+                  x-kubernetes-validations:
+                  - message: family requires either channel or version to be set
+                    rule: '!has(self.family) || has(self.channel) || has(self.version)'
+                  - message: channel and version require family to be set
+                    rule: '!(has(self.channel) || has(self.version)) || has(self.family)'
+                  - message: channel and version cannot both be set
+                    rule: '!(has(self.channel) && has(self.version))'
+                  - message: channel is only supported for family ContainerOptimizedOS
+                    rule: '!has(self.channel) || self.family == ''ContainerOptimizedOS'''
+                  - message: exactly one of alias, id, or family must be set
+                    rule: '(has(self.alias) ? 1 : 0) + (has(self.id) ? 1 : 0) + (has(self.family)
+                      ? 1 : 0) == 1'
+                  - message: ContainerOptimizedOS version must be 'latest' or 'milestone.build.build.build'
+                      (e.g. '125.19216.104.126')
+                    rule: '!has(self.version) || !has(self.family) || self.family
+                      != ''ContainerOptimizedOS'' || self.version == ''latest'' ||
+                      self.version.matches(''^[0-9]+[.][0-9]+[.][0-9]+[.][0-9]+$'')'
+                  - message: Ubuntu2404 version must be 'latest' or 'vYYYYMMDD' (e.g.
+                      'v20260416')
+                    rule: '!has(self.version) || !has(self.family) || self.family
+                      != ''Ubuntu2404'' || self.version == ''latest'' || self.version.matches(''^v[0-9]{8}$'')'
+                  - message: Ubuntu2204 version must be 'latest' or 'vYYYYMMDD' (e.g.
+                      'v20260416')
+                    rule: '!has(self.version) || !has(self.family) || self.family
+                      != ''Ubuntu2204'' || self.version == ''latest'' || self.version.matches(''^v[0-9]{8}$'')'
+                  - message: family 'Ubuntu' is not valid; use Ubuntu2404 for Ubuntu
+                      24.04 or Ubuntu2204 for Ubuntu 22.04
+                    rule: '!has(self.family) || self.family != ''Ubuntu'''
+                maxItems: 30
+                minItems: 1
+                type: array
+                x-kubernetes-validations:
+                - message: 'each term must set exactly one of: alias, id, or family
+                    (with channel or version)'
+                  rule: self.all(x, has(x.alias) || has(x.id) || has(x.family))
+                - message: 'channel: and version: latest cannot both appear in the
+                    same imageSelectorTerms'
+                  rule: '!(self.exists(t, has(t.channel)) && self.exists(t, has(t.family)
+                    && t.family == ''ContainerOptimizedOS'' && has(t.version) && t.version
+                    == ''latest''))'
+              kubeletConfiguration:
+                description: |-
+                  KubeletConfiguration defines args to be used when configuring kubelet on provisioned nodes.
+                  They are a vswitch of the upstream types, recognizing not all options may be supported.
+                  Wherever possible, the types and names should reflect the upstream kubelet types.
+                properties:
+                  clusterDNS:
+                    description: |-
+                      clusterDNS is a list of IP addresses for the cluster DNS server.
+                      Note that not all providers may use all addresses.
+                    items:
+                      type: string
+                    type: array
+                  cpuCFSQuota:
+                    description: CPUCFSQuota enables CPU CFS quota enforcement for
+                      containers that specify CPU limits.
+                    type: boolean
+                  evictionHard:
+                    additionalProperties:
+                      description: KubeletQuantity is a bounded kubelet resource quantity
+                        or percentage string.
+                      maxLength: 64
+                      type: string
+                    description: EvictionHard is the map of signal names to quantities
+                      that define hard eviction thresholds
+                    maxProperties: 10
+                    type: object
+                    x-kubernetes-validations:
+                    - message: valid keys for evictionHard are ['memory.available','nodefs.available','nodefs.inodesFree','imagefs.available','imagefs.inodesFree','pid.available']
+                      rule: self.all(x, x in ['memory.available','nodefs.available','nodefs.inodesFree','imagefs.available','imagefs.inodesFree','pid.available'])
+                    - message: evictionHard values must be a percentage or a resource.Quantity
+                      rule: self.all(x, self[x].matches('^((\\d{1,2}(\\.\\d{1,2})?|100(\\.0{1,2})?)%|(\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))))?)$'))
+                  evictionMaxPodGracePeriod:
+                    description: |-
+                      EvictionMaxPodGracePeriod is the maximum allowed grace period (in seconds) to use when terminating pods in
+                      response to soft eviction thresholds being met.
+                    format: int32
+                    type: integer
+                  evictionSoft:
+                    additionalProperties:
+                      description: KubeletQuantity is a bounded kubelet resource quantity
+                        or percentage string.
+                      maxLength: 64
+                      type: string
+                    description: EvictionSoft is the map of signal names to quantities
+                      that define soft eviction thresholds
+                    maxProperties: 10
+                    type: object
+                    x-kubernetes-validations:
+                    - message: valid keys for evictionSoft are ['memory.available','nodefs.available','nodefs.inodesFree','imagefs.available','imagefs.inodesFree','pid.available']
+                      rule: self.all(x, x in ['memory.available','nodefs.available','nodefs.inodesFree','imagefs.available','imagefs.inodesFree','pid.available'])
+                    - message: evictionSoft values must be a percentage or a resource.Quantity
+                      rule: self.all(x, self[x].matches('^((\\d{1,2}(\\.\\d{1,2})?|100(\\.0{1,2})?)%|(\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))))?)$'))
+                  evictionSoftGracePeriod:
+                    additionalProperties:
+                      type: string
+                    description: EvictionSoftGracePeriod is the map of signal names
+                      to quantities that define grace periods for each eviction signal
+                    maxProperties: 10
+                    type: object
+                    x-kubernetes-validations:
+                    - message: valid keys for evictionSoftGracePeriod are ['memory.available','nodefs.available','nodefs.inodesFree','imagefs.available','imagefs.inodesFree','pid.available']
+                      rule: self.all(x, x in ['memory.available','nodefs.available','nodefs.inodesFree','imagefs.available','imagefs.inodesFree','pid.available'])
+                  imageGCHighThresholdPercent:
+                    description: |-
+                      ImageGCHighThresholdPercent is the percent of disk usage after which image
+                      garbage collection is always run. The percent is calculated by dividing this
+                      field value by 100, so this field must be between 0 and 100, inclusive.
+                      When specified, the value must be greater than ImageGCLowThresholdPercent.
+                    format: int32
+                    maximum: 100
+                    minimum: 0
+                    type: integer
+                  imageGCLowThresholdPercent:
+                    description: |-
+                      ImageGCLowThresholdPercent is the percent of disk usage before which image
+                      garbage collection is never run. Lowest disk usage to garbage collect to.
+                      The percent is calculated by dividing this field value by 100,
+                      so the field value must be between 0 and 100, inclusive.
+                      When specified, the value must be less than imageGCHighThresholdPercent
+                    format: int32
+                    maximum: 100
+                    minimum: 0
+                    type: integer
+                  kubeReserved:
+                    additionalProperties:
+                      description: KubeletQuantity is a bounded kubelet resource quantity
+                        or percentage string.
+                      maxLength: 64
+                      type: string
+                    description: KubeReserved contains resources reserved for Kubernetes
+                      system components.
+                    maxProperties: 10
+                    type: object
+                    x-kubernetes-validations:
+                    - message: valid keys for kubeReserved are ['cpu','memory','ephemeral-storage','pid']
+                      rule: self.all(x, x=='cpu' || x=='memory' || x=='ephemeral-storage'
+                        || x=='pid')
+                    - message: kubeReserved value cannot be a negative resource quantity
+                      rule: self.all(x, !self[x].startsWith('-'))
+                    - message: kubeReserved values must be a resource.Quantity
+                      rule: self.all(x, self[x].matches('^(\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))))?$'))
+                  maxPods:
+                    description: |-
+                      MaxPods is an override for the maximum number of pods that can run on
+                      a worker node instance.
+                    format: int32
+                    minimum: 0
+                    type: integer
+                  podsPerCore:
+                    description: |-
+                      PodsPerCore is an override for the number of pods that can run on a worker node
+                      instance based on the number of cpu cores. This value cannot exceed MaxPods, so, if
+                      MaxPods is a lower value, that value will be used.
+                    format: int32
+                    minimum: 0
+                    type: integer
+                  systemReserved:
+                    additionalProperties:
+                      description: KubeletQuantity is a bounded kubelet resource quantity
+                        or percentage string.
+                      maxLength: 64
+                      type: string
+                    description: SystemReserved contains resources reserved for OS
+                      system daemons and kernel memory.
+                    maxProperties: 10
+                    type: object
+                    x-kubernetes-validations:
+                    - message: valid keys for systemReserved are ['cpu','memory','ephemeral-storage','pid']
+                      rule: self.all(x, x=='cpu' || x=='memory' || x=='ephemeral-storage'
+                        || x=='pid')
+                    - message: systemReserved value cannot be a negative resource
+                        quantity
+                      rule: self.all(x, !self[x].startsWith('-'))
+                    - message: systemReserved values must be a resource.Quantity
+                      rule: self.all(x, self[x].matches('^(\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))))?$'))
+                type: object
+                x-kubernetes-validations:
+                - message: imageGCHighThresholdPercent must be greater than imageGCLowThresholdPercent
+                  rule: 'has(self.imageGCHighThresholdPercent) && has(self.imageGCLowThresholdPercent)
                     ?  self.imageGCHighThresholdPercent > self.imageGCLowThresholdPercent  :
                     true'
-                    - message: evictionSoft OwnerKey does not have a matching evictionSoftGracePeriod
-                      rule: has(self.evictionSoft) ? self.evictionSoft.all(e, (e in self.evictionSoftGracePeriod)):true
-                    - message: evictionSoftGracePeriod OwnerKey does not have a matching
-                        evictionSoft
-                      rule: has(self.evictionSoftGracePeriod) ? self.evictionSoftGracePeriod.all(e,
-                        (e in self.evictionSoft)):true
-                labels:
-                  additionalProperties:
-                    type: string
-                  description: Labels to be applied on GCE VM instance.
-                  type: object
-                  x-kubernetes-validations:
-                    - message: empty tag keys aren't supported
-                      rule: self.all(k, k != '')
-                    - message: tag contains a restricted tag matching gce:gce-cluster-name
-                      rule: self.all(k, k !='gce:gce-cluster-name')
-                    - message: tag contains a restricted tag matching kubernetes.io/cluster/
-                      rule: self.all(k, !k.startsWith('kubernetes.io/cluster') )
-                    - message: tag contains a restricted tag matching karpenter.sh/nodepool
-                      rule: self.all(k, k != 'karpenter.sh/nodepool')
-                    - message: tag contains a restricted tag matching karpenter.sh/nodeclaim
-                      rule: self.all(k, k !='karpenter.sh/nodeclaim')
-                    - message: tag contains a restricted tag matching karpenter.k8s.gcp/gcenodeclass
-                      rule: self.all(k, k !='karpenter.k8s.gcp/gcenodeclass')
-                metadata:
-                  additionalProperties:
-                    type: string
-                  description: Metadata contains key/value pairs to set as instance
-                    metadata
-                  type: object
-                networkTags:
-                  description: NetworkTags is a list of network tags to apply to the node.
-                  items:
-                    maxLength: 63
-                    pattern: ^[a-z]([-a-z0-9]{0,61}[a-z0-9])?$
-                    type: string
-                  maxItems: 64
-                  type: array
-                  x-kubernetes-validations:
-                    - message: network tag must match ^[a-z]([-a-z0-9]{0,61}[a-z0-9])?$
-                      rule: self.all(x, x.matches('^[a-z]([-a-z0-9]{0,61}[a-z0-9])?$'))
-                serviceAccount:
-                  description: ServiceAccount is the GCP IAM service account email to
-                    assign to the instance
-                  pattern: ^[^@]+@(developer\.gserviceaccount\.com|[^@]+\.iam\.gserviceaccount\.com)$
+                - message: evictionSoft OwnerKey does not have a matching evictionSoftGracePeriod
+                  rule: has(self.evictionSoft) ? self.evictionSoft.all(e, (e in self.evictionSoftGracePeriod)):true
+                - message: evictionSoftGracePeriod OwnerKey does not have a matching
+                    evictionSoft
+                  rule: has(self.evictionSoftGracePeriod) ? self.evictionSoftGracePeriod.all(e,
+                    (e in self.evictionSoft)):true
+              labels:
+                additionalProperties:
                   type: string
-              required:
-                - imageSelectorTerms
-              type: object
-            status:
-              description: GCENodeClassStatus contains the resolved state of the GCENodeClass
-              properties:
-                conditions:
-                  description: Conditions contains signals for health and readiness
-                  items:
-                    description: Condition aliases the upstream type and adds additional
-                      helper methods
-                    properties:
-                      lastTransitionTime:
-                        description: |-
-                          lastTransitionTime is the last time the condition transitioned from one status to another.
-                          This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
-                        format: date-time
-                        type: string
-                      message:
-                        description: |-
-                          message is a human readable message indicating details about the transition.
-                          This may be an empty string.
-                        maxLength: 32768
-                        type: string
-                      observedGeneration:
-                        description: |-
-                          observedGeneration represents the .metadata.generation that the condition was set based upon.
-                          For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
-                          with respect to the current state of the instance.
-                        format: int64
-                        minimum: 0
-                        type: integer
-                      reason:
-                        description: |-
-                          reason contains a programmatic identifier indicating the reason for the condition's last transition.
-                          Producers of specific condition types may define expected values and meanings for this field,
-                          and whether the values are considered a guaranteed API.
-                          The value should be a CamelCase string.
-                          This field may not be empty.
-                        maxLength: 1024
-                        minLength: 1
-                        pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
-                        type: string
-                      status:
-                        description: status of the condition, one of True, False, Unknown.
-                        enum:
-                          - "True"
-                          - "False"
-                          - Unknown
-                        type: string
-                      type:
-                        description: type of condition in CamelCase or in foo.example.com/CamelCase.
-                        maxLength: 316
-                        pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
-                        type: string
-                    required:
-                      - lastTransitionTime
-                      - message
-                      - reason
-                      - status
-                      - type
-                    type: object
-                  type: array
-                images:
-                  description: |-
-                    Image contains the current image that are available to the
-                    cluster under the Image selectors.
-                  items:
-                    description: Image contains resolved image selector values utilized
-                      for node launch
-                    properties:
-                      requirements:
-                        description: Requirements of the Image to be utilized on an
-                          instance type
-                        items:
+                description: Labels to be applied on GCE VM instance.
+                maxProperties: 20
+                type: object
+                x-kubernetes-validations:
+                - message: empty tag keys aren't supported
+                  rule: self.all(k, k != '')
+                - message: tag contains a restricted tag matching gce:gce-cluster-name
+                  rule: self.all(k, k !='gce:gce-cluster-name')
+                - message: tag contains a restricted tag matching kubernetes.io/cluster/
+                  rule: self.all(k, !k.startsWith('kubernetes.io/cluster') )
+                - message: tag contains a restricted tag matching karpenter.sh/nodepool
+                  rule: self.all(k, k != 'karpenter.sh/nodepool')
+                - message: tag contains a restricted tag matching karpenter.sh/nodeclaim
+                  rule: self.all(k, k !='karpenter.sh/nodeclaim')
+                - message: tag contains a restricted tag matching karpenter.k8s.gcp/gcenodeclass
+                  rule: self.all(k, k !='karpenter.k8s.gcp/gcenodeclass')
+              metadata:
+                additionalProperties:
+                  type: string
+                description: |-
+                  Metadata contains custom key/value pairs to set as instance metadata.
+                  Keys reserved by GKE bootstrap metadata are rejected because the provider owns them.
+                type: object
+                x-kubernetes-validations:
+                - message: spec.metadata contains a reserved GKE metadata key
+                  rule: '!(''cluster-location'' in self) && !(''cluster-name'' in
+                    self) && !(''cluster-uid'' in self) && !(''configure-sh'' in self)
+                    && !(''containerd-configure-sh'' in self) && !(''disable-address-manager''
+                    in self) && !(''enable-os-login'' in self) && !(''gci-ensure-gke-docker''
+                    in self) && !(''gci-metrics-enabled'' in self) && !(''gci-update-strategy''
+                    in self) && !(''instance-template'' in self) && !(''install-ssh-psm1''
+                    in self) && !(''k8s-node-setup-psm1'' in self) && !(''kube-env''
+                    in self) && !(''kube-labels'' in self) && !(''startup-script''
+                    in self) && !(''user-data'' in self) && !(''user-profile-psm1''
+                    in self) && !(''windows-startup-script-ps1'' in self) && !(''common-psm1''
+                    in self) && !(''kubeconfig'' in self) && !(''kubelet-config''
+                    in self)'
+              networkConfig:
+                description: NetworkConfig allows overriding per-interface network
+                  settings for provisioned nodes.
+                properties:
+                  additionalNetworkInterfaces:
+                    description: |-
+                      AdditionalNetworkInterfaces adds secondary network interfaces to provisioned nodes.
+                      Each entry must specify a subnetwork.
+                      Mirrors GKE node pool network_config.additional_node_network_configs.
+                    items:
+                      description: |-
+                        AdditionalNetworkInterface defines a secondary network interface on provisioned nodes.
+                        Mirrors an entry in GKE node pool network_config.additional_node_network_configs.
+                      properties:
+                        network:
                           description: |-
-                            A node selector requirement is a selector that contains values, a key, and an operator
-                            that relates the key and values.
-                          properties:
-                            key:
-                              description: The label key that the selector applies to.
+                            Network is the VPC network for this interface.
+                            When unset, defaults to the cluster's network.
+                          type: string
+                        subnetwork:
+                          description: Subnetwork is the subnetwork for this interface.
+                            Required.
+                          minLength: 1
+                          type: string
+                      required:
+                      - subnetwork
+                      type: object
+                    maxItems: 7
+                    type: array
+                  enablePrivateNodes:
+                    description: |-
+                      EnablePrivateNodes controls whether provisioned nodes have internal IP addresses only
+                      (no external IP). When unset, defaults to the cluster's EnablePrivateNodes setting.
+                      Mirrors GKE node pool network_config.enable_private_nodes.
+                    type: boolean
+                  subnetwork:
+                    description: |-
+                      Subnetwork is the subnetwork for the primary network interface.
+                      Format: projects/{project}/regions/{region}/subnetworks/{name}
+                      When unset, defaults to the cluster's primary subnetwork.
+                      Mirrors GKE node pool network_config.subnetwork.
+                    type: string
+                type: object
+              networkTags:
+                description: NetworkTags is a list of network tags to apply to the
+                  node.
+                items:
+                  description: |-
+                    NetworkTag represents a single GCE network tag value.
+                    Network tags must be RFC1035 compliant, start with a lowercase letter, and contain only
+                    lowercase letters, digits, and hyphens.
+                  maxLength: 63
+                  minLength: 1
+                  pattern: ^[a-z]([-a-z0-9]{0,61}[a-z0-9])?$
+                  type: string
+                maxItems: 20
+                type: array
+              serviceAccount:
+                description: ServiceAccount is the GCP IAM service account email to
+                  assign to the instance
+                pattern: ^[^@]+@(developer\.gserviceaccount\.com|[^@]+\.iam\.gserviceaccount\.com)$
+                type: string
+              shieldedInstanceConfig:
+                description: |-
+                  ShieldedInstanceConfig enables Shielded VM for provisioned nodes: Secure Boot,
+                  virtual TPM, and integrity monitoring.
+                properties:
+                  enableIntegrityMonitoring:
+                    description: EnableIntegrityMonitoring defines whether the instance
+                      has integrity monitoring enabled.
+                    type: boolean
+                  enableSecureBoot:
+                    description: EnableSecureBoot defines whether the instance has
+                      Secure Boot enabled.
+                    type: boolean
+                  enableVtpm:
+                    description: EnableVtpm defines whether the instance has the vTPM
+                      enabled.
+                    type: boolean
+                type: object
+              subnetRangeName:
+                description: |-
+                  SubnetRangeName is the name of the subnetwork secondary IPv4 range from which
+                  to allocate pod IP addresses (alias IPs for pods). If not specified, the cluster's
+                  default pod secondary range (ClusterSecondaryRangeName from the cluster's IP
+                  allocation policy) is used.
+                maxLength: 63
+                minLength: 1
+                pattern: ^[a-z]([-a-z0-9]{0,61}[a-z0-9])?$
+                type: string
+            required:
+            - imageSelectorTerms
+            type: object
+          status:
+            description: GCENodeClassStatus contains the resolved state of the GCENodeClass
+            properties:
+              conditions:
+                description: Conditions contains signals for health and readiness
+                items:
+                  description: Condition aliases the upstream type and adds additional
+                    helper methods
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        observedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+              images:
+                description: |-
+                  Image contains the current image that are available to the
+                  cluster under the Image selectors.
+                items:
+                  description: Image contains resolved image selector values utilized
+                    for node launch
+                  properties:
+                    requirements:
+                      description: Requirements of the Image to be utilized on an
+                        instance type
+                      items:
+                        description: |-
+                          A node selector requirement is a selector that contains values, a key, and an operator
+                          that relates the key and values.
+                        properties:
+                          key:
+                            description: The label key that the selector applies to.
+                            type: string
+                          operator:
+                            description: |-
+                              Represents a key's relationship to a set of values.
+                              Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.
+                            type: string
+                          values:
+                            description: |-
+                              An array of string values. If the operator is In or NotIn,
+                              the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                              the values array must be empty. If the operator is Gt or Lt, the values
+                              array must have a single element, which will be interpreted as an integer.
+                              This array is replaced during a strategic merge patch.
+                            items:
                               type: string
-                            operator:
-                              description: |-
-                                Represents a key's relationship to a set of values.
-                                Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.
-                              type: string
-                            values:
-                              description: |-
-                                An array of string values. If the operator is In or NotIn,
-                                the values array must be non-empty. If the operator is Exists or DoesNotExist,
-                                the values array must be empty. If the operator is Gt or Lt, the values
-                                array must have a single element, which will be interpreted as an integer.
-                                This array is replaced during a strategic merge patch.
-                              items:
-                                type: string
-                              type: array
-                              x-kubernetes-list-type: atomic
-                          required:
-                            - key
-                            - operator
-                          type: object
-                        type: array
-                      sourceImage:
-                        description: SourceImage represents the source image, format
-                          like projects/gke-node-images/global/images/gke-1309-gke1046000-cos-113-18244-291-9-c-pre
-                        type: string
-                    required:
-                      - requirements
-                      - sourceImage
-                    type: object
-                  type: array
-              type: object
-          type: object
-      served: true
-      storage: true
-      subresources:
-        status: {}
+                            type: array
+                            x-kubernetes-list-type: atomic
+                        required:
+                        - key
+                        - operator
+                        type: object
+                      type: array
+                    sourceImage:
+                      description: SourceImage represents the source image, format
+                        like projects/gke-node-images/global/images/gke-1309-gke1046000-cos-113-18244-291-9-c-pre
+                      type: string
+                  required:
+                  - requirements
+                  - sourceImage
+                  type: object
+                type: array
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

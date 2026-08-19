@@ -15,14 +15,62 @@ serviceAccount:
 podAnnotations: {}
 podLabels: {}
 
+# Names of existing image pull secrets, for a private registry mirror.
+imagePullSecrets: []
+
+# Security context applied at the pod level.
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+# Security context applied to the karpenter container.
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  capabilities:
+    drop:
+      - ALL
+  seccompProfile:
+    type: RuntimeDefault
+
 podDisruptionBudget:
+  # Minimum number of available pods. Used only when maxUnavailable is null.
   minAvailable: 1
+  # Maximum number of unavailable pods. When set, takes precedence over minAvailable.
+  maxUnavailable: null
+
+# ServiceMonitor for the Prometheus Operator. Rendered only when the
+# monitoring.coreos.com/v1 API is present on the cluster.
+serviceMonitor:
+  enabled: false
+  additionalLabels: {}
+  # Empty string uses the Prometheus operator defaults (30s / 10s).
+  interval: ""
+  scrapeTimeout: ""
+  relabelings: []
+  metricRelabelings: []
+  # Per-scrape cap on accepted samples. null means no limit.
+  sampleLimit: null
 
 controller:
   replicaCount: 2
   revisionHistoryLimit: 10
+  strategy:
+    rollingUpdate:
+      maxUnavailable: 1
+  terminationGracePeriodSeconds: 30
   image:
-    tag: "v0.0.1"
+    repository: "public.ecr.aws/cloudpilotai/gcp/karpenter"
+    # Empty falls back to the chart's appVersion.
+    tag: "v0.6.0"
+    pullPolicy: IfNotPresent
+
+  # gmp-critical is created by Google Managed Prometheus, so it exists on most
+  # GKE clusters. Set to "" on any cluster without it -- a priorityClassName
+  # naming a class that does not exist blocks pod creation entirely.
+  priorityClassName: gmp-critical
 
   env: []
 
@@ -34,13 +82,64 @@ controller:
   metrics:
     port: 8080
 
+  healthProbe:
+    # Upstream defaults this to 8081; this chart has always used 8001 and keeps
+    # it so the port does not move under existing installs on upgrade.
+    port: 8001
+
+  # Overrides the default pod anti-affinity, which spreads replicas one per node
+  # using the chart's own selector labels. Leave empty to keep that default --
+  # writing the selector out by hand risks it drifting from the chart name.
+  affinity: {}
+  tolerations: []
+
+  # Everything except spotToSpotConsolidation is ALPHA upstream and off by default.
+  featureGates:
+    # Spot replacement consolidation, for both single and multi-node consolidation.
+    spotToSpotConsolidation: true
+    # Lets NodeOverlay resources influence scheduling decisions.
+    nodeOverlay: false
+    # A NodePool with spec.replicas holds a fixed node count regardless of pod
+    # demand. consolidationPolicy and consolidateAfter are ignored on such pools.
+    staticCapacity: false
+    # Karpenter replaces nodes failing GKE Node Problem Detector health conditions.
+    nodeRepair: false
+    # Scheduling onto reserved/committed GCP capacity. The GCP provider does not
+    # implement GCE reservations yet, so this stays off.
+    reservedCapacity: false
+    # CapacityBuffer pre-provisioning. This chart does not install the
+    # CapacityBuffer CRD -- GKE ships it natively from 1.35.2-gke.1842000.
+    # Enabling it without that CRD fails at render time.
+    capacityBuffer: false
+
+  # Whether controller watches/informers start before leader election is won.
+  # false pre-populates caches and speeds up leader failover. true matches the
+  # karpenter-core default.
+  disableControllerWarmup: true
+
   settings:
     projectID: ""
-    location: ""
+    # Region or zone used for instance type discovery, e.g. us-central1.
+    clusterLocation: ""
+    # Exact cluster location for GKE API calls: us-central1-a for a zonal
+    # cluster, us-central1 for a regional one. Defaults to clusterLocation.
+    nodeLocation: ""
     clusterName: ""
     vmMemoryOverheadPercent: 0.065
     batchMaxDuration: 10s
     batchIdleDuration: 1s
+    # Ignore pods' Dynamic Resource Allocation requests while simulating
+    # scheduling. Set false only if the cluster has DRA drivers and resource
+    # claims Karpenter should account for.
+    ignoreDRARequests: true
+    # Pin the GKE node pool used as the bootstrap metadata source. When set,
+    # Karpenter uses only this pool and errors if it is not RUNNING. Empty means
+    # automatic discovery.
+    defaultNodePoolTemplateName: ""
+    # GCP service account email attached to provisioned nodes, overriding the
+    # Compute Engine default. Give it roles/container.nodeServiceAccount. Can be
+    # overridden per node class via GCENodeClass.spec.serviceAccount.
+    defaultNodepoolServiceAccount: ""
 
 credentials:
   enabled: true
