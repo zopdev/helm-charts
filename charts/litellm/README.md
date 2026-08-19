@@ -1,5 +1,9 @@
 # LiteLLM Helm Chart
 
+<p align="center">
+  <a href="https://zop.dev/zopday/app/deploy?install=litellm"><img src="https://zop.dev/deploytozopday-inkhard.svg" alt="Deploy to Zopday"></a>
+</p>
+
 This Helm chart deploys the [LiteLLM](https://github.com/BerriAI/litellm) proxy on
 Kubernetes. LiteLLM exposes a unified, OpenAI-compatible API in front of 100+ LLM
 providers, with a built-in admin UI, virtual API keys, and spend tracking.

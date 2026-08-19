@@ -1,5 +1,9 @@
 # HolmesGPT Helm Chart
 
+<p align="center">
+  <a href="https://zop.dev/zopday/app/deploy?install=holmesgpt"><img src="https://zop.dev/deploytozopday-inkhard.svg" alt="Deploy to Zopday"></a>
+</p>
+
 [HolmesGPT](https://holmesgpt.dev/) is an open-source SRE agent, a CNCF
 sandbox project, that investigates production incidents by reading your
 cluster and correlating it with your observability data. This chart
@@ -17,7 +21,7 @@ keeps an upstream value rename from silently changing our surface.
 
 - Kubernetes 1.19+
 - Helm 3+
-- An API key for a supported [AI provider](https://holmesgpt.dev/ai-providers/),
+- An API key for a supported [AI provider](https://holmesgpt.dev/latest/ai-providers/),
   or any OpenAI-compatible endpoint
 
 ---
@@ -159,7 +163,7 @@ out.
 Its answers are only as good as its data sources. Of the 42 toolsets
 shipped, roughly 10 enable themselves from in-cluster access alone; the
 rest need credentials for Prometheus, Datadog, GitHub and so on. See
-[data sources](https://holmesgpt.dev/data-sources/).
+[data sources](https://holmesgpt.dev/latest/data-sources/).
 
 ### Deliberate differences from upstream's chart
 

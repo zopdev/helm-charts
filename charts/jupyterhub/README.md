@@ -1,5 +1,9 @@
 # JupyterHub Helm Chart
 
+<p align="center">
+  <a href="https://zop.dev/zopday/app/deploy?install=jupyterhub"><img src="https://zop.dev/deploytozopday-inkhard.svg" alt="Deploy to Zopday"></a>
+</p>
+
 This Helm chart deploys JupyterHub on Kubernetes, providing a multi-user server for Jupyter notebooks. JupyterHub allows multiple users to access their own Jupyter notebook servers in a shared environment, making it ideal for educational institutions, research labs, and data science teams.
 
 ---
