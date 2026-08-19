@@ -106,7 +106,7 @@ spec:
             failureThreshold: 30
             periodSeconds: 10
           volumeMounts:
-            - name: {{ .Release.Name }}-qdrant-persistent-storage
+            - name: qdrant-storage
               mountPath: /qdrant/storage
 {{- if .Values.customConfig }}
             - name: custom-config
@@ -121,7 +121,14 @@ spec:
 {{- end }}
   volumeClaimTemplates:
     - metadata:
-        name: {{ .Release.Name }}-qdrant-persistent-storage
+        # No release-name prefix: volume names are pod-scoped, and the
+        # StatefulSet controller appends the pod name to make the PVC unique
+        # (qdrant-storage-<release>-qdrant-0). Prefixing with the release name
+        # is redundant and, on release names >=38 chars, pushes the volume name
+        # past the 63-char limit — helm install then reports success while the
+        # pod is never created. The `app` selector label the controller copies
+        # onto the PVC still backs `kubectl delete pvc -l app=<release>-qdrant`.
+        name: qdrant-storage
       spec:
         accessModes:
           - ReadWriteOnce

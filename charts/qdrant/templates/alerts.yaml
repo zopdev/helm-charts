@@ -32,14 +32,18 @@ spec:
         - alert: QdrantInRecoveryMode
           # app_status_recovery_mode is a real gauge from Qdrant's /metrics; it
           # flips to 1 when the node boots into recovery (e.g. after an OOM or
-          # WAL corruption) and cannot serve normally.
+          # WAL corruption). Critical, not warning: in recovery mode the pod
+          # reports Ready and stays in the Service, but every read and write
+          # against existing collections fails — an up-but-broken state, which
+          # this repo pages as critical (cf. KafkaOfflinePartitions,
+          # MariaDBReplicationNotRunning). QdrantDown does NOT fire here (up == 1).
           expr: app_status_recovery_mode{namespace="{{ .Release.Namespace }}", service="{{ .Release.Name }}-qdrant"} == 1
           for: 2m
           labels:
-            severity: warning
+            severity: critical
             servicealert: "true"
             namespace: {{ .Release.Namespace }}
             service: {{ .Release.Name }}-qdrant
           annotations:
             summary: 'Qdrant instance {{ .Release.Name }} is in recovery mode'
-            description: 'Qdrant instance {{ .Release.Name }} booted into recovery mode and is not serving normally'
+            description: 'Qdrant instance {{ .Release.Name }} booted into recovery mode. It reports Ready and stays in the Service, but every read and write against existing collections fails. Drop a collection to recover, or raise the memory limit.'

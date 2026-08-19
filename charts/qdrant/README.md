@@ -108,7 +108,10 @@ customConfig: |
 
 ## Monitoring
 
-Qdrant exposes a built-in Prometheus endpoint on the HTTP port (`6333`) at `/metrics` — no exporter sidecar is required. When the API key is enabled, `/metrics` requires authentication (only the health endpoints stay open), so the shipped `ServiceMonitor` scrapes it with the key as a Bearer token, read from the generated Secret. The chart also ships a `PrometheusRule` with a `QdrantDown` alert.
+Qdrant exposes a built-in Prometheus endpoint on the HTTP port (`6333`) at `/metrics` — no exporter sidecar is required. When the API key is enabled, `/metrics` requires authentication (only the health endpoints stay open), so the shipped `ServiceMonitor` scrapes it with the key as a Bearer token, read from the generated Secret. The chart also ships a `PrometheusRule` with two alerts:
+
+- **`QdrantDown`** (critical) — no metric scrapes succeed (`up == 0`).
+- **`QdrantInRecoveryMode`** (critical) — the node booted into recovery mode, typically after an OOM. This is a **silent-degradation** state worth understanding before you meet it in an incident: the pod reports `Ready` and stays in the Service (so `QdrantDown` does **not** fire), but every read and write against existing collections fails. Recovery mode is Qdrant's designed remedy — with the pod reachable, drop a collection to get back under the memory limit, or raise `resources.limits.memory`.
 
 ---
 
