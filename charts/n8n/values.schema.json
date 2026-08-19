@@ -12,7 +12,8 @@
         "repository": {
           "type": "string",
           "description": "Image repository",
-          "default": "n8nio/n8n"
+          "default": "n8nio/n8n",
+          "editDisabled": true
         },
         "tag": {
           "type": "string",
@@ -66,7 +67,8 @@
           "type": "string",
           "description": "Requested volume size",
           "default": "10Gi",
-          "mutable": true
+          "mutable": true,
+          "editDisabled": true
         },
         "storageClass": {
           "type": "string",
@@ -143,6 +145,13 @@
       "category": "runtime",
       "description": "Send the auth cookie without the Secure flag; required for a plain-http instance, since browsers will not return a Secure cookie over http",
       "default": false,
+      "mutable": true
+    },
+    "proxyHops": {
+      "type": "integer",
+      "category": "runtime",
+      "description": "Number of proxies in front of n8n, used to resolve the client IP from X-Forwarded-For; typically 1 behind an ingress",
+      "default": 0,
       "mutable": true
     },
     "encryptionKey": {

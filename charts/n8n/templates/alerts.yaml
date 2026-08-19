@@ -21,6 +21,14 @@ spec:
   groups:
     - name: {{ .Release.Namespace }}.{{ include "n8n.fullname" . }}.rules
       rules:
+        {{- if .Values.metrics.enabled }}
+        {{/*
+        Gated on metrics: `up` only exists for a job Prometheus actually scrapes,
+        and this chart's ServiceMonitor is what creates that job. With metrics off
+        the series is absent rather than 0, so the rule could never fire - it would
+        sit in the UI looking like coverage while providing none. The restart alert
+        below needs no gate: it reads kube-state-metrics, not our own endpoint.
+        */}}
         - alert: N8nDown
           expr: up{job="{{ include "n8n.fullname" . }}",namespace="{{ .Release.Namespace }}"} == 0
           for: 5m
@@ -34,6 +42,8 @@ spec:
           annotations:
             summary: "n8n is not responding"
             description: "n8n in namespace {{ .Release.Namespace }} has been unreachable for 5 minutes. Scheduled workflows and webhook deliveries are not running."
+
+        {{- end }}
 
         # A restarting pod is worth alerting on here in a way it would not be for
         # a stateless replica: this is a single instance, and every restart is a

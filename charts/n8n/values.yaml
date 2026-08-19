@@ -63,6 +63,13 @@ webhookUrl: ""
 # render no tls: block at all. Guessing would drop Secure on HTTPS-only sites.
 insecureCookie: false
 
+# How many proxies sit between a client and n8n, so it can resolve the real
+# client IP from X-Forwarded-For - which is what per-client rate limiting and
+# audit logging depend on. Typically 1 behind an ingress, 2 behind a CDN as well.
+# Left at n8n's default of 0 because the unsafe direction is upward: trusting more
+# hops than exist lets a client spoof its own address.
+proxyHops: 0
+
 # Encrypts every credential stored in n8n. Generated on install and read back on
 # upgrade, so it stays stable for the life of the secret. It cannot be recovered
 # from the database: if it is lost, every stored credential must be re-entered.

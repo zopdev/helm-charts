@@ -19,9 +19,18 @@ data:
   EXECUTIONS_MODE: "regular"
 
   N8N_PORT: "5678"
-  # The container listens on all interfaces so the kubelet's probes and the
-  # Service can reach it; n8n's own default binds narrower than that.
-  N8N_LISTEN_ADDRESS: "0.0.0.0"
+  {{/*
+  N8N_LISTEN_ADDRESS is deliberately not set. n8n defaults to `::`, which accepts
+  both IPv4 and IPv6; pinning 0.0.0.0 would narrow that to IPv4 only for no gain,
+  since the kubelet's probes and the Service reach `::` perfectly well. Set it
+  through `env` if a node genuinely has IPv6 disabled.
+  */}}
+
+  # Number of proxies between a client and n8n, used to pick the real client IP
+  # out of X-Forwarded-For. Typically 1 behind an ingress, more behind a CDN.
+  # Left at n8n's own default of 0 because the unsafe direction is upward: trust
+  # more hops than exist and a client can spoof its own address.
+  N8N_PROXY_HOPS: {{ .Values.proxyHops | quote }}
 
   {{- if .Values.persistence.enabled }}
   # Binary payloads go to the mounted volume, keeping them out of the execution
@@ -50,6 +59,10 @@ data:
   N8N_WEBHOOK_URL: {{ $public.url | quote }}
   N8N_HOST: {{ $public.host | quote }}
   N8N_PROTOCOL: {{ $public.protocol | quote }}
+  # Base URL the editor advertises for itself - the address in invite emails and
+  # password resets. Same public URL, so those links cannot point somewhere the
+  # webhooks do not.
+  N8N_EDITOR_BASE_URL: {{ $public.url | quote }}
   {{- end }}
 
   {{- if .Values.insecureCookie }}

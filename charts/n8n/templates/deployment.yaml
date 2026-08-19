@@ -28,6 +28,11 @@ spec:
       labels:
         {{- include "n8n.selectorLabels" . | nindent 8 }}
     spec:
+      # n8n's own graceful shutdown budget (N8N_GRACEFUL_SHUTDOWN_TIMEOUT) is 30s.
+      # Kubernetes also defaults to 30s, so SIGKILL would land at the exact moment
+      # n8n expects to finish draining. The extra 10s is that headroom; raise it
+      # alongside the timeout if you lengthen n8n's.
+      terminationGracePeriodSeconds: 40
       securityContext:
         # The image runs as the `node` user, uid/gid 1000, and cannot write a
         # freshly provisioned volume that comes up owned by root.
