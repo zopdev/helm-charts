@@ -1,8 +1,6 @@
-# WordPress Helm Chart
+<a href="https://zop.dev/zopday/app/deploy?install=wordpress"><img src="https://zop.dev/deploytozopday-inkhard.svg" alt="Deploy to Zopday" align="right" height="36"></a>
 
-<p align="center">
-  <a href="https://zop.dev/zopday/app/deploy?install=wordpress"><img src="https://zop.dev/deploytozopday-inkhard.svg" alt="Deploy to Zopday"></a>
-</p>
+# WordPress Helm Chart
 
 This Helm chart deploys WordPress, the world's most popular content management system, on Kubernetes. WordPress provides a flexible and user-friendly platform for creating websites, blogs, and web applications.
 

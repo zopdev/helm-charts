@@ -1,8 +1,6 @@
-# HolmesGPT Helm Chart
+<a href="https://zop.dev/zopday/app/deploy?install=holmesgpt"><img src="https://zop.dev/deploytozopday-inkhard.svg" alt="Deploy to Zopday" align="right" height="36"></a>
 
-<p align="center">
-  <a href="https://zop.dev/zopday/app/deploy?install=holmesgpt"><img src="https://zop.dev/deploytozopday-inkhard.svg" alt="Deploy to Zopday"></a>
-</p>
+# HolmesGPT Helm Chart
 
 [HolmesGPT](https://holmesgpt.dev/) is an open-source SRE agent, a CNCF
 sandbox project, that investigates production incidents by reading your

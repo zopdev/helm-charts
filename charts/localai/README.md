@@ -1,8 +1,6 @@
-# LocalAI Helm Chart
+<a href="https://zop.dev/zopday/app/deploy?install=localai"><img src="https://zop.dev/deploytozopday-inkhard.svg" alt="Deploy to Zopday" align="right" height="36"></a>
 
-<p align="center">
-  <a href="https://zop.dev/zopday/app/deploy?install=localai"><img src="https://zop.dev/deploytozopday-inkhard.svg" alt="Deploy to Zopday"></a>
-</p>
+# LocalAI Helm Chart
 
 [LocalAI](https://github.com/mudler/LocalAI) is a drop-in replacement for
 the OpenAI API that runs models on your own hardware. This chart deploys
