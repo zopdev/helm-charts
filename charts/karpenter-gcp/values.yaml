@@ -15,6 +15,9 @@ serviceAccount:
 podAnnotations: {}
 podLabels: {}
 
+# Names of existing image pull secrets, for a private registry mirror.
+imagePullSecrets: []
+
 # Security context applied at the pod level.
 podSecurityContext:
   runAsNonRoot: true
@@ -54,8 +57,15 @@ serviceMonitor:
 controller:
   replicaCount: 2
   revisionHistoryLimit: 10
+  strategy:
+    rollingUpdate:
+      maxUnavailable: 1
+  terminationGracePeriodSeconds: 30
   image:
+    repository: "public.ecr.aws/cloudpilotai/gcp/karpenter"
+    # Empty falls back to the chart's appVersion.
     tag: "v0.6.0"
+    pullPolicy: IfNotPresent
 
   # gmp-critical is created by Google Managed Prometheus, so it exists on most
   # GKE clusters. Set to "" on any cluster without it -- a priorityClassName
@@ -71,6 +81,17 @@ controller:
 
   metrics:
     port: 8080
+
+  healthProbe:
+    # Upstream defaults this to 8081; this chart has always used 8001 and keeps
+    # it so the port does not move under existing installs on upgrade.
+    port: 8001
+
+  # Overrides the default pod anti-affinity, which spreads replicas one per node
+  # using the chart's own selector labels. Leave empty to keep that default --
+  # writing the selector out by hand risks it drifting from the chart name.
+  affinity: {}
+  tolerations: []
 
   # Everything except spotToSpotConsolidation is ALPHA upstream and off by default.
   featureGates:

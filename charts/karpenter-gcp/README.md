@@ -297,6 +297,14 @@ Everything except `spotToSpotConsolidation` is ALPHA upstream and off by default
 | `controller.replicaCount` | `integer` | Number of controller replicas | `2` |
 | `controller.image.tag` | `string` | Controller image tag | `"v0.6.0"` |
 | `controller.priorityClassName` | `string` | Priority class for the controller pods. `gmp-critical` is created by Google Managed Prometheus. Set to `""` on clusters without it — naming a class that does not exist blocks pod creation entirely | `"gmp-critical"` |
+| `controller.image.repository` | `string` | Controller image repository | `"public.ecr.aws/cloudpilotai/gcp/karpenter"` |
+| `controller.image.pullPolicy` | `string` | Image pull policy | `"IfNotPresent"` |
+| `imagePullSecrets` | `list` | Existing pull secrets, for a private registry mirror | `[]` |
+| `controller.strategy` | `object` | Deployment update strategy | `{ rollingUpdate: { maxUnavailable: 1 } }` |
+| `controller.terminationGracePeriodSeconds` | `integer` | Grace period for controller shutdown | `30` |
+| `controller.healthProbe.port` | `integer` | Port for the health and readiness probes. Upstream defaults to `8081`; this chart keeps `8001` so the port does not move on upgrade | `8001` |
+| `controller.affinity` | `object` | Overrides the default pod anti-affinity, which spreads replicas one per node using the chart's selector labels. Leave empty to keep that default | `{}` |
+| `controller.tolerations` | `list` | Tolerations for the controller pods | `[]` |
 | `controller.resources` | `object` | CPU and memory requests | `{ cpu: 500m, memory: 500Mi }` |
 | `controller.metrics.port` | `integer` | Metrics port | `8080` |
 | `podSecurityContext` | `object` | Security context applied at the pod level | `{ runAsNonRoot: true, seccompProfile: { type: RuntimeDefault } }` |
