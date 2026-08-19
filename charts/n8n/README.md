@@ -1,5 +1,9 @@
 # n8n Helm Chart
 
+<p align="center">
+  <a href="https://zop.dev/zopday/app/deploy?install=n8n"><img src="https://zop.dev/deploytozopday-inkhard.svg" alt="Deploy to Zopday"></a>
+</p>
+
 This Helm chart deploys [n8n](https://n8n.io) on Kubernetes. n8n is a workflow
 automation platform: workflows are built in a browser-based editor and triggered
 on a schedule, by a webhook call, or by hand.
