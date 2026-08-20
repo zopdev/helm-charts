@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-qdrant-headless
+  namespace: {{ .Release.Namespace }}
+  labels:
+    # Distinct from the ClusterIP Service's label so the ServiceMonitor selects
+    # only that one — otherwise every metric is scraped twice, and the not-ready
+    # pod exposed here (publishNotReadyAddresses) would flap QdrantDown on every
+    # rollout. The pod selector below is unchanged, so DNS identity still works.
+    app: {{ .Release.Name }}-qdrant-headless
+spec:
+  # Headless service backing the StatefulSet — gives the pod a stable DNS name
+  # and is required for correct per-pod network identity.
+  clusterIP: None
+  publishNotReadyAddresses: true
+  ports:
+    - port: 6333
+      targetPort: 6333
+      protocol: TCP
+      name: http
+    - port: 6334
+      targetPort: 6334
+      protocol: TCP
+      name: grpc
+  selector:
+    app: {{ .Release.Name }}-qdrant
