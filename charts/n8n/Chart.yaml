@@ -1,0 +1,28 @@
+apiVersion: v2
+# Pinned to the semver tag that `stable` and `latest` currently resolve to.
+# Both of those are moving tags, so naming one of them here would make two
+# installs of the same chart version run different code.
+appVersion: "2.35.3"
+description: Helm chart for deploying n8n, a workflow automation platform
+name: n8n
+version: 0.0.1
+type: application
+icon: "https://storage.googleapis.com/zopdev-blog-resources/1/files/originals/20260812/71ab17a6-11d5-4280-a267-1749b533b756-n8n.png"
+maintainers:
+  - name: ZopDev
+    url: zop.dev
+# PostgreSQL holds workflows, credentials and execution history. It is the
+# default and only supported datastore for this chart; point the release at an
+# existing server with externalDatabase instead of turning this off.
+dependencies:
+  - name: postgres
+    # 0.0.14 or later is required, not merely preferred. Up to 0.0.13 the
+    # database init ran as a bare Pod, and a completed Pod never reports
+    # Ready - so `helm install --wait` blocked until it timed out. 0.0.14
+    # runs it as a Job. 0.0.13 also fixed the alerts template rendering a
+    # null `service` label that the PrometheusRule CRD rejects.
+    version: 0.0.14
+    repository: https://helm.zop.dev
+    condition: postgres.enabled
+annotations:
+  type: application

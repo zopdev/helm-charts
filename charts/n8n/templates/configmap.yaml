@@ -1,0 +1,98 @@
+{{- $db := include "n8n.db" . | fromYaml }}
+{{- $public := include "n8n.public" . | fromYaml }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "n8n.fullname" . }}-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "n8n.labels" . | nindent 4 }}
+data:
+  DB_TYPE: "postgresdb"
+  DB_POSTGRESDB_HOST: {{ $db.host | quote }}
+  DB_POSTGRESDB_PORT: {{ $db.port | quote }}
+  DB_POSTGRESDB_DATABASE: {{ $db.database | quote }}
+  DB_POSTGRESDB_SCHEMA: "public"
+
+  # Without queue mode there is one process, and it both serves the editor and
+  # runs the executions.
+  EXECUTIONS_MODE: "regular"
+
+  N8N_PORT: "5678"
+  {{/*
+  N8N_LISTEN_ADDRESS is deliberately not set. n8n defaults to `::`, which accepts
+  both IPv4 and IPv6; pinning 0.0.0.0 would narrow that to IPv4 only for no gain,
+  since the kubelet's probes and the Service reach `::` perfectly well. Set it
+  through `env` if a node genuinely has IPv6 disabled.
+  */}}
+
+  # Number of proxies between a client and n8n, used to pick the real client IP
+  # out of X-Forwarded-For. Typically 1 behind an ingress, more behind a CDN.
+  # Left at n8n's own default of 0 because the unsafe direction is upward: trust
+  # more hops than exist and a client can spoof its own address.
+  N8N_PROXY_HOPS: {{ .Values.proxyHops | quote }}
+
+  {{- if .Values.persistence.enabled }}
+  # Binary payloads go to the mounted volume, keeping them out of the execution
+  # rows in Postgres, which is what stops execution_data growing without bound.
+  N8N_DEFAULT_BINARY_DATA_MODE: "filesystem"
+  {{- else }}
+  # No volume, so payloads go into Postgres. NOT "default": that mode keeps
+  # binary data in the process heap, which would OOMKill the pod against its
+  # memory limit and is removed in n8n 3.x. "database" is the Postgres-backed
+  # mode. Payloads are capped by N8N_BINARY_DATA_DATABASE_MAX_FILE_SIZE.
+  N8N_DEFAULT_BINARY_DATA_MODE: "database"
+  {{- end }}
+
+  # Self-hosted installs should not report usage back to n8n's servers unless
+  # the operator opts in.
+  N8N_DIAGNOSTICS_ENABLED: "false"
+
+  {{- if $public.url }}
+  # Baked into every registered webhook and OAuth callback URL. Derived from the
+  # ingress host unless webhookUrl overrides it. All three come from one value, so
+  # the protocol n8n advertises cannot contradict the URL it hands out.
+  #
+  # N8N_WEBHOOK_URL, not WEBHOOK_URL: the latter is deprecated and, unlike the
+  # four variables this chart pins deliberately, it warns whenever it is SET
+  # rather than when it is unset.
+  N8N_WEBHOOK_URL: {{ $public.url | quote }}
+  N8N_HOST: {{ $public.host | quote }}
+  N8N_PROTOCOL: {{ $public.protocol | quote }}
+  # Base URL the editor advertises for itself - the address in invite emails and
+  # password resets. Same public URL, so those links cannot point somewhere the
+  # webhooks do not.
+  N8N_EDITOR_BASE_URL: {{ $public.url | quote }}
+  {{- end }}
+
+  {{- if .Values.insecureCookie }}
+  # Explicitly opted in. n8n marks its auth cookie Secure by default and no
+  # browser sends a Secure cookie over plain http, so a genuinely http instance
+  # needs this or nobody can log in.
+  #
+  # Deliberately NOT inferred from "no ingress.tlsSecretName". TLS is often
+  # terminated upstream - an ALB with an ACM certificate, a GKE managed
+  # certificate, a cert-manager annotation - and those render no tls: block at
+  # all. Inferring insecurity from a missing field would drop Secure on sites
+  # that are HTTPS-only, silently, which is worse than an instance that refuses
+  # to log in and says why.
+  N8N_SECURE_COOKIE: "false"
+  {{- end }}
+
+  N8N_METRICS: {{ .Values.metrics.enabled | quote }}
+
+  GENERIC_TIMEZONE: {{ .Values.timezone | quote }}
+  TZ: {{ .Values.timezone | quote }}
+
+  {{/*
+  Chart-owned keys are skipped rather than emitted a second time. validate.yaml
+  already fails the render on them, so this is unreachable in practice - but it
+  means no ordering of templates can produce a ConfigMap carrying the same key
+  twice, where the last one silently wins.
+  */}}
+  {{- $owned := splitList "," (include "n8n.ownedEnv" .) }}
+  {{- range $key, $value := .Values.env }}
+  {{- if not (has $key $owned) }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}
+  {{- end }}

@@ -1,0 +1,31 @@
+{{- if and .Values.persistence.enabled (not .Values.persistence.existingClaim) }}
+{{/*
+Holds the config file n8n writes on first boot, any custom nodes installed into
+the instance, and binary payloads under filesystem mode.
+
+Deliberately not a volumeClaimTemplate on a StatefulSet: a Deployment is the
+right controller for a single stateless-ish process, and keeping the claim as its
+own object means `helm uninstall` leaves the data behind rather than depending on
+the cluster's StatefulSet retention policy.
+*/}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "n8n.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "n8n.labels" . | nindent 4 }}
+  annotations:
+    # The volume outlives the release. Losing it means losing the instance's
+    # binary data and its generated config.
+    helm.sh/resource-policy: keep
+spec:
+  accessModes:
+    - ReadWriteOnce
+  {{- if .Values.persistence.storageClass }}
+  storageClassName: {{ .Values.persistence.storageClass | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.size | quote }}
+{{- end }}

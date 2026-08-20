@@ -1,0 +1,6 @@
+dependencies:
+- name: postgres
+  repository: https://helm.zop.dev
+  version: v0.0.14
+digest: sha256:52fa869fd28543afab579ed94b65e63f4faf619086333867dc89e6a93dddbf7b
+generated: "2026-08-18T15:24:15.723291+05:30"

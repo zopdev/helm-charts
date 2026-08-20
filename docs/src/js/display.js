@@ -69,6 +69,11 @@ const CHART_DISPLAY = {
     name: "MySQL",
     description: "Deploy a MySQL database service",
   },
+  n8n: {
+    // Lowercase on purpose; titleCase would render this "N8n".
+    name: "n8n",
+    description: "Workflow automation you build in the browser and trigger by webhook or schedule",
+  },
   opentsdb: {
     name: "OpenTSDB",
     description: "A Distributed, Scalable Monitoring System",
