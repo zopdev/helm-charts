@@ -1,3 +1,5 @@
+<a href="https://zop.dev/zopday/app/deploy?install=litellm"><img src="https://zop.dev/deploytozopday-inkhard.svg" alt="Deploy to Zopday" align="right" height="36"></a>
+
 # LiteLLM Helm Chart
 
 This Helm chart deploys the [LiteLLM](https://github.com/BerriAI/litellm) proxy on

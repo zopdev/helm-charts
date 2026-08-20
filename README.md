@@ -104,43 +104,50 @@ Below is a list of available charts along with their links:
 
 | **Name**             | **Link**                                                               | **Metrics** |
 |----------------------|------------------------------------------------------------------------|-------------|
-| **MySQL**            | [helm.zop.dev/mysql](https://helm.zop.dev/mysql)                       | ✅           |
-| **PostgreSQL**       | [helm.zop.dev/postgres](https://helm.zop.dev/postgres)                 | ✅           |
-| **MariaDB**          | [helm.zop.dev/mariadb](https://helm.zop.dev/mariadb)                   | ✅           |
-| **Redis**            | [helm.zop.dev/redis](https://helm.zop.dev/redis)                       | ✅           |
-| **SurrealDB**        | [helm.zop.dev/surrealdb](https://helm.zop.dev/surrealdb)               |             |
-| **Dgraph**           | [helm.zop.dev/dgraph](https://helm.zop.dev/dgraph)                     |             |
-| **Solr**             | [helm.zop.dev/solr](https://helm.zop.dev/solr)                         | ✅           |
-| **OpenTSDB**         | [helm.zop.dev/opentsdb](https://helm.zop.dev/opentsdb)                 |             |
-| **ChromaDB**         | [helm.zop.dev/chromadb](https://helm.zop.dev/chromadb)                 |             |
-| **Cassandra**        | [helm.zop.dev/cassandra](https://helm.zop.dev/cassandra)               |             |
-| **CockroachDB**      | [helm.zop.dev/cockroachdb](https://helm.zop.dev/cockroachdb)           |             |
-| **ClickHouse**       | [helm.zop.dev/clickhouse](https://helm.zop.dev/clickhouse)             | ✅           |
-| **Kafka**            | [helm.zop.dev/kafka](https://helm.zop.dev/kafka)                       | ✅           |
-| **RedisDistributed** | [helm.zop.dev/redisdistributed](https://helm.zop.dev/redisdistributed) | ✅           |
-| **SolrCloud**        | [helm.zop.dev/solrcloud](https://helm.zop.dev/solrcloud)               |             |
-| **Qdrant**           | [helm.zop.dev/qdrant](https://helm.zop.dev/qdrant)                     | ✅           |
+| **MySQL**            | [helm.zop.dev/mysql](https://helm.zop.dev/src/readme.html?id=mysql)                       | ✅           |
+| **PostgreSQL**       | [helm.zop.dev/postgres](https://helm.zop.dev/src/readme.html?id=postgres)                 | ✅           |
+| **MariaDB**          | [helm.zop.dev/mariadb](https://helm.zop.dev/src/readme.html?id=mariadb)                   | ✅           |
+| **Redis**            | [helm.zop.dev/redis](https://helm.zop.dev/src/readme.html?id=redis)                       | ✅           |
+| **SurrealDB**        | [helm.zop.dev/surrealdb](https://helm.zop.dev/src/readme.html?id=surrealdb)               |             |
+| **Dgraph**           | [helm.zop.dev/dgraph](https://helm.zop.dev/src/readme.html?id=dgraph)                     |             |
+| **Solr**             | [helm.zop.dev/solr](https://helm.zop.dev/src/readme.html?id=solr)                         | ✅           |
+| **OpenTSDB**         | [helm.zop.dev/opentsdb](https://helm.zop.dev/src/readme.html?id=opentsdb)                 |             |
+| **ChromaDB**         | [helm.zop.dev/chromadb](https://helm.zop.dev/src/readme.html?id=chromadb)                 |             |
+| **Cassandra**        | [helm.zop.dev/cassandra](https://helm.zop.dev/src/readme.html?id=cassandra)               |             |
+| **CockroachDB**      | [helm.zop.dev/cockroachdb](https://helm.zop.dev/src/readme.html?id=cockroachdb)           |             |
+| **ClickHouse**       | [helm.zop.dev/clickhouse](https://helm.zop.dev/src/readme.html?id=clickhouse)             | ✅           |
+| **Kafka**            | [helm.zop.dev/kafka](https://helm.zop.dev/src/readme.html?id=kafka)                       | ✅           |
+| **RedisDistributed** | [helm.zop.dev/redisdistributed](https://helm.zop.dev/src/readme.html?id=redisdistributed) | ✅           |
+| **SolrCloud**        | [helm.zop.dev/solrcloud](https://helm.zop.dev/src/readme.html?id=solrcloud)               |             |
+| **ScyllaDB**         | [helm.zop.dev/scylladb](https://helm.zop.dev/src/readme.html?id=scylladb)               |             |
+| **Qdrant**           | [helm.zop.dev/qdrant](https://helm.zop.dev/src/readme.html?id=qdrant)                     | ✅           |
 
 
 2. **APPLICATIONS**
 
-| **Name**       | **Link**                                                   |
-|----------------|------------------------------------------------------------|
-| **HolmesGPT**  | [helm.zop.dev/holmesgpt](https://helm.zop.dev/holmesgpt)   |
-| **JupyterHub** | [helm.zop.dev/jupyterhub](https://helm.zop.dev/jupyterhub) |
-| **LiteLLM**    | [helm.zop.dev/litellm](https://helm.zop.dev/litellm)       |
-| **LocalAI**    | [helm.zop.dev/localai](https://helm.zop.dev/localai)       |
-| **Outline**    | [helm.zop.dev/outline](https://helm.zop.dev/outline)       |
-| **Superset**   | [helm.zop.dev/superset](https://helm.zop.dev/superset)     |
-| **WordPress**  | [helm.zop.dev/wordpress](https://helm.zop.dev/wordpress)   |
+| **Name** | **Link** | **Deploy** |
+|---|---|---|
+| **HolmesGPT** | [helm.zop.dev/holmesgpt](https://helm.zop.dev/src/readme.html?id=holmesgpt) | <a href="https://zop.dev/zopday/app/deploy?install=holmesgpt"><img src="https://zop.dev/deploytozopday-inkhard.svg" alt="Deploy to Zopday" height="28"></a> |
+| **JupyterHub** | [helm.zop.dev/jupyterhub](https://helm.zop.dev/src/readme.html?id=jupyterhub) | <a href="https://zop.dev/zopday/app/deploy?install=jupyterhub"><img src="https://zop.dev/deploytozopday-inkhard.svg" alt="Deploy to Zopday" height="28"></a> |
+| **LiteLLM** | [helm.zop.dev/litellm](https://helm.zop.dev/src/readme.html?id=litellm) | <a href="https://zop.dev/zopday/app/deploy?install=litellm"><img src="https://zop.dev/deploytozopday-inkhard.svg" alt="Deploy to Zopday" height="28"></a> |
+| **LocalAI** | [helm.zop.dev/localai](https://helm.zop.dev/src/readme.html?id=localai) | <a href="https://zop.dev/zopday/app/deploy?install=localai"><img src="https://zop.dev/deploytozopday-inkhard.svg" alt="Deploy to Zopday" height="28"></a> |
+| **Outline** | [helm.zop.dev/outline](https://helm.zop.dev/src/readme.html?id=outline) | <a href="https://zop.dev/zopday/app/deploy?install=outline"><img src="https://zop.dev/deploytozopday-inkhard.svg" alt="Deploy to Zopday" height="28"></a> |
+| **Superset** | [helm.zop.dev/superset](https://helm.zop.dev/src/readme.html?id=superset) | <a href="https://zop.dev/zopday/app/deploy?install=superset"><img src="https://zop.dev/deploytozopday-inkhard.svg" alt="Deploy to Zopday" height="28"></a> |
+| **WordPress** | [helm.zop.dev/wordpress](https://helm.zop.dev/src/readme.html?id=wordpress) | <a href="https://zop.dev/zopday/app/deploy?install=wordpress"><img src="https://zop.dev/deploytozopday-inkhard.svg" alt="Deploy to Zopday" height="28"></a> |
 
 
 3. **OTHERS**
 
-| **Name**     | **Link**                                               | **Metrics** |
-|--------------|--------------------------------------------------------|-------------|
-| **Cron-Job** | [helm.zop.dev/cron-job](https://helm.zop.dev/cron-job) | ✅           |
-| **Service**  | [helm.zop.dev/service](https://helm.zop.dev/service)   | ✅           |
+| **Name** | **Link** | **Metrics** |
+|---|---|---|
+| **Cron-Job** | [helm.zop.dev/cron-job](https://helm.zop.dev/src/readme.html?id=cron-job) | ✅ |
+| **Service** | [helm.zop.dev/service](https://helm.zop.dev/src/readme.html?id=service) | ✅ |
+| **OpenObserve** | [helm.zop.dev/openobserve-standalone](https://helm.zop.dev/src/readme.html?id=openobserve-standalone) |  |
+| **Uptime Monitoring** | [helm.zop.dev/uptime-monitoring](https://helm.zop.dev/src/readme.html?id=uptime-monitoring) |  |
+| **ZooKeeper** | [helm.zop.dev/zookeeper](https://helm.zop.dev/src/readme.html?id=zookeeper) |  |
+| **ZooKeeper Operator** | [helm.zop.dev/zookeeper-operator](https://helm.zop.dev/src/readme.html?id=zookeeper-operator) |  |
+| **Solr Operator** | [helm.zop.dev/solr-operator](https://helm.zop.dev/src/readme.html?id=solr-operator) |  |
+| **Karpenter (GCP)** | [helm.zop.dev/karpenter-gcp](https://helm.zop.dev/src/readme.html?id=karpenter-gcp) |  |
 
 
 📊 **Metrics Export** - All charts that support metrics expose them on port 2121 by default.
