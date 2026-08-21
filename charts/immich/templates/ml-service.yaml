@@ -1,0 +1,37 @@
+{{/*
+Internal only -- the server reaches this by DNS name, nothing outside
+the cluster needs it, so there's no ingress for this component.
+*/}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "immich.mlFullname" . }}
+  labels:
+    {{- include "immich.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3003
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "immich.selectorLabels" (dict "context" $ "component" "machine-learning") | nindent 4 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "immich.mlFullname" . }}-headless
+  labels:
+    {{- include "immich.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  clusterIP: None
+  publishNotReadyAddresses: true
+  ports:
+    - port: 3003
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "immich.selectorLabels" (dict "context" $ "component" "machine-learning") | nindent 4 }}

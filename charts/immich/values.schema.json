@@ -1,0 +1,369 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "Immich",
+  "type": "object",
+  "properties": {
+    "server": {
+      "category": "runtime",
+      "type": "object",
+      "properties": {
+        "image": {
+          "type": "object",
+          "properties": {
+            "repository": {
+              "type": "string",
+              "default": "ghcr.io/immich-app/immich-server",
+              "editDisabled": true,
+              "description": "Server image repository."
+            },
+            "tag": {
+              "type": "string",
+              "default": "v3.1.0",
+              "mutable": true,
+              "description": "Server image tag."
+            },
+            "pullPolicy": {
+              "type": "string",
+              "enum": [
+                "Always",
+                "IfNotPresent",
+                "Never"
+              ],
+              "default": "IfNotPresent",
+              "mutable": true,
+              "description": "When the kubelet pulls the image."
+            }
+          }
+        },
+        "service": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "ClusterIP",
+                "NodePort",
+                "LoadBalancer"
+              ],
+              "default": "ClusterIP",
+              "mutable": true,
+              "description": "Kubernetes Service type."
+            },
+            "port": {
+              "type": "integer",
+              "default": 2283,
+              "mutable": true,
+              "description": "Port the web UI/API is served on."
+            }
+          }
+        },
+        "diskSize": {
+          "type": "string",
+          "pattern": "^[0-9]+Gi$",
+          "default": "20Gi",
+          "mutable": true,
+          "editDisabled": true,
+          "description": "Size of the photo/video library volume."
+        },
+        "resources": {
+          "type": "object",
+          "properties": {
+            "requests": {
+              "type": "object",
+              "properties": {
+                "cpu": {
+                  "type": "string",
+                  "pattern": "^[0-9]+m$",
+                  "default": "500m",
+                  "mutable": true,
+                  "description": "CPU request."
+                },
+                "memory": {
+                  "type": "string",
+                  "pattern": "^[0-9]+(Mi|Gi)$",
+                  "default": "1Gi",
+                  "mutable": true,
+                  "description": "Memory request."
+                }
+              }
+            },
+            "limits": {
+              "type": "object",
+              "properties": {
+                "cpu": {
+                  "type": "string",
+                  "pattern": "^[0-9]+m$",
+                  "default": "2000m",
+                  "mutable": true,
+                  "description": "CPU limit."
+                },
+                "memory": {
+                  "type": "string",
+                  "pattern": "^[0-9]+(Mi|Gi)$",
+                  "default": "4Gi",
+                  "mutable": true,
+                  "description": "Memory limit."
+                }
+              }
+            }
+          }
+        },
+        "env": {
+          "type": "object",
+          "mutable": true,
+          "description": "Extra environment variables applied to the server container."
+        }
+      },
+      "description": "The API, web UI, and job orchestrator."
+    },
+    "machineLearning": {
+      "category": "runtime",
+      "type": "object",
+      "properties": {
+        "image": {
+          "type": "object",
+          "properties": {
+            "repository": {
+              "type": "string",
+              "default": "ghcr.io/immich-app/immich-machine-learning",
+              "editDisabled": true,
+              "description": "Machine-learning image repository."
+            },
+            "tag": {
+              "type": "string",
+              "default": "v3.1.0",
+              "mutable": true,
+              "description": "Machine-learning image tag."
+            },
+            "pullPolicy": {
+              "type": "string",
+              "enum": [
+                "Always",
+                "IfNotPresent",
+                "Never"
+              ],
+              "default": "IfNotPresent",
+              "mutable": true,
+              "description": "When the kubelet pulls the image."
+            }
+          }
+        },
+        "diskSize": {
+          "type": "string",
+          "pattern": "^[0-9]+Gi$",
+          "default": "5Gi",
+          "mutable": true,
+          "editDisabled": true,
+          "description": "Size of the ML model cache volume."
+        },
+        "resources": {
+          "type": "object",
+          "properties": {
+            "requests": {
+              "type": "object",
+              "properties": {
+                "cpu": {
+                  "type": "string",
+                  "pattern": "^[0-9]+m$",
+                  "default": "1000m",
+                  "mutable": true,
+                  "description": "CPU request."
+                },
+                "memory": {
+                  "type": "string",
+                  "pattern": "^[0-9]+(Mi|Gi)$",
+                  "default": "2Gi",
+                  "mutable": true,
+                  "description": "Memory request."
+                }
+              }
+            },
+            "limits": {
+              "type": "object",
+              "properties": {
+                "cpu": {
+                  "type": "string",
+                  "pattern": "^[0-9]+m$",
+                  "default": "4000m",
+                  "mutable": true,
+                  "description": "CPU limit."
+                },
+                "memory": {
+                  "type": "string",
+                  "pattern": "^[0-9]+(Mi|Gi)$",
+                  "default": "4Gi",
+                  "mutable": true,
+                  "description": "Memory limit."
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": "Face detection and smart search inference. Always deployed, matching upstream's own reference compose file."
+    },
+    "postgres": {
+      "category": "advanced",
+      "type": "object",
+      "properties": {
+        "image": {
+          "type": "object",
+          "properties": {
+            "repository": {
+              "type": "string",
+              "default": "ghcr.io/immich-app/postgres",
+              "editDisabled": true,
+              "description": "Bundles the vectorchord extension Immich's search needs; not the zopdev postgres chart."
+            },
+            "tag": {
+              "type": "string",
+              "default": "14-vectorchord0.4.3-pgvectors0.2.0",
+              "mutable": true,
+              "editDisabled": true,
+              "description": "Postgres image tag."
+            },
+            "pullPolicy": {
+              "type": "string",
+              "enum": [
+                "Always",
+                "IfNotPresent",
+                "Never"
+              ],
+              "default": "IfNotPresent",
+              "mutable": true,
+              "description": "When the kubelet pulls the image."
+            }
+          }
+        },
+        "database": {
+          "type": "string",
+          "default": "immich",
+          "mutable": true,
+          "editDisabled": true,
+          "description": "Database name."
+        },
+        "username": {
+          "type": "string",
+          "default": "immich",
+          "mutable": true,
+          "editDisabled": true,
+          "description": "Database user."
+        },
+        "password": {
+          "type": "string",
+          "default": "",
+          "mutable": true,
+          "description": "Pin a known database password instead of the chart generating one. Ignored if existingSecret is set."
+        },
+        "existingSecret": {
+          "type": "string",
+          "default": "",
+          "mutable": true,
+          "description": "Name of an existing Secret carrying a POSTGRES_PASSWORD key, used instead of one this chart manages."
+        },
+        "diskSize": {
+          "type": "string",
+          "pattern": "^[0-9]+Gi$",
+          "default": "10Gi",
+          "mutable": true,
+          "editDisabled": true,
+          "description": "Size of the database volume."
+        },
+        "resources": {
+          "type": "object",
+          "properties": {
+            "requests": {
+              "type": "object",
+              "properties": {
+                "cpu": {
+                  "type": "string",
+                  "pattern": "^[0-9]+m$",
+                  "default": "500m",
+                  "mutable": true,
+                  "description": "CPU request."
+                },
+                "memory": {
+                  "type": "string",
+                  "pattern": "^[0-9]+(Mi|Gi)$",
+                  "default": "1Gi",
+                  "mutable": true,
+                  "description": "Memory request."
+                }
+              }
+            },
+            "limits": {
+              "type": "object",
+              "properties": {
+                "cpu": {
+                  "type": "string",
+                  "pattern": "^[0-9]+m$",
+                  "default": "2000m",
+                  "mutable": true,
+                  "description": "CPU limit."
+                },
+                "memory": {
+                  "type": "string",
+                  "pattern": "^[0-9]+(Mi|Gi)$",
+                  "default": "2Gi",
+                  "mutable": true,
+                  "description": "Memory limit."
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": "Immich's own postgres image, with the vector extension its search features need."
+    },
+    "redis": {
+      "category": "advanced",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "default": "immich",
+          "mutable": true,
+          "editDisabled": true,
+          "description": "Service name labelled on the redis subchart's alerts. Required by the subchart's PrometheusRule -- left unset, it renders a null label the CRD rejects and the release fails to install."
+        }
+      },
+      "description": "Job queue backing the server's background workers. Installed with the release via the redis subchart."
+    },
+    "ingress": {
+      "category": "runtime",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false,
+          "mutable": true,
+          "description": "Create an Ingress for the web UI/API."
+        },
+        "className": {
+          "type": "string",
+          "default": "",
+          "mutable": true,
+          "description": "IngressClass to use."
+        },
+        "host": {
+          "type": "string",
+          "default": "",
+          "mutable": true,
+          "description": "Hostname to serve on. Required when the ingress is enabled."
+        },
+        "annotations": {
+          "type": "object",
+          "mutable": true,
+          "description": "Annotations applied to the Ingress."
+        },
+        "tlsSecretName": {
+          "type": "string",
+          "default": "",
+          "mutable": true,
+          "description": "Existing TLS secret for the host."
+        }
+      },
+      "description": "Ingress exposing the web UI/API outside the cluster."
+    }
+  }
+}

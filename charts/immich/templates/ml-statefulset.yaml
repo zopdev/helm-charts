@@ -1,0 +1,67 @@
+{{/*
+StatefulSet only so the /cache volume (downloaded ML models) survives
+restarts without re-downloading. There is no scale-out story for this
+component -- one replica is what the reference deployment runs too.
+*/}}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "immich.mlFullname" . }}
+  labels:
+    {{- include "immich.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  serviceName: {{ include "immich.mlFullname" . }}-headless
+  selector:
+    matchLabels:
+      {{- include "immich.selectorLabels" (dict "context" $ "component" "machine-learning") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "immich.selectorLabels" (dict "context" $ "component" "machine-learning") | nindent 8 }}
+    spec:
+      containers:
+        - name: machine-learning
+          image: "{{ .Values.machineLearning.image.repository }}:{{ .Values.machineLearning.image.tag }}"
+          imagePullPolicy: {{ .Values.machineLearning.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 3003
+              protocol: TCP
+          volumeMounts:
+            - name: cache
+              mountPath: /cache
+          resources:
+            {{- toYaml .Values.machineLearning.resources | nindent 12 }}
+          # First start loads ML models into memory, which can take a
+          # while -- without this, the liveness probe below kills the
+          # container before it ever finishes starting.
+          startupProbe:
+            httpGet:
+              path: /ping
+              port: http
+            periodSeconds: 5
+            failureThreshold: 36
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+  volumeClaimTemplates:
+    - metadata:
+        name: cache
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: {{ .Values.machineLearning.diskSize }}

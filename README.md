@@ -127,6 +127,7 @@ Below is a list of available charts along with their links:
 | **Name** | **Link** | **Deploy** |
 |---|---|---|
 | **HolmesGPT** | [helm.zop.dev/holmesgpt](https://helm.zop.dev/src/readme.html?id=holmesgpt) | <a href="https://zop.dev/zopday/app/deploy?install=holmesgpt"><img src="https://zop.dev/deploytozopday-inkhard.svg" alt="Deploy to Zopday" height="28"></a> |
+| **Immich** | [helm.zop.dev/immich](https://helm.zop.dev/src/readme.html?id=immich) | <a href="https://zop.dev/zopday/app/deploy?install=immich"><img src="https://zop.dev/deploytozopday-inkhard.svg" alt="Deploy to Zopday" height="28"></a> |
 | **JupyterHub** | [helm.zop.dev/jupyterhub](https://helm.zop.dev/src/readme.html?id=jupyterhub) | <a href="https://zop.dev/zopday/app/deploy?install=jupyterhub"><img src="https://zop.dev/deploytozopday-inkhard.svg" alt="Deploy to Zopday" height="28"></a> |
 | **LiteLLM** | [helm.zop.dev/litellm](https://helm.zop.dev/src/readme.html?id=litellm) | <a href="https://zop.dev/zopday/app/deploy?install=litellm"><img src="https://zop.dev/deploytozopday-inkhard.svg" alt="Deploy to Zopday" height="28"></a> |
 | **LocalAI** | [helm.zop.dev/localai](https://helm.zop.dev/src/readme.html?id=localai) | <a href="https://zop.dev/zopday/app/deploy?install=localai"><img src="https://zop.dev/deploytozopday-inkhard.svg" alt="Deploy to Zopday" height="28"></a> |
