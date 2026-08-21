@@ -1,0 +1,27 @@
+Ollama is installed as release {{ .Release.Name }}.
+
+Reach the API:
+
+  kubectl port-forward -n {{ .Release.Namespace }} \
+    svc/{{ include "ollama.fullname" . }} 11434:{{ .Values.service.port }}
+
+  curl http://localhost:11434/api/generate \
+    -d '{"model": "<model>", "prompt": "hello"}'
+{{- if .Values.ingress.enabled }}
+
+Or over the ingress at http{{ if .Values.ingress.tlsSecretName }}s{{ end }}://{{ .Values.ingress.host }}
+{{- end }}
+
+{{- if .Values.models }}
+
+These models were pulled automatically on first start:
+{{- range .Values.models }}
+  - {{ . }}
+{{- end }}
+{{- else }}
+
+No models are installed by default. Pull one after install:
+
+  kubectl exec -n {{ .Release.Namespace }} \
+    {{ include "ollama.fullname" . }}-0 -- ollama pull llama3
+{{- end }}

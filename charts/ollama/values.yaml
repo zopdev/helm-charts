@@ -1,0 +1,55 @@
+# Ollama serves a REST API for running LLMs locally (llama3, mistral,
+# etc). One pod runs the server and holds the pulled models on its own
+# volume -- there is no distributed/multi-node topology in this chart.
+#
+# No securityContext is set: the upstream image runs as root by
+# default and expects to own /root/.ollama, so this chart leaves that
+# as-is rather than fighting it.
+
+image:
+  repository: ollama/ollama
+  tag: "0.32.9"
+  pullPolicy: IfNotPresent
+
+# API service.
+service:
+  type: ClusterIP
+  port: 11434
+
+# Volume backing /root/.ollama, where pulled models are cached. Models
+# are multi-GB each, so size generously.
+diskSize: "20Gi"
+
+resources:
+  requests:
+    cpu: "500m"
+    memory: "2Gi"
+  limits:
+    cpu: "2000m"
+    memory: "4Gi"
+
+# Models to pull automatically on first start, e.g. ["llama3", "mistral"].
+# An init container runs `ollama pull` for each entry against the models
+# volume before the main container starts. Left empty, no init container
+# is rendered -- pull models manually after install instead:
+#   kubectl exec <pod> -- ollama pull llama3
+models: []
+
+# Schedule onto specific nodes, e.g. GPU nodes. Both are passed through
+# verbatim; this chart adds no GPU-specific fields. For a GPU node, also
+# set resources.limits."nvidia.com/gpu" to the number of GPUs to request.
+nodeSelector: {}
+tolerations: []
+
+# Extra environment variables applied to the Ollama container, e.g.
+#   env:
+#     OLLAMA_NUM_PARALLEL: "4"
+env: {}
+
+ingress:
+  enabled: false
+  className: ""
+  host: ""
+  annotations: {}
+  # Set to serve the host over TLS from an existing certificate secret.
+  tlsSecretName: ""
