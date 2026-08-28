@@ -1,3 +1,5 @@
+<a href="https://zop.dev/zopday/app/deploy?install=localai"><img src="https://zop.dev/deploytozopday-inkhard.svg" alt="Deploy to Zopday" align="right" height="36"></a>
+
 # LocalAI Helm Chart
 
 [LocalAI](https://github.com/mudler/LocalAI) is a drop-in replacement for

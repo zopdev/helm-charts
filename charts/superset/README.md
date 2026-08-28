@@ -1,3 +1,5 @@
+<a href="https://zop.dev/zopday/app/deploy?install=superset"><img src="https://zop.dev/deploytozopday-inkhard.svg" alt="Deploy to Zopday" align="right" height="36"></a>
+
 # Apache Superset Helm Chart
 
 This Helm chart deploys Apache Superset on Kubernetes, providing a modern, enterprise-ready business intelligence web application. Superset enables users to create and share interactive dashboards, perform data exploration, and visualize data through a rich set of charts and graphs.

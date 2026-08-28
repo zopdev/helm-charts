@@ -1,3 +1,5 @@
+<a href="https://zop.dev/zopday/app/deploy?install=outline"><img src="https://zop.dev/deploytozopday-inkhard.svg" alt="Deploy to Zopday" align="right" height="36"></a>
+
 # Outline Helm Chart
 
 This Helm chart deploys Outline, a modern team knowledge base and wiki platform, on Kubernetes. Outline provides a beautiful, real-time collaborative editing experience with features like rich text editing, markdown support, and team collaboration tools.

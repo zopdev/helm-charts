@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-qdrant
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Release.Name }}-qdrant
+spec:
+  ports:
+    # The HTTP port (6333) also serves /metrics and the health endpoints, so the
+    # ServiceMonitor scrapes this same named port — no separate metrics port.
+    - port: 6333
+      targetPort: 6333
+      protocol: TCP
+      name: http
+    - port: 6334
+      targetPort: 6334
+      protocol: TCP
+      name: grpc
+  selector:
+    app: {{ .Release.Name }}-qdrant
+  type: ClusterIP
