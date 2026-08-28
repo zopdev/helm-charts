@@ -1,0 +1,166 @@
+# n8n is a workflow automation platform. This chart runs a single instance that
+# serves the editor UI, the REST API and the webhook endpoints, with PostgreSQL
+# holding workflows, credentials and execution history.
+#
+# Executions run in the same process as the editor (EXECUTIONS_MODE=regular).
+# Queue mode, which spreads executions across dedicated worker pods and needs
+# Redis, is not part of this chart.
+
+image:
+  repository: n8nio/n8n
+  # Empty falls back to .Chart.AppVersion, which is pinned to an immutable
+  # release tag. `latest` and `stable` both move, so naming either here would
+  # make two installs of this chart version run different code.
+  tag: ""
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  # The editor, the API, the webhook endpoints and /metrics all answer here.
+  port: 5678
+
+# Holds the config file n8n writes on first boot, any custom nodes, and binary
+# payloads. Turning this off switches binary storage into Postgres (n8n's
+# `database` mode) rather than writing to a container filesystem that is lost on
+# restart. The chart never selects n8n's `default` mode: despite the name it
+# keeps payloads in the process heap, which OOMKills the pod against its memory
+# limit, and it is removed in n8n 3.x.
+persistence:
+  enabled: true
+  size: "10Gi"
+  # Empty uses the cluster's default StorageClass.
+  storageClass: ""
+  # Bind to a claim you already have instead of creating one.
+  existingClaim: ""
+
+# n8n writes its own hostname into every webhook it registers and into OAuth
+# callback URLs, so enabling the ingress is also what makes those URLs correct.
+ingress:
+  enabled: false
+  className: ""
+  host: ""
+  annotations: {}
+  # Set to serve the host over TLS from an existing certificate secret. Its
+  # presence is also what decides whether webhook URLs are https.
+  tlsSecretName: ""
+
+# Overrides the URL derived from ingress.host. Set this when something else
+# terminates traffic - a tunnel, a proxy on another hostname, or TLS terminated
+# by the load balancer - and n8n would otherwise advertise an address callers
+# cannot reach. Must include the scheme; a schemeless value fails the render.
+webhookUrl: ""
+
+# Sends the auth cookie without the Secure flag (N8N_SECURE_COOKIE=false).
+#
+# Required for a genuinely plain-http instance: n8n marks the cookie Secure by
+# default, no browser returns a Secure cookie over http, and the result is an
+# editor that loads and then refuses every login. localhost is exempt - browsers
+# treat it as a secure context - so a port-forward works without this.
+#
+# It is an explicit opt-in rather than something the chart infers from a missing
+# ingress.tlsSecretName, because TLS is frequently terminated upstream (ALB with
+# an ACM certificate, GKE managed certificate, cert-manager annotation) and those
+# render no tls: block at all. Guessing would drop Secure on HTTPS-only sites.
+insecureCookie: false
+
+# How many proxies sit between a client and n8n, so it can resolve the real
+# client IP from X-Forwarded-For - which is what per-client rate limiting and
+# audit logging depend on. Typically 1 behind an ingress, 2 behind a CDN as well.
+# Left at n8n's default of 0 because the unsafe direction is upward: trusting more
+# hops than exist lets a client spoof its own address.
+proxyHops: 0
+
+# Encrypts every credential stored in n8n. Generated on install and read back on
+# upgrade, so it stays stable for the life of the secret. It cannot be recovered
+# from the database: if it is lost, every stored credential must be re-entered.
+encryptionKey:
+  # Use a pre-created secret instead of generating one.
+  existingSecret: ""
+  secretKey: N8N_ENCRYPTION_KEY
+
+# Applied as both GENERIC_TIMEZONE and TZ. Cron-triggered workflows are
+# scheduled against this, so a wrong value silently shifts when they run.
+timezone: "UTC"
+
+# Renders a ServiceMonitor and sets N8N_METRICS, which is what makes n8n serve
+# /metrics at all. Needs the Prometheus Operator CRDs.
+metrics:
+  enabled: true
+  scrapeInterval: 30s
+
+# Renders a PrometheusRule. Needs the Prometheus Operator CRDs.
+alerts:
+  enabled: true
+
+resources:
+  requests:
+    cpu: "500m"
+    memory: "1Gi"
+  limits:
+    cpu: "1"
+    memory: "2Gi"
+
+# Extra plain environment variables, e.g.
+#   env:
+#     N8N_LOG_LEVEL: debug
+# Variables this chart derives from other values are rejected at render time
+# rather than silently overridden - see templates/validate.yaml.
+#
+# The four defaults below are settings n8n warns it is about to change. Pinning
+# them here means an image bump cannot quietly alter how this release behaves;
+# override or remove any of them freely.
+env:
+  # Community nodes that have not been vetted. n8n's default becomes false in a
+  # future version and that is the safer position, so the chart starts there
+  # rather than inheriting a permissive default that later flips.
+  N8N_UNVERIFIED_PACKAGES_ENABLED: "false"
+  # Seconds a Code node may run. n8n plans to cut its default to 60, which would
+  # start killing legitimate long-running tasks on an image bump, so the current
+  # value is pinned instead. Lower it if you would rather bound them tightly.
+  N8N_RUNNERS_TASK_TIMEOUT: "300"
+  # Decompression bounds for the Compression node, taken from where n8n is
+  # heading rather than from today's much looser defaults: 2 GiB of
+  # decompressed output from an untrusted archive is a memory-exhaustion risk,
+  # and this chart has no existing behaviour to preserve. Raise them if you
+  # genuinely process large archives.
+  N8N_COMPRESSION_NODE_MAX_DECOMPRESSED_SIZE_BYTES: "268435456"
+  N8N_COMPRESSION_NODE_MAX_ZIP_ENTRIES: "1000"
+
+# Existing secrets mounted with envFrom, for values that should not sit in
+# values.yaml. Useful for SMTP credentials or an external storage key.
+extraEnvFrom: []
+#  - secretName: n8n-smtp
+
+# Blocks startup until the database accepts an authenticated connection. The
+# postgres chart provisions the role from a Job that sleeps before it runs, so
+# without this n8n crash-loops through the first minute of a fresh install.
+waitForDatabase:
+  enabled: true
+  image:
+    # The same image the postgres chart runs, so this introduces no new registry.
+    # Keep the tag in step with the postgres subchart's own `version`.
+    repository: docker.io/bitnamilegacy/postgresql
+    tag: "17.4.0"
+    pullPolicy: IfNotPresent
+
+# The zopdev postgres chart. It provisions the database, a dedicated role, and
+# the secret this chart reads those credentials from.
+postgres:
+  enabled: true
+  # Used as the `service` label on the postgres alerts, attributing them to this
+  # release rather than to the datastore in isolation.
+  name: n8n
+  services:
+    - name: n8n
+      database: n8n
+
+# Point at a PostgreSQL server this release does not manage. Setting host turns
+# the subchart off; the two are mutually exclusive and setting both fails the
+# render. The password is only ever read from a secret.
+externalDatabase:
+  host: ""
+  port: 5432
+  database: n8n
+  user: ""
+  existingSecret: ""
+  passwordKey: password

@@ -1,0 +1,176 @@
+{{- $db := include "n8n.db" . | fromYaml }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "n8n.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "n8n.labels" . | nindent 4 }}
+spec:
+  # One replica is a property of this topology, not a limit to raise. Without
+  # queue mode each pod runs its own scheduler, so a second one would fire every
+  # cron-triggered workflow twice.
+  replicas: 1
+  strategy:
+    # The data volume is ReadWriteOnce, so a rolling update would deadlock: the
+    # new pod cannot attach the volume until the old one releases it, and the old
+    # one is not torn down until the new one is ready.
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "n8n.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        # Environment is read once at process start, so a ConfigMap edit alone
+        # would leave the running pod on the old values.
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+      labels:
+        {{- include "n8n.selectorLabels" . | nindent 8 }}
+    spec:
+      # n8n's own graceful shutdown budget (N8N_GRACEFUL_SHUTDOWN_TIMEOUT) is 30s.
+      # Kubernetes also defaults to 30s, so SIGKILL would land at the exact moment
+      # n8n expects to finish draining. The extra 10s is that headroom; raise it
+      # alongside the timeout if you lengthen n8n's.
+      terminationGracePeriodSeconds: 40
+      securityContext:
+        # The image runs as the `node` user, uid/gid 1000, and cannot write a
+        # freshly provisioned volume that comes up owned by root.
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      {{- if .Values.waitForDatabase.enabled }}
+      initContainers:
+        # The postgres subchart provisions the database and role from a Pod that
+        # sleeps before it runs, so on a fresh install the role n8n authenticates
+        # as does not exist yet. Blocking here turns what would be a crash loop
+        # for the first minute into a clean install.
+        - name: wait-for-db
+          image: "{{ .Values.waitForDatabase.image.repository }}:{{ .Values.waitForDatabase.image.tag }}"
+          imagePullPolicy: {{ .Values.waitForDatabase.image.pullPolicy }}
+          command:
+            - /bin/sh
+            - -c
+            # Authenticating is the check. A TCP probe would pass as soon as
+            # postgres accepts connections, which happens before the role and
+            # database this release needs have been created.
+            - |
+              until psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -c 'select 1' >/dev/null 2>&1; do
+                echo "waiting for postgres at $DB_HOST:$DB_PORT/$DB_NAME as $DB_USER"
+                sleep 2
+              done
+              echo "database is ready"
+          env:
+            - name: DB_HOST
+              value: {{ $db.host | quote }}
+            - name: DB_PORT
+              value: {{ $db.port | quote }}
+            - name: DB_NAME
+              value: {{ $db.database | quote }}
+            {{- if .Values.postgres.enabled }}
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "n8n.postgresSecretName" . }}
+                  key: DB_USER
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "n8n.postgresSecretName" . }}
+                  key: DB_PASSWORD
+            {{- else }}
+            - name: DB_USER
+              value: {{ .Values.externalDatabase.user | quote }}
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.externalDatabase.existingSecret }}
+                  key: {{ .Values.externalDatabase.passwordKey }}
+            {{- end }}
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 5678
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ include "n8n.fullname" . }}-config
+            {{- range .Values.extraEnvFrom }}
+            - secretRef:
+                name: {{ .secretName }}
+            {{- end }}
+          env:
+            {{- if .Values.postgres.enabled }}
+            # The subchart publishes these as DB_USER / DB_PASSWORD, so they are
+            # mapped key by key rather than pulled in wholesale with envFrom.
+            - name: DB_POSTGRESDB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "n8n.postgresSecretName" . }}
+                  key: DB_USER
+            - name: DB_POSTGRESDB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "n8n.postgresSecretName" . }}
+                  key: DB_PASSWORD
+            {{- else }}
+            - name: DB_POSTGRESDB_USER
+              value: {{ .Values.externalDatabase.user | quote }}
+            - name: DB_POSTGRESDB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.externalDatabase.existingSecret }}
+                  key: {{ .Values.externalDatabase.passwordKey }}
+            {{- end }}
+            - name: N8N_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "n8n.encryptionSecretName" . }}
+                  key: {{ .Values.encryptionKey.secretKey }}
+          volumeMounts:
+            - name: data
+              mountPath: /home/node/.n8n
+          # Database migrations run before the HTTP server binds, and on a first
+          # install that is the slowest part of startup, so readiness is gated by
+          # a long startup budget instead of a long delay on every probe.
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /healthz/readiness
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: data
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "n8n.claimName" . }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}

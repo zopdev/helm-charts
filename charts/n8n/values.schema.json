@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "n8n Helm Chart Values",
+  "description": "Configuration values for the n8n workflow automation Helm chart",
+  "properties": {
+    "image": {
+      "type": "object",
+      "category": "runtime",
+      "description": "n8n container image",
+      "properties": {
+        "repository": {
+          "type": "string",
+          "description": "Image repository",
+          "default": "n8nio/n8n",
+          "editDisabled": true
+        },
+        "tag": {
+          "type": "string",
+          "description": "Image tag; falls back to the chart's appVersion when empty",
+          "default": "",
+          "mutable": true
+        },
+        "pullPolicy": {
+          "type": "string",
+          "description": "Image pull policy",
+          "default": "IfNotPresent",
+          "mutable": true
+        }
+      },
+      "required": ["repository"]
+    },
+    "ingress": {
+      "type": "object",
+      "category": "runtime",
+      "description": "How n8n is reached from outside the cluster. The host is also written into every webhook URL n8n registers",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Expose n8n through an Ingress",
+          "default": false,
+          "mutable": true
+        },
+        "className": {
+          "type": "string",
+          "description": "IngressClass name; empty uses the cluster default",
+          "default": "",
+          "mutable": true
+        },
+        "host": {
+          "type": "string",
+          "description": "Hostname to serve n8n on; required when enabled",
+          "default": "",
+          "mutable": true
+        },
+        "tlsSecretName": {
+          "type": "string",
+          "description": "Existing TLS certificate secret for the host; serving over https is strongly recommended",
+          "default": "",
+          "mutable": true
+        }
+      },
+      "required": ["enabled"]
+    },
+    "persistence": {
+      "type": "object",
+      "category": "compute",
+      "description": "Disk for n8n's own data - its generated config, any custom nodes, and binary payloads from executions",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Provision a disk; when off, binary payloads are stored in the database instead",
+          "default": true
+        },
+        "size": {
+          "type": "string",
+          "description": "Disk size",
+          "default": "10Gi",
+          "mutable": true,
+          "editDisabled": true
+        }
+      },
+      "required": ["enabled", "size"]
+    },
+    "timezone": {
+      "type": "string",
+      "category": "runtime",
+      "description": "Timezone that scheduled workflows are evaluated against; a wrong value shifts when they run",
+      "default": "UTC",
+      "mutable": true
+    },
+    "resources": {
+      "type": "object",
+      "category": "compute",
+      "description": "CPU and memory for the n8n container",
+      "properties": {
+        "requests": {
+          "type": "object",
+          "properties": {
+            "cpu": {
+              "type": "string",
+              "description": "CPU request",
+              "default": "500m",
+              "mutable": true
+            },
+            "memory": {
+              "type": "string",
+              "description": "Memory request",
+              "default": "1Gi",
+              "mutable": true
+            }
+          },
+          "required": ["cpu", "memory"]
+        },
+        "limits": {
+          "type": "object",
+          "properties": {
+            "cpu": {
+              "type": "string",
+              "description": "CPU limit",
+              "default": "1",
+              "mutable": true
+            },
+            "memory": {
+              "type": "string",
+              "description": "Memory limit",
+              "default": "2Gi",
+              "mutable": true
+            }
+          },
+          "required": ["cpu", "memory"]
+        }
+      },
+      "required": ["requests", "limits"]
+    }
+  },
+  "required": ["image", "ingress", "persistence", "resources"]
+}
