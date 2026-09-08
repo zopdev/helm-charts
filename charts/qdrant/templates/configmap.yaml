@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-qdrant-configmap
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Release.Name }}-qdrant
+data:
+  # Connection details for applications. The matching API key is stored in the
+  # Secret {{ include "qdrant.secretName" . }} under the "api-key" field; pass it
+  # to Qdrant via the "api-key" request header (or "Authorization: Bearer <key>").
+  QDRANT_HOST: "{{ .Release.Name }}-qdrant"
+  QDRANT_HTTP_PORT: "6333"
+  QDRANT_GRPC_PORT: "6334"
