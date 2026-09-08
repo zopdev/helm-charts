@@ -112,6 +112,24 @@
           "type": "object",
           "mutable": true,
           "description": "Extra environment variables applied to the server container."
+        },
+        "startupProbe": {
+          "type": "object",
+          "properties": {
+            "periodSeconds": {
+              "type": "integer",
+              "default": 10,
+              "mutable": true,
+              "description": "Seconds between startup probe checks."
+            },
+            "failureThreshold": {
+              "type": "integer",
+              "default": 30,
+              "mutable": true,
+              "description": "Consecutive failures allowed before the container is killed. Raise for a very large library."
+            }
+          },
+          "description": "Budget for first boot, which runs schema migrations against the library's current size."
         }
       },
       "description": "The API, web UI, and job orchestrator."
@@ -198,6 +216,24 @@
               }
             }
           }
+        },
+        "startupProbe": {
+          "type": "object",
+          "properties": {
+            "periodSeconds": {
+              "type": "integer",
+              "default": 10,
+              "mutable": true,
+              "description": "Seconds between startup probe checks."
+            },
+            "failureThreshold": {
+              "type": "integer",
+              "default": 60,
+              "mutable": true,
+              "description": "Consecutive failures allowed before the container is killed. Raise for a slow disk or a large model set."
+            }
+          },
+          "description": "Budget for cold start, which loads ML models into memory."
         }
       },
       "description": "Face detection and smart search inference. Always deployed, matching upstream's own reference compose file."
@@ -253,7 +289,8 @@
           "type": "string",
           "default": "",
           "mutable": true,
-          "description": "Pin a known database password instead of the chart generating one. Ignored if existingSecret is set."
+          "editDisabled": true,
+          "description": "Pin a known database password instead of the chart generating one. Ignored if existingSecret is set. Not safe to edit after install -- see README."
         },
         "existingSecret": {
           "type": "string",
@@ -285,9 +322,9 @@
                 "memory": {
                   "type": "string",
                   "pattern": "^[0-9]+(Mi|Gi)$",
-                  "default": "1Gi",
+                  "default": "2Gi",
                   "mutable": true,
-                  "description": "Memory request."
+                  "description": "Memory request. Immich's own docs: Postgres needs at least 2Gi when resource limits are enforced."
                 }
               }
             },
@@ -304,13 +341,36 @@
                 "memory": {
                   "type": "string",
                   "pattern": "^[0-9]+(Mi|Gi)$",
-                  "default": "2Gi",
+                  "default": "3Gi",
                   "mutable": true,
                   "description": "Memory limit."
                 }
               }
             }
           }
+        },
+        "env": {
+          "type": "object",
+          "mutable": true,
+          "description": "Extra environment variables applied to the postgres container, e.g. IGNORE_DATABASE_FSTYPE for non-local storage."
+        },
+        "startupProbe": {
+          "type": "object",
+          "properties": {
+            "periodSeconds": {
+              "type": "integer",
+              "default": 5,
+              "mutable": true,
+              "description": "Seconds between startup probe checks."
+            },
+            "failureThreshold": {
+              "type": "integer",
+              "default": 36,
+              "mutable": true,
+              "description": "Consecutive failures allowed before the container is killed. Raise on slow storage."
+            }
+          },
+          "description": "Budget for initdb plus the vchord extension preload on a fresh volume."
         }
       },
       "description": "Immich's own postgres image, with the vector extension its search features need."

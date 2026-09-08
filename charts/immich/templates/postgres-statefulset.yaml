@@ -11,7 +11,7 @@ metadata:
     {{- include "immich.labels" . | nindent 4 }}
 spec:
   replicas: 1
-  serviceName: {{ include "immich.postgresFullname" . }}-headless
+  serviceName: {{ include "immich.postgresHeadlessFullname" . }}
   selector:
     matchLabels:
       {{- include "immich.selectorLabels" (dict "context" $ "component" "postgres") | nindent 6 }}
@@ -43,6 +43,10 @@ spec:
                 secretKeyRef:
                   name: {{ include "immich.postgresSecretName" . }}
                   key: POSTGRES_PASSWORD
+            {{- range $key, $value := .Values.postgres.env }}
+            - name: {{ $key | quote }}
+              value: {{ $value | quote }}
+            {{- end }}
           ports:
             - name: postgres
               containerPort: 5432
@@ -57,6 +61,19 @@ spec:
               mountPath: /dev/shm
           resources:
             {{- toYaml .Values.postgres.resources | nindent 12 }}
+          # initdb plus the vchord extension preload on a fresh PVC can
+          # take a while -- without this, the liveness probe below (no
+          # initialDelaySeconds) can kill the container before it ever
+          # finishes starting, same class of bug already guarded against
+          # on the server and machine-learning StatefulSets.
+          startupProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - {{ .Values.postgres.username | quote }}
+            periodSeconds: {{ .Values.postgres.startupProbe.periodSeconds }}
+            failureThreshold: {{ .Values.postgres.startupProbe.failureThreshold }}
           readinessProbe:
             exec:
               command:

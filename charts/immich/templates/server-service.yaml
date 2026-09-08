@@ -17,7 +17,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "immich.serverFullname" . }}-headless
+  name: {{ include "immich.serverHeadlessFullname" . }}
   labels:
     {{- include "immich.labels" . | nindent 4 }}
 spec:

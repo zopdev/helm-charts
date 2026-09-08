@@ -11,7 +11,7 @@ metadata:
     {{- include "immich.labels" . | nindent 4 }}
 spec:
   replicas: 1
-  serviceName: {{ include "immich.mlFullname" . }}-headless
+  serviceName: {{ include "immich.mlHeadlessFullname" . }}
   selector:
     matchLabels:
       {{- include "immich.selectorLabels" (dict "context" $ "component" "machine-learning") | nindent 6 }}
@@ -40,8 +40,8 @@ spec:
             httpGet:
               path: /ping
               port: http
-            periodSeconds: 5
-            failureThreshold: 36
+            periodSeconds: {{ .Values.machineLearning.startupProbe.periodSeconds }}
+            failureThreshold: {{ .Values.machineLearning.startupProbe.failureThreshold }}
           readinessProbe:
             httpGet:
               path: /ping

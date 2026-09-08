@@ -6,7 +6,7 @@ metadata:
     {{- include "immich.labels" . | nindent 4 }}
 spec:
   replicas: 1
-  serviceName: {{ include "immich.serverFullname" . }}-headless
+  serviceName: {{ include "immich.serverHeadlessFullname" . }}
   selector:
     matchLabels:
       {{- include "immich.selectorLabels" (dict "context" $ "component" "server") | nindent 6 }}
@@ -79,8 +79,8 @@ spec:
             httpGet:
               path: /api/server/ping
               port: http
-            periodSeconds: 5
-            failureThreshold: 24
+            periodSeconds: {{ .Values.server.startupProbe.periodSeconds }}
+            failureThreshold: {{ .Values.server.startupProbe.failureThreshold }}
           readinessProbe:
             httpGet:
               path: /api/server/ping

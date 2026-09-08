@@ -17,6 +17,10 @@ needs), and Redis.
   cluster. The redis dependency renders a `PrometheusRule` and a
   `ServiceMonitor` unconditionally — there's no flag to opt out — so
   `helm install` fails outright without them.
+- On `amd64` nodes, a CPU supporting the `x86-64-v2` microarchitecture
+  level or newer. Since Immich v3, the machine-learning image's ONNX
+  runtime requires it — an older node pool or VM CPU model will fail to
+  run that container. (`arm64` has no equivalent restriction.)
 
 ---
 
@@ -70,6 +74,15 @@ together, or keep both together — never split them. To reclaim
 kubectl delete secret my-immich-immich-postgres-secret
 ```
 
+**The same rule applies to the library PVC and the database.** Immich
+writes a `.immich` marker file into `/data`'s subfolders on first run
+and refuses to start if a later run finds that marker missing —
+[system integrity checks](https://docs.immich.app/administration/system-integrity)
+that catch a wrong volume mount or an incomplete restore. Delete
+`library-my-immich-immich-server-0` together with the postgres PVC and
+Secret, or keep all three together — mixing a fresh library volume
+with a retained database (or vice versa) fails the same way.
+
 ---
 
 ## Configuration
@@ -82,20 +95,24 @@ kubectl delete secret my-immich-immich-postgres-secret
 | `server.diskSize` | `string` | Size of the photo/video library volume. | `"20Gi"` |
 | `server.resources` | `object` | CPU and memory for the server pod. | 500m/1Gi – 2000m/4Gi |
 | `server.env` | `object` | Extra environment variables for the server. | `{}` |
+| `server.startupProbe` | `object` | `periodSeconds`/`failureThreshold` budget for first boot (schema migrations). | 10s × 30 = 300s |
 | `machineLearning.image.tag` | `string` | Machine-learning image tag. | `v3.1.0` |
 | `machineLearning.diskSize` | `string` | Size of the ML model cache volume. | `"5Gi"` |
 | `machineLearning.resources` | `object` | CPU and memory for the ML pod. | 1000m/2Gi – 4000m/4Gi |
+| `machineLearning.startupProbe` | `object` | `periodSeconds`/`failureThreshold` budget for cold start (model loading). | 10s × 60 = 600s |
 | `postgres.database` | `string` | Database name. | `"immich"` |
 | `postgres.username` | `string` | Database user. | `"immich"` |
-| `postgres.password` | `string` | Pin a known database password instead of generating one. See *Database password* below. | `""` |
+| `postgres.password` | `string` | Pin a known database password instead of generating one. See *Database password* below. Not safe to edit after install. | `""` |
 | `postgres.existingSecret` | `string` | Name of an existing Secret carrying `POSTGRES_PASSWORD`, used instead of one this chart manages. | `""` |
 | `postgres.diskSize` | `string` | Size of the database volume. | `"10Gi"` |
-| `postgres.resources` | `object` | CPU and memory for the database pod. | 500m/1Gi – 2000m/2Gi |
+| `postgres.resources` | `object` | CPU and memory for the database pod. | 500m/2Gi – 2000m/3Gi |
+| `postgres.env` | `object` | Extra environment variables for postgres, e.g. `IGNORE_DATABASE_FSTYPE` for non-local storage. | `{}` |
+| `postgres.startupProbe` | `object` | `periodSeconds`/`failureThreshold` budget for initdb plus the vchord preload. | 5s × 36 = 180s |
 | `redis.name` | `string` | Service name labelled on the redis subchart's alerts. Required — see *Redis* below. | `"immich"` |
 | `ingress.enabled` | `bool` | Create an Ingress for the web UI/API. | `false` |
 | `ingress.className` | `string` | IngressClass name. | `""` |
 | `ingress.host` | `string` | Hostname. Required when the ingress is enabled. | `""` |
-| `ingress.annotations` | `object` | Ingress annotations. | `{}` |
+| `ingress.annotations` | `object` | Ingress annotations. Defaults to ingress-nginx annotations lifting the body-size/timeout limits large uploads need — see *Ingress upload limits* below. | see below |
 | `ingress.tlsSecretName` | `string` | Existing TLS secret for the host. | `""` |
 
 ### Why a separate Postgres, not the zopdev postgres chart
@@ -136,10 +153,40 @@ password. Set `postgres.existingSecret` (name of a Secret you manage,
 carrying a `POSTGRES_PASSWORD` key) to skip this chart's own Secret
 entirely; it takes precedence over `postgres.password`.
 
+Once postgres has initialized with a given password, changing
+`postgres.password` on a running release rotates the Secret without
+touching the already-initialized database — the server picks up the
+new value and can no longer authenticate. Treat it the same as
+`postgres.username`/`postgres.database`: set it before the first
+install, not after.
+
+Under `helm template`, `--dry-run`, or a GitOps renderer without live
+cluster access, a fresh password is generated on every render rather
+than the stored one being reused, because the chart can only find the
+existing Secret by querying the cluster directly (`lookup`), which
+those tools don't give it — applying such a render would rotate the
+Secret against a volume that still holds the old password. This does
+not affect the real `helm install`/`helm upgrade` path (including a
+reinstall after `helm uninstall`, which is what the paragraph above
+covers): those always run against the live cluster, so `lookup` always
+finds and reuses the stored password there. Pin `postgres.password` or
+`postgres.existingSecret` if you render manifests without cluster
+access.
+
+### Ingress upload limits
+
+`ingress.annotations` defaults to ingress-nginx annotations that lift
+its own defaults (1m body size, 60s read/send timeouts) — Immich
+[recommends](https://docs.immich.app/administration/reverse-proxy) no
+body-size limit and 600s timeouts to cover multi-gigabyte video
+uploads. These are no-ops on a non-nginx ingress controller; override
+`ingress.annotations` entirely with your controller's own equivalents
+if you're not running ingress-nginx.
+
 ### Minimum node size
 
 Summed across all four components, the defaults request **2.5 CPU /
-4.3Gi** and allow bursting to **9.5 CPU / 11.1Gi** — machine learning
+5.3Gi** and allow bursting to **9.5 CPU / 12.1Gi** — machine learning
 alone requests 1 CPU / 2Gi. A 2-CPU node cannot schedule this
 release. Size accordingly, or lower `machineLearning.resources` if
 inference latency isn't a concern.

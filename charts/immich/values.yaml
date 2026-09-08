@@ -36,6 +36,13 @@ server:
   #   env:
   #     IMMICH_LOG_LEVEL: debug
   env: {}
+  # First install (and any restart) has to survive schema migrations
+  # against the library's current size, not just process boot -- upstream's
+  # own chart budgets 300s (periodSeconds x failureThreshold) for this.
+  # Raise failureThreshold for a very large library.
+  startupProbe:
+    periodSeconds: 10
+    failureThreshold: 30
 
 machineLearning:
   image:
@@ -52,6 +59,11 @@ machineLearning:
     limits:
       cpu: "4000m"
       memory: "4Gi"
+  # Cold start loads ML models into memory, which can take a while on a
+  # slow disk or a large model set -- upstream's own chart budgets 600s.
+  startupProbe:
+    periodSeconds: 10
+    failureThreshold: 60
 
 postgres:
   image:
@@ -74,18 +86,38 @@ postgres:
   # `password` above.
   existingSecret: ""
   diskSize: "10Gi"
+  # Immich's own docs: "if Docker resource limits are used, the Postgres
+  # database requires at least 2GB of RAM."
   resources:
     requests:
       cpu: "500m"
-      memory: "1Gi"
+      memory: "2Gi"
     limits:
       cpu: "2000m"
-      memory: "2Gi"
+      memory: "3Gi"
+  # Extra environment variables, e.g. IGNORE_DATABASE_FSTYPE or
+  # DB_STORAGE_TYPE for filesystems (NFS, EFS, Filestore) the image's own
+  # entrypoint would otherwise refuse to run on -- see Immich's
+  # environment variable docs.
+  env: {}
+  # initdb plus the vchord extension preload can take a while on a fresh
+  # PVC, especially on slow storage -- give it its own budget rather than
+  # sharing the liveness probe's.
+  startupProbe:
+    periodSeconds: 5
+    failureThreshold: 36
 
 ingress:
   enabled: false
   className: ""
   host: ""
-  annotations: {}
+  # Immich uploads large photos/videos over this ingress; ingress-nginx's
+  # own defaults (1m body size, 60s timeouts) reject them. These match
+  # Immich's own reverse-proxy guidance. No-ops on a non-nginx controller.
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
   # Set to serve the host over TLS from an existing certificate secret.
   tlsSecretName: ""
