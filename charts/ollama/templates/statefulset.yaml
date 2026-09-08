@@ -1,0 +1,123 @@
+{{/*
+Single-pod topology: one Ollama server holding all pulled models on its
+own volume. There is no distributed/multi-node mode in this chart.
+*/}}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "ollama.fullname" . }}
+  labels:
+    {{- include "ollama.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  serviceName: {{ include "ollama.fullname" . }}-headless
+  selector:
+    matchLabels:
+      {{- include "ollama.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "ollama.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.models }}
+      # Pulls every model in .Values.models onto the shared volume before
+      # the main container starts, so the API never serves a model that
+      # isn't there yet. Runs its own throwaway `ollama serve` because
+      # `ollama pull` needs a running server to talk to.
+      initContainers:
+        - name: pull-models
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              ollama serve &
+              pid=$!
+              trap 'kill $pid' EXIT
+              tries=0
+              until ollama list >/dev/null 2>&1; do
+                tries=$((tries + 1))
+                if [ "$tries" -ge 60 ]; then
+                  echo "ollama serve did not become ready within 60s" >&2
+                  exit 1
+                fi
+                sleep 1
+              done
+              {{- range .Values.models }}
+              ollama pull {{ . }}
+              {{- end }}
+          {{- if .Values.env }}
+          env:
+            {{- range $key, $value := .Values.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          {{- end }}
+          volumeMounts:
+            - name: models
+              mountPath: /root/.ollama
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- end }}
+      containers:
+        - name: ollama
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if .Values.env }}
+          env:
+            {{- range $key, $value := .Values.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: 11434
+              protocol: TCP
+          volumeMounts:
+            - name: models
+              mountPath: /root/.ollama
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          # Models finish pulling in the init container above before this
+          # container ever starts, so this only has to cover the API
+          # server's own bind time, not a model download.
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 5
+            failureThreshold: 12
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+  volumeClaimTemplates:
+    - metadata:
+        name: models
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: {{ .Values.diskSize }}

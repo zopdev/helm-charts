@@ -1,0 +1,23 @@
+{{/*
+Governing service for the StatefulSet. A StatefulSet's serviceName is
+meant to name a headless service -- that is what gives the pod a stable
+DNS record. The field is immutable once the object exists, so it is far
+cheaper to get right before release than after.
+*/}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ollama.fullname" . }}-headless
+  labels:
+    {{- include "ollama.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  clusterIP: None
+  publishNotReadyAddresses: true
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "ollama.selectorLabels" . | nindent 4 }}
