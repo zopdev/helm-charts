@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "Configuration values for the Qdrant vector database Helm chart",
+  "properties": {
+    "version": {
+      "category": "runtime",
+      "type": "string",
+      "description": "Qdrant server image tag (qdrant/qdrant:<version>)",
+      "default": "v1.19.0",
+      "mutable": true
+    },
+    "diskSize": {
+      "category": "compute",
+      "type": "string",
+      "description": "Size of the persistent volume backing /qdrant/storage. Cannot be changed after install.",
+      "pattern": "^[0-9]+Gi$",
+      "default": "10Gi",
+      "mutable": true,
+      "editDisabled": true
+    },
+    "customConfig": {
+      "category": "advanced",
+      "type": "string",
+      "description": "Extra Qdrant configuration as YAML, mounted at /qdrant/config/local.yaml. Values injected via QDRANT__* env vars (e.g. the API key) take precedence.",
+      "default": "",
+      "mutable": true
+    },
+    "resources": {
+      "category": "compute",
+      "type": "object",
+      "description": "CPU and memory requests and limits for the Qdrant container",
+      "properties": {
+        "requests": {
+          "type": "object",
+          "description": "Guaranteed resources reserved for the container",
+          "properties": {
+            "cpu": {
+              "type": "string",
+              "description": "CPU request (e.g. 250m)",
+              "pattern": "^[0-9]+m$",
+              "default": "250m",
+              "mutable": true
+            },
+            "memory": {
+              "type": "string",
+              "description": "Memory request (e.g. 512Mi)",
+              "pattern": "^[0-9]+(Mi|Gi)$",
+              "default": "512Mi",
+              "mutable": true
+            }
+          }
+        },
+        "limits": {
+          "type": "object",
+          "description": "Maximum resources the container may use",
+          "properties": {
+            "cpu": {
+              "type": "string",
+              "description": "CPU limit (e.g. 1000m)",
+              "pattern": "^[0-9]+m$",
+              "default": "1000m",
+              "mutable": true
+            },
+            "memory": {
+              "type": "string",
+              "description": "Memory limit (e.g. 2Gi)",
+              "pattern": "^[0-9]+(Mi|Gi)$",
+              "default": "2Gi",
+              "mutable": true
+            }
+          }
+        }
+      }
+    }
+  }
+}

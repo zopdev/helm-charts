@@ -1,0 +1,137 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}-qdrant
+  namespace: {{ .Release.Namespace }}
+{{- if .Values.customConfig }}
+  annotations:
+    # Restart the pod when the mounted config changes. subPath mounts never
+    # receive live ConfigMap updates, so a restart is required to pick them up.
+    # Emitted only when customConfig exists, matching the ConfigMap's condition.
+    configmap.reloader.stakater.com/reload: "{{ .Release.Name }}-qdrant-custom-config"
+{{- end }}
+  labels:
+    {{- include "qdrant.selectorLabels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "qdrant.selectorLabels" . | nindent 6 }}
+  serviceName: "{{ .Release.Name }}-qdrant-headless"
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+{{- if .Values.customConfig }}
+      annotations:
+        # Roll the pod when customConfig changes. subPath mounts don't receive
+        # live ConfigMap updates, and Reloader is optional — this checksum
+        # changes the pod template so an upgrade rolls the pod without any
+        # cluster add-on. (Complements the Reloader annotation on the workload.)
+        checksum/custom-config: {{ include (print $.Template.BasePath "/custom-config-configmap.yaml") . | sha256sum }}
+{{- end }}
+      labels:
+        {{- include "qdrant.selectorLabels" . | nindent 8 }}
+    spec:
+      securityContext:
+        # The qdrant/qdrant image can run as root by default; pin it to a
+        # non-root user and let fsGroup own the freshly provisioned data volume.
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 2000
+        fsGroup: 3000
+      containers:
+        - name: qdrant
+          image: qdrant/qdrant:{{ .Values.version }}
+          resources:
+            requests:
+              memory: {{ .Values.resources.requests.memory }}
+              cpu: {{ .Values.resources.requests.cpu }}
+            limits:
+              memory: {{ .Values.resources.limits.memory }}
+              cpu: {{ .Values.resources.limits.cpu }}
+          env:
+            # Enabling the API key makes Qdrant reject unauthenticated requests,
+            # including /metrics (verified: 401 without the key). Only the health
+            # endpoints (/livez, /readyz, /healthz) stay open, which is why the
+            # probes need no key — but the ServiceMonitor MUST send it as a Bearer
+            # token (see serviceMonitor.yaml), or metrics collection breaks.
+            - name: QDRANT__SERVICE__API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "qdrant.secretName" . }}
+                  key: api-key
+            # The container runs as non-root (uid 1000), so only the mounted PVC
+            # at /qdrant/storage is writable — the image's /qdrant/snapshots and
+            # working dir are root-owned. Keep everything Qdrant writes on the
+            # PVC: snapshots under it, and the init-file indicator inside it.
+            - name: QDRANT__STORAGE__SNAPSHOTS_PATH
+              value: "/qdrant/storage/snapshots"
+            - name: QDRANT_INIT_FILE_PATH
+              value: "/qdrant/storage/.qdrant-initialized"
+            # On an abnormal exit (e.g. OOM while loading collections) boot into
+            # recovery mode instead of crash-looping, so an operator can drop a
+            # collection to get back under the limit. This is also what makes the
+            # QdrantInRecoveryMode alert reachable and gives the init-file
+            # handshake above a consumer.
+            - name: QDRANT_ALLOW_RECOVERY_MODE
+              value: "true"
+            # Disable Qdrant's anonymous usage telemetry (hourly POST to
+            # telemetry.qdrant.io), matching the sibling chromadb chart and
+            # avoiding third-party egress from a customer namespace. Set via env
+            # so customConfig cannot re-enable it, same as the API key.
+            - name: QDRANT__TELEMETRY_DISABLED
+              value: "true"
+          ports:
+            - containerPort: 6333
+              name: http
+            - containerPort: 6334
+              name: grpc
+          # No initialDelaySeconds on liveness/readiness: the startupProbe below
+          # gates both, so the kubelet does not run them until startup succeeds.
+          livenessProbe:
+            httpGet:
+              path: /livez
+              port: 6333
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 6333
+            periodSeconds: 10
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: 6333
+            failureThreshold: 30
+            periodSeconds: 10
+          volumeMounts:
+            - name: qdrant-storage
+              mountPath: /qdrant/storage
+{{- if .Values.customConfig }}
+            - name: custom-config
+              mountPath: /qdrant/config/local.yaml
+              subPath: local.yaml
+{{- end }}
+{{- if .Values.customConfig }}
+      volumes:
+        - name: custom-config
+          configMap:
+            name: {{ .Release.Name }}-qdrant-custom-config
+{{- end }}
+  volumeClaimTemplates:
+    - metadata:
+        # No release-name prefix: volume names are pod-scoped, and the
+        # StatefulSet controller appends the pod name to make the PVC unique
+        # (qdrant-storage-<release>-qdrant-0). Prefixing with the release name
+        # is redundant and, on release names >=38 chars, pushes the volume name
+        # past the 63-char limit — helm install then reports success while the
+        # pod is never created. The `app` selector label the controller copies
+        # onto the PVC still backs `kubectl delete pvc -l app=<release>-qdrant`.
+        name: qdrant-storage
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: {{ .Values.diskSize }}

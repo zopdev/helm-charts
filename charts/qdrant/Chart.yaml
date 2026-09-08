@@ -1,0 +1,13 @@
+apiVersion: v2
+# Keep in step with values.yaml `version` (the deployed image tag, which carries
+# a `v` prefix). appVersion is what shows on helm.zop.dev and in `helm list`.
+appVersion: "1.19.0"
+description: High-performance vector database for AI search, recommendations and RAG
+name: qdrant
+version: 0.0.1
+icon: "https://storage.googleapis.com/zopdev-blog-resources/1/files/originals/20260813/a95c34e7-1888-4a94-8476-0ea91d710f53-qdrant.png"
+maintainers:
+  - name: ZopDev
+    url: zop.dev
+annotations:
+  type: datasource

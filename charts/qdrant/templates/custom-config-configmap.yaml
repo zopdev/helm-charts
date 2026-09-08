@@ -1,0 +1,10 @@
+{{- if .Values.customConfig }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-qdrant-custom-config
+  namespace: {{ .Release.Namespace }}
+data:
+  local.yaml: |-
+    {{- .Values.customConfig | nindent 4 }}
+{{- end }}
