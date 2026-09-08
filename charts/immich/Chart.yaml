@@ -1,0 +1,16 @@
+apiVersion: v2
+appVersion: "v3.1.0"
+description: Helm chart for deploying Immich, a self-hosted photo and video backup solution
+name: immich
+version: 0.0.1
+type: application
+icon: "https://raw.githubusercontent.com/immich-app/immich/main/design/immich-logo-stacked-light.png"
+maintainers:
+  - name: ZopDev
+    url: zop.dev
+dependencies:
+  - name: redis
+    version: 0.0.5
+    repository: https://helm.zop.dev
+annotations:
+  type: application

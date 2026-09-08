@@ -1,0 +1,123 @@
+# Immich needs four pieces, matching its own reference docker-compose:
+#   immich-server            the API, web UI, and job orchestrator
+#   immich-machine-learning  face detection / smart search inference
+#   postgres                 a specific image bundling a vector extension --
+#                            NOT the zopdev postgres chart, which can't run it
+#   redis                    the zopdev redis chart, used as the job queue
+#
+# server and machine-learning talk to each other over their Service DNS
+# names; there is no toggle to disable machine-learning, matching upstream's
+# own compose file, which always runs it.
+
+# The redis chart labels its alerts with `service: {{ .Values.name }}`
+# and defines no default for it, which renders a null label the
+# PrometheusRule CRD rejects -- same gotcha the postgres chart has.
+redis:
+  name: immich
+
+server:
+  image:
+    repository: ghcr.io/immich-app/immich-server
+    tag: "v3.1.0"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 2283
+  # Size of the /data volume: the actual photo/video library.
+  diskSize: "20Gi"
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+    limits:
+      cpu: "2000m"
+      memory: "4Gi"
+  # Extra environment variables, e.g.
+  #   env:
+  #     IMMICH_LOG_LEVEL: debug
+  env: {}
+  # First install (and any restart) has to survive schema migrations
+  # against the library's current size, not just process boot -- upstream's
+  # own chart budgets 300s (periodSeconds x failureThreshold) for this.
+  # Raise failureThreshold for a very large library.
+  startupProbe:
+    periodSeconds: 10
+    failureThreshold: 30
+
+machineLearning:
+  image:
+    repository: ghcr.io/immich-app/immich-machine-learning
+    tag: "v3.1.0"
+    pullPolicy: IfNotPresent
+  # Size of the /cache volume: downloaded ML models. Without this, every
+  # pod restart re-downloads them.
+  diskSize: "5Gi"
+  resources:
+    requests:
+      cpu: "1000m"
+      memory: "2Gi"
+    limits:
+      cpu: "4000m"
+      memory: "4Gi"
+  # Cold start loads ML models into memory, which can take a while on a
+  # slow disk or a large model set -- upstream's own chart budgets 600s.
+  startupProbe:
+    periodSeconds: 10
+    failureThreshold: 60
+
+postgres:
+  image:
+    # Bundles the vectorchord extension Immich's search features need.
+    # Not the zopdev postgres chart -- that ships plain bitnami postgres,
+    # which has no such extension.
+    repository: ghcr.io/immich-app/postgres
+    tag: "14-vectorchord0.4.3-pgvectors0.2.0"
+    pullPolicy: IfNotPresent
+  database: immich
+  username: immich
+  # Left empty, a password is generated and stored in a Secret this
+  # chart manages (kept across `helm uninstall` so a reinstall against
+  # the same retained PVC still authenticates -- see README). Set this
+  # to pin a known password instead, e.g. to restore into a fresh
+  # volume from a backup taken under a specific password.
+  password: ""
+  # Name of an existing Secret carrying a POSTGRES_PASSWORD key, used
+  # as-is instead of the chart managing one. Takes precedence over
+  # `password` above.
+  existingSecret: ""
+  diskSize: "10Gi"
+  # Immich's own docs: "if Docker resource limits are used, the Postgres
+  # database requires at least 2GB of RAM."
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "2Gi"
+    limits:
+      cpu: "2000m"
+      memory: "3Gi"
+  # Extra environment variables, e.g. IGNORE_DATABASE_FSTYPE or
+  # DB_STORAGE_TYPE for filesystems (NFS, EFS, Filestore) the image's own
+  # entrypoint would otherwise refuse to run on -- see Immich's
+  # environment variable docs.
+  env: {}
+  # initdb plus the vchord extension preload can take a while on a fresh
+  # PVC, especially on slow storage -- give it its own budget rather than
+  # sharing the liveness probe's.
+  startupProbe:
+    periodSeconds: 5
+    failureThreshold: 36
+
+ingress:
+  enabled: false
+  className: ""
+  host: ""
+  # Immich uploads large photos/videos over this ingress; ingress-nginx's
+  # own defaults (1m body size, 60s timeouts) reject them. These match
+  # Immich's own reverse-proxy guidance. No-ops on a non-nginx controller.
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+  # Set to serve the host over TLS from an existing certificate secret.
+  tlsSecretName: ""

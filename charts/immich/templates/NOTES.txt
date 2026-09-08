@@ -1,0 +1,20 @@
+Immich is installed as release {{ .Release.Name }}.
+
+Reach the web UI / mobile app server:
+
+  kubectl port-forward -n {{ .Release.Namespace }} \
+    svc/{{ include "immich.serverFullname" . }} 2283:{{ .Values.server.service.port }}
+
+  open http://localhost:2283
+{{- if .Values.ingress.enabled }}
+
+Or over the ingress at http{{ if .Values.ingress.tlsSecretName }}s{{ end }}://{{ .Values.ingress.host }}
+
+Point the Immich mobile app at that URL to start auto-backup.
+{{- end }}
+
+First run: open the URL above and create the admin account -- Immich
+has no default login.
+
+Machine learning (face detection, smart search) runs as a separate
+internal component and needs no configuration.
