@@ -121,7 +121,6 @@ Below is a list of available charts along with their links:
 | **SolrCloud**        | [helm.zop.dev/solrcloud](https://helm.zop.dev/src/readme.html?id=solrcloud)               |             |
 | **ScyllaDB**         | [helm.zop.dev/scylladb](https://helm.zop.dev/src/readme.html?id=scylladb)               |             |
 | **Qdrant**           | [helm.zop.dev/qdrant](https://helm.zop.dev/src/readme.html?id=qdrant)                     | ✅           |
-| **Mosquitto**        | [helm.zop.dev/mosquitto](https://helm.zop.dev/src/readme.html?id=mosquitto)               |             |
 
 
 2. **APPLICATIONS**
