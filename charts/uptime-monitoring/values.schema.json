@@ -62,6 +62,21 @@
         "type": "string",
         "pattern": "^https?://"
       }
+    },
+
+    "nodeSelector": {
+      "category": "advanced",
+      "type": "object"
+    },
+
+    "tolerations": {
+      "category": "advanced",
+      "type": "array"
+    },
+
+    "affinity": {
+      "category": "advanced",
+      "type": "object"
     }
   },
 

@@ -200,6 +200,29 @@ Key metrics include:
 
 ---
 
+## Pod Scheduling
+
+`nodeSelector`, `tolerations` and `affinity` are passed straight through to the pod spec. All three are empty by default and render nothing, so leaving them unset changes nothing for an existing release.
+
+Together they place the workload on a dedicated node pool — the `nodeSelector` picks the pool, the toleration gets past its taint:
+
+```yaml
+nodeSelector:
+  workload: stateful
+
+tolerations:
+  - key: workload
+    operator: Equal
+    value: stateful
+    effect: NoSchedule
+```
+
+`affinity` takes a full [Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) object. Note that setting it **replaces** the chart's default soft pod-anti-affinity (which spreads replicas across nodes) rather than merging with it — restate the anti-affinity alongside your own rules if you still want it.
+
+Bundled subcharts (zookeeper) are scheduled separately — set the same keys under their own value prefix if they should follow the parent.
+
+---
+
 ## Contributing
 
 We welcome contributions to improve this Helm chart. Please refer to the [CONTRIBUTING.md](../../CONTRIBUTING.md) file for contribution guidelines.

@@ -16,6 +16,18 @@ spec:
       labels:
         app: {{ .Release.Name }}-cassandra
     spec:
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: cassandra
           image: "bitnami/cassandra:5.0.2-debian-12-r3"

@@ -26,9 +26,21 @@ spec:
         release: {{ .Release.Name }}
         component: master
     spec:
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       securityContext:
         fsGroup: 1001
         runAsUser: 1001
+      {{- if .Values.affinity }}
+      affinity:
+        {{- toYaml .Values.affinity | nindent 8 }}
+      {{- else }}
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -39,6 +51,7 @@ spec:
                   matchLabels:
                     app: {{ template "mariadb.name" . }}
                     release: {{ .Release.Name }}
+      {{- end }}
       containers:
         - name: "mariadb"
           image: {{ template "mariadb.image" . }}

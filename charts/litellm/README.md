@@ -200,6 +200,29 @@ postgres:
 
 ---
 
+## Pod Scheduling
+
+`nodeSelector`, `tolerations` and `affinity` are passed straight through to the pod spec. All three are empty by default and render nothing, so leaving them unset changes nothing for an existing release.
+
+Together they place the workload on a dedicated node pool — the `nodeSelector` picks the pool, the toleration gets past its taint:
+
+```yaml
+nodeSelector:
+  workload: stateful
+
+tolerations:
+  - key: workload
+    operator: Equal
+    value: stateful
+    effect: NoSchedule
+```
+
+`affinity` takes a full [Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) object and is rendered verbatim.
+
+Bundled subcharts (postgres) are scheduled separately — set the same keys under their own value prefix if they should follow the parent.
+
+---
+
 ## Contributing
 
 We welcome contributions. Please refer to [CONTRIBUTING.md](../../CONTRIBUTING.md).

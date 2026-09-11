@@ -18,11 +18,19 @@ spec:
       labels:
         {{- include "zookeeper.selectorLabels" . | nindent 8 }}
     spec:
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       affinity:
       {{- if .Values.affinity }}
-        {{ toYaml .Values.affinity | indent 8 }}
+        {{- toYaml .Values.affinity | nindent 8 }}
       {{- else }}
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -35,7 +43,7 @@ spec:
                   - zookeeper
               topologyKey: kubernetes.io/hostname
             weight: 1
-     {{- end }}
+      {{- end }}
       containers:
       - name: {{ .Chart.Name }}
       {{- with .Values.imagePullSecrets }}
