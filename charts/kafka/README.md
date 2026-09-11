@@ -219,7 +219,7 @@ tolerations:
 
 `affinity` takes a full [Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) object. Note that setting it **replaces** the chart's default soft pod-anti-affinity (which spreads replicas across nodes) rather than merging with it — restate the anti-affinity alongside your own rules if you still want it.
 
-Bundled subcharts (zookeeper) are scheduled separately — set the same keys under their own value prefix if they should follow the parent.
+These keys reach this chart's own pods only. The bundled **zookeeper** subchart is pinned to `0.0.1`, which predates this feature, so its pods **cannot currently be pinned** — setting `zookeeper.nodeSelector` is accepted and silently ignored. Bumping the `zookeeper` dependency to `v0.0.3` or later is what makes it work.
 
 ---
 

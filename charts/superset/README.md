@@ -282,6 +282,8 @@ The Superset deployment includes:
 
 They apply to the web node, worker, beat and flower Deployments.
 
+They also apply to the db-init Job, which otherwise could not schedule onto a tainted pool the Deployments had already reached.
+
 Together they place the workload on a dedicated node pool — the `nodeSelector` picks the pool, the toleration gets past its taint:
 
 ```yaml
@@ -297,7 +299,7 @@ tolerations:
 
 `affinity` takes a full [Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) object and is rendered verbatim.
 
-Bundled subcharts (postgres and redis) are scheduled separately — set the same keys under their own value prefix if they should follow the parent.
+These keys reach this chart's own pods only. The bundled **postgres** (`0.0.12`) and **redis** (`0.0.1`) subcharts predate this feature, so their pods **cannot currently be pinned** — setting `postgres.nodeSelector` or `redis.nodeSelector` is accepted and silently ignored. Bumping those dependencies to `v0.0.15` and `v0.0.6` or later is what makes it work.
 
 ---
 

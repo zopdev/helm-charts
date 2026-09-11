@@ -510,7 +510,7 @@ tolerations:
 
 `affinity` takes a full [Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) object and is rendered verbatim.
 
-Bundled subcharts (postgres and nats) are scheduled separately — set the same keys under their own value prefix if they should follow the parent.
+These keys reach this chart's own pods only. The bundled **postgres** subchart is pinned to `0.0.12`, which predates this feature, so its pods **cannot currently be pinned** — setting `postgres.nodeSelector` is accepted and silently ignored. Bumping the `postgres` dependency to `v0.0.15` or later is what makes it work. The **nats** subchart is upstream and places these keys under its own paths; see the nats chart's own values.
 
 ---
 

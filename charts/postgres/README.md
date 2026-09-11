@@ -145,6 +145,8 @@ kubectl create secret generic my-postgres-secret --from-literal=postgres-root-pa
 
 They apply to the primary StatefulSet and, when `replication.enabled`, the replicas.
 
+They also apply to the per-service db-init Jobs. A Job that could not tolerate the pool while the StatefulSet could would leave the databases uncreated, with the release still reporting `deployed`.
+
 Together they place the workload on a dedicated node pool — the `nodeSelector` picks the pool, the toleration gets past its taint:
 
 ```yaml

@@ -393,6 +393,30 @@
           "mutable": false
         }
       }
+    },
+
+    "nodeSelector": {
+      "category": "advanced",
+      "type": "object",
+      "description": "Node labels the pod must match, for pinning the workload to a node pool",
+      "default": {},
+      "mutable": true
+    },
+
+    "tolerations": {
+      "category": "advanced",
+      "type": "array",
+      "description": "Taints the pod tolerates, so it can schedule onto a tainted node pool",
+      "default": [],
+      "mutable": true
+    },
+
+    "affinity": {
+      "category": "advanced",
+      "type": "object",
+      "description": "Pod affinity / anti-affinity rules, applied verbatim to the pod spec",
+      "default": {},
+      "mutable": true
     }
   },
   "required": ["name", "image"]

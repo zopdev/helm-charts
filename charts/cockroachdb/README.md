@@ -118,6 +118,8 @@ helm install my-cockroachdb zopdev/cockroachdb -f values.yaml
 
 `nodeSelector`, `tolerations` and `affinity` are passed straight through to the pod spec. All three are empty by default and render nothing, so leaving them unset changes nothing for an existing release.
 
+They also apply to the cluster-init Job. A Job that could not tolerate the pool while the StatefulSet could would leave the cluster uninitialised, with the release still reporting `deployed`.
+
 Together they place the workload on a dedicated node pool — the `nodeSelector` picks the pool, the toleration gets past its taint:
 
 ```yaml
