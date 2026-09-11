@@ -33,6 +33,18 @@ spec:
       labels:
         {{- include "qdrant.selectorLabels" . | nindent 8 }}
     spec:
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       securityContext:
         # The qdrant/qdrant image can run as root by default; pin it to a
         # non-root user and let fsGroup own the freshly provisioned data volume.

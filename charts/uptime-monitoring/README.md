@@ -111,3 +111,26 @@ helm uninstall uptime
 
 Both pods are stateless, so nothing is left behind — and equally, probe history
 does not survive an upgrade. Ship the metrics elsewhere if you need to keep them.
+
+## Pod Scheduling
+
+`nodeSelector`, `tolerations` and `affinity` are passed straight through to the pod spec. All three are empty by default and render nothing, so leaving them unset changes nothing for an existing release.
+
+They apply to both the Prometheus and the blackbox-exporter Deployment.
+
+Together they place the workload on a dedicated node pool — the `nodeSelector` picks the pool, the toleration gets past its taint:
+
+```yaml
+nodeSelector:
+  workload: stateful
+
+tolerations:
+  - key: workload
+    operator: Equal
+    value: stateful
+    effect: NoSchedule
+```
+
+`affinity` takes a full [Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) object and is rendered verbatim.
+
+---

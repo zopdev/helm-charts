@@ -276,6 +276,33 @@ The Superset deployment includes:
 
 ---
 
+## Pod Scheduling
+
+`nodeSelector`, `tolerations` and `affinity` are passed straight through to the pod spec. All three are empty by default and render nothing, so leaving them unset changes nothing for an existing release.
+
+They apply to the web node, worker, beat and flower Deployments.
+
+They also apply to the db-init Job, which otherwise could not schedule onto a tainted pool the Deployments had already reached.
+
+Together they place the workload on a dedicated node pool — the `nodeSelector` picks the pool, the toleration gets past its taint:
+
+```yaml
+nodeSelector:
+  workload: stateful
+
+tolerations:
+  - key: workload
+    operator: Equal
+    value: stateful
+    effect: NoSchedule
+```
+
+`affinity` takes a full [Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) object and is rendered verbatim.
+
+These keys reach this chart's own pods only. The bundled **postgres** (`0.0.12`) and **redis** (`0.0.1`) subcharts predate this feature, so their pods **cannot currently be pinned** — setting `postgres.nodeSelector` or `redis.nodeSelector` is accepted and silently ignored. Bumping those dependencies to `v0.0.15` and `v0.0.6` or later is what makes it work.
+
+---
+
 ## Contributing
 
 We welcome contributions to improve this Helm chart. Please refer to the [CONTRIBUTING.md](../../CONTRIBUTING.md) file for contribution guidelines.

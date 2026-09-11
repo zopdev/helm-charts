@@ -20,11 +20,19 @@ spec:
       labels:
         {{- include "kafka.selectorLabels" . | nindent 8 }}
     spec:
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       securityContext:
         fsGroup: 1000
       affinity:
       {{- if .Values.affinity }}
-        {{ toYaml .Values.affinity | indent 8 }}
+        {{- toYaml .Values.affinity | nindent 8 }}
       {{- else }}
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -37,7 +45,7 @@ spec:
                   - {{ include "kafka.name" . }}
               topologyKey: kubernetes.io/hostname
             weight: 1
-     {{- end }}
+      {{- end }}
       containers:
       - name: kafka-exporter
         image: danielqsj/kafka-exporter:v1.9.0

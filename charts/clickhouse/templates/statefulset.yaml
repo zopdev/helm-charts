@@ -27,6 +27,18 @@ spec:
         app.kubernetes.io/part-of: clickhouse
         app: {{ .Release.Name }}-clickhouse
     spec:
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       securityContext:
         # The clickhouse-server image runs as uid/gid 101; fsGroup lets it own
         # the freshly provisioned data volume.

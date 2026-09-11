@@ -17,3 +17,17 @@ diskSize: "10Gi"
 
 
 
+
+# Pod scheduling. All three are optional and render nothing when left empty,
+# so existing releases are unaffected. Use them to pin the workload to a
+# dedicated (optionally tainted) node pool.
+nodeSelector: {}
+#  workload: stateful
+
+tolerations: []
+#  - key: workload
+#    operator: Equal
+#    value: stateful
+#    effect: NoSchedule
+
+affinity: {}
