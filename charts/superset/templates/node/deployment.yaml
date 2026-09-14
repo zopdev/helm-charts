@@ -47,7 +47,8 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       securityContext:
-        runAsUser: 0
+        runAsNonRoot: true
+        runAsUser: 1000
       initContainers:
         - name: wait-for-postgres
           image: apache/superset:dockerize
