@@ -1,0 +1,255 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "LibreDB Studio",
+  "properties": {
+    "image": {
+      "type": "object",
+      "category": "runtime",
+      "description": "LibreDB Studio container image.",
+      "properties": {
+        "repository": {
+          "type": "string",
+          "description": "Image repository.",
+          "default": "ghcr.io/libredb/libredb-studio",
+          "editDisabled": true
+        },
+        "tag": {
+          "type": "string",
+          "description": "Image tag. Empty uses the chart's appVersion.",
+          "default": "",
+          "mutable": true
+        },
+        "pullPolicy": {
+          "type": "string",
+          "description": "When the kubelet pulls the image.",
+          "enum": [
+            "Always",
+            "IfNotPresent",
+            "Never"
+          ],
+          "default": "IfNotPresent",
+          "mutable": true
+        }
+      }
+    },
+    "service": {
+      "type": "object",
+      "category": "advanced",
+      "description": "Service in front of the web UI.",
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Kubernetes Service type.",
+          "enum": [
+            "ClusterIP",
+            "NodePort",
+            "LoadBalancer"
+          ],
+          "default": "ClusterIP",
+          "mutable": true
+        },
+        "port": {
+          "type": "integer",
+          "description": "Service port.",
+          "default": 80,
+          "mutable": true
+        }
+      }
+    },
+    "auth": {
+      "type": "object",
+      "category": "runtime",
+      "description": "Admin sign-in. The password is generated on install into a Secret.",
+      "properties": {
+        "adminEmail": {
+          "type": "string",
+          "description": "Email the admin signs in with.",
+          "default": "admin@libredb.org",
+          "mutable": true
+        },
+        "existingSecret": {
+          "type": "string",
+          "description": "Existing Secret with JWT_SECRET (32+ characters) and ADMIN_PASSWORD. Empty generates one.",
+          "default": "",
+          "mutable": true
+        },
+        "insecureCookie": {
+          "type": "boolean",
+          "description": "Send the session cookie without the Secure flag. Only when the browser uses plain http on a host other than localhost.",
+          "default": false,
+          "mutable": true
+        }
+      }
+    },
+    "persistence": {
+      "type": "object",
+      "category": "compute",
+      "description": "Volume for the SQLite store and the agent run history.",
+      "properties": {
+        "size": {
+          "type": "string",
+          "description": "Volume size.",
+          "pattern": "^[0-9]+(Mi|Gi)$",
+          "default": "1Gi",
+          "mutable": true,
+          "editDisabled": true
+        },
+        "storageClass": {
+          "type": "string",
+          "description": "StorageClass. Empty uses the cluster default.",
+          "default": "",
+          "mutable": true,
+          "editDisabled": true
+        },
+        "existingClaim": {
+          "type": "string",
+          "description": "Existing PersistentVolumeClaim to use instead of creating one.",
+          "default": "",
+          "mutable": true,
+          "editDisabled": true
+        }
+      }
+    },
+    "ingress": {
+      "type": "object",
+      "category": "runtime",
+      "description": "How Studio is reached from outside the cluster.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Create an Ingress.",
+          "default": false,
+          "mutable": true
+        },
+        "className": {
+          "type": "string",
+          "description": "IngressClass. Empty uses the cluster default.",
+          "default": "",
+          "mutable": true
+        },
+        "host": {
+          "type": "string",
+          "description": "Hostname. Required when enabled.",
+          "default": "",
+          "mutable": true
+        },
+        "annotations": {
+          "type": "object",
+          "description": "Ingress annotations.",
+          "default": {},
+          "mutable": true
+        },
+        "tlsSecretName": {
+          "type": "string",
+          "description": "Existing TLS Secret for the host.",
+          "default": "",
+          "mutable": true
+        }
+      }
+    },
+    "alerts": {
+      "type": "object",
+      "category": "advanced",
+      "description": "PrometheusRule alerts. Needs the Prometheus Operator CRDs.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Create the PrometheusRule.",
+          "default": true,
+          "mutable": true
+        }
+      }
+    },
+    "resources": {
+      "type": "object",
+      "category": "compute",
+      "description": "CPU and memory for the Studio pod.",
+      "properties": {
+        "requests": {
+          "type": "object",
+          "properties": {
+            "cpu": {
+              "type": "string",
+              "description": "CPU request.",
+              "default": "100m",
+              "mutable": true
+            },
+            "memory": {
+              "type": "string",
+              "description": "Memory request.",
+              "pattern": "^[0-9]+(Mi|Gi)$",
+              "default": "256Mi",
+              "mutable": true
+            }
+          }
+        },
+        "limits": {
+          "type": "object",
+          "properties": {
+            "memory": {
+              "type": "string",
+              "description": "Memory limit.",
+              "pattern": "^[0-9]+(Mi|Gi)$",
+              "default": "512Mi",
+              "mutable": true
+            }
+          }
+        }
+      }
+    },
+    "env": {
+      "type": "object",
+      "category": "environment",
+      "description": "Plain environment variables, for example LLM_PROVIDER and LLM_MODEL for the AI assistant.",
+      "additionalProperties": {
+        "type": [
+          "string",
+          "number",
+          "boolean"
+        ]
+      },
+      "default": {},
+      "mutable": true
+    },
+    "extraEnvFrom": {
+      "type": "array",
+      "category": "environment",
+      "description": "Existing Secrets loaded as environment variables, for keys such as LLM_API_KEY.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "secretName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "secretName"
+        ]
+      },
+      "default": [],
+      "mutable": true
+    },
+    "nodeSelector": {
+      "type": "object",
+      "category": "advanced",
+      "description": "Node labels the pod must match.",
+      "default": {},
+      "mutable": true
+    },
+    "tolerations": {
+      "type": "array",
+      "category": "advanced",
+      "description": "Tolerations for tainted nodes.",
+      "default": [],
+      "mutable": true
+    },
+    "affinity": {
+      "type": "object",
+      "category": "advanced",
+      "description": "Pod affinity rules.",
+      "default": {},
+      "mutable": true
+    }
+  }
+}

@@ -1,0 +1,115 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "libredb-studio.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "libredb-studio.labels" . | nindent 4 }}
+spec:
+  # SQLite on a ReadWriteOnce volume and the agent's on-disk run ledger both
+  # mean one pod. Recreate, because a rolling update would wait forever for
+  # the volume the old pod still holds.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "libredb-studio.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+      labels:
+        {{- include "libredb-studio.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      # Studio never talks to the Kubernetes API.
+      automountServiceAccountToken: false
+      securityContext:
+        # The image's app user. fsGroup makes a fresh volume writable for it.
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ include "libredb-studio.fullname" . }}-config
+            {{- range .Values.extraEnvFrom }}
+            - secretRef:
+                name: {{ .secretName }}
+            {{- end }}
+          env:
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "libredb-studio.secretName" . }}
+                  key: JWT_SECRET
+            - name: ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "libredb-studio.secretName" . }}
+                  key: ADMIN_PASSWORD
+          # /api/db/health is a plain liveness answer; it does not reach any
+          # database.
+          startupProbe:
+            httpGet:
+              path: /api/db/health
+              port: http
+            periodSeconds: 2
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /api/db/health
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/db/health
+              port: http
+            periodSeconds: 30
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+            # The root filesystem is read-only; these are the two paths the
+            # server writes besides /app/data.
+            - name: next-cache
+              mountPath: /app/.next/cache
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "libredb-studio.claimName" . }}
+        - name: next-cache
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}

@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "libredb-studio.fullname" . }}-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "libredb-studio.labels" . | nindent 4 }}
+data:
+  PORT: "3000"
+  # Empty lets the image pick the bind address (dual-stack when it can).
+  # Set explicitly so the pod name the runtime puts in HOSTNAME never reaches
+  # the server.
+  HOSTNAME: ""
+  STORAGE_PROVIDER: "sqlite"
+  STORAGE_SQLITE_PATH: "/app/data/libredb-storage.db"
+  # The chart always supplies both secrets, so a missing one is an error
+  # rather than a password generated and printed once to the log.
+  AUTH_BOOTSTRAP: "off"
+  ADMIN_EMAIL: {{ .Values.auth.adminEmail | quote }}
+  {{- if .Values.auth.insecureCookie }}
+  AUTH_COOKIE_SECURE: "false"
+  {{- end }}
+  {{- range $key, $value := .Values.env }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}

@@ -1,0 +1,18 @@
+apiVersion: v2
+# A fixed release tag; image.tag defaults to it.
+appVersion: "0.17.0"
+description: Web-based SQL IDE for PostgreSQL, MySQL, MongoDB, Redis and other databases, with an AI query assistant
+name: libredb-studio
+version: 0.0.1
+type: application
+home: https://github.com/libredb/libredb-studio
+sources:
+  - https://github.com/libredb/libredb-studio
+icon: "https://raw.githubusercontent.com/libredb/libredb-studio/main/public/web-app-icon-192x192.png"
+maintainers:
+  - name: ZopDev
+    url: zop.dev
+  - name: LibreDB
+    url: libredb.org
+annotations:
+  type: application

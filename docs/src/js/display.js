@@ -53,6 +53,10 @@ const CHART_DISPLAY = {
     description:
       "A distributed event streaming platform for real-time data pipelines and stream processing.",
   },
+  "libredb-studio": {
+    name: "LibreDB Studio",
+    description: "Web-based SQL IDE for PostgreSQL, MySQL, MongoDB, Redis and other databases",
+  },
   litellm: {
     name: "LiteLLM",
     description: "One OpenAI-compatible proxy in front of every LLM provider",
