@@ -6,7 +6,7 @@
     "version": {
       "type": "string",
       "category": "runtime",
-      "description": "LibreDB Studio release (ghcr.io/libredb/libredb-studio:<version>).",
+      "description": "LibreDB Studio release (ghcr.io/libredb/libredb-studio:<version>). Empty uses the chart's appVersion.",
       "default": "0.17.0",
       "mutable": true
     },
