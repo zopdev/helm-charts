@@ -2,11 +2,8 @@
 # its own data (saved connections, queries, history, agent runs) in SQLite on a
 # volume. The databases you connect to are not part of this chart.
 
-image:
-  repository: ghcr.io/libredb/libredb-studio
-  # Empty uses the chart's appVersion, a fixed release tag.
-  tag: ""
-  pullPolicy: IfNotPresent
+# LibreDB Studio release. Defaults to the chart's appVersion.
+version: "0.17.0"
 
 service:
   type: ClusterIP
@@ -25,11 +22,7 @@ auth:
   insecureCookie: false
 
 # Holds the SQLite store and the agent run history.
-persistence:
-  size: "1Gi"
-  # Empty uses the cluster's default StorageClass.
-  storageClass: ""
-  existingClaim: ""
+diskSize: "1Gi"
 
 ingress:
   enabled: false
@@ -40,7 +33,7 @@ ingress:
 
 # PrometheusRule on kube-state-metrics. Needs the Prometheus Operator CRDs.
 alerts:
-  enabled: true
+  enabled: false
 
 resources:
   requests:

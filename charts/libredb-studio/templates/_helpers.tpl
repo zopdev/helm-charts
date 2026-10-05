@@ -25,10 +25,6 @@ release: {{ .Release.Name }}
   {{- .Values.auth.existingSecret | default (include "libredb-studio.fullname" .) -}}
 {{- end -}}
 
-{{- define "libredb-studio.claimName" -}}
-  {{- .Values.persistence.existingClaim | default (include "libredb-studio.fullname" .) -}}
-{{- end -}}
-
 {{/*
 Variables the chart sets. validate.yaml rejects them in `env`.
 */}}

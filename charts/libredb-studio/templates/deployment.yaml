@@ -46,8 +46,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: {{ .Chart.Name }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          image: "ghcr.io/libredb/libredb-studio:{{ .Values.version }}"
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
@@ -108,7 +107,7 @@ spec:
       volumes:
         - name: data
           persistentVolumeClaim:
-            claimName: {{ include "libredb-studio.claimName" . }}
+            claimName: {{ include "libredb-studio.fullname" . }}
         - name: next-cache
           emptyDir: {}
         - name: tmp

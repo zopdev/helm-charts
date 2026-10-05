@@ -15,8 +15,8 @@ The databases you connect to are not part of this chart.
 
 - Kubernetes 1.26+
 - Helm 3+
-- A default StorageClass, or `persistence.storageClass`
-- The Prometheus Operator CRDs, or `alerts.enabled=false`
+- A default StorageClass
+- The Prometheus Operator CRDs, only with `alerts.enabled=true`
 
 ---
 
@@ -47,19 +47,16 @@ kubectl get secret studio-libredb-studio -o jsonpath='{.data.ADMIN_PASSWORD}' | 
 
 | Key | Default | Description |
 |---|---|---|
-| `image.repository` | `ghcr.io/libredb/libredb-studio` | Image repository. |
-| `image.tag` | `""` | Empty uses the chart's `appVersion`. |
+| `version` | `0.17.0` | LibreDB Studio release, the tag of `ghcr.io/libredb/libredb-studio`. |
 | `auth.adminEmail` | `admin@libredb.org` | Email the admin signs in with. |
 | `auth.existingSecret` | `""` | Secret with `JWT_SECRET` (32+ characters) and `ADMIN_PASSWORD`. Empty generates one. |
 | `auth.insecureCookie` | `false` | Session cookie without the Secure flag. See below. |
-| `persistence.size` | `1Gi` | Volume for the SQLite store and agent runs. |
-| `persistence.storageClass` | `""` | Empty uses the cluster default. |
-| `persistence.existingClaim` | `""` | Use a claim you already have. |
+| `diskSize` | `1Gi` | Volume for the SQLite store and agent runs, on the default StorageClass. Fixed after install. |
 | `ingress.enabled` | `false` | Create an Ingress. Needs `ingress.host`. |
 | `ingress.className` | `""` | IngressClass. |
 | `ingress.host` | `""` | Hostname. |
 | `ingress.tlsSecretName` | `""` | TLS Secret for the host. |
-| `alerts.enabled` | `true` | PrometheusRule on kube-state-metrics. |
+| `alerts.enabled` | `false` | PrometheusRule on kube-state-metrics. |
 | `resources` | 100m / 256Mi, limit 512Mi | Pod resources. |
 | `env` | `{}` | Plain environment variables. |
 | `extraEnvFrom` | `[]` | Existing Secrets loaded as environment variables. |

@@ -1,5 +1,5 @@
 apiVersion: v2
-# A fixed release tag; image.tag defaults to it.
+# A fixed release tag; the version value defaults to it.
 appVersion: "0.17.0"
 description: Web-based SQL IDE for PostgreSQL, MySQL, MongoDB, Redis and other databases, with an AI query assistant
 name: libredb-studio

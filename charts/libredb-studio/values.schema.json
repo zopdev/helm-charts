@@ -3,35 +3,12 @@
   "type": "object",
   "title": "LibreDB Studio",
   "properties": {
-    "image": {
-      "type": "object",
+    "version": {
+      "type": "string",
       "category": "runtime",
-      "description": "LibreDB Studio container image.",
-      "properties": {
-        "repository": {
-          "type": "string",
-          "description": "Image repository.",
-          "default": "ghcr.io/libredb/libredb-studio",
-          "editDisabled": true
-        },
-        "tag": {
-          "type": "string",
-          "description": "Image tag. Empty uses the chart's appVersion.",
-          "default": "",
-          "mutable": true
-        },
-        "pullPolicy": {
-          "type": "string",
-          "description": "When the kubelet pulls the image.",
-          "enum": [
-            "Always",
-            "IfNotPresent",
-            "Never"
-          ],
-          "default": "IfNotPresent",
-          "mutable": true
-        }
-      }
+      "description": "LibreDB Studio release (ghcr.io/libredb/libredb-studio:<version>).",
+      "default": "0.17.0",
+      "mutable": true
     },
     "service": {
       "type": "object",
@@ -82,34 +59,14 @@
         }
       }
     },
-    "persistence": {
-      "type": "object",
+    "diskSize": {
+      "type": "string",
       "category": "compute",
-      "description": "Volume for the SQLite store and the agent run history.",
-      "properties": {
-        "size": {
-          "type": "string",
-          "description": "Volume size.",
-          "pattern": "^[0-9]+(Mi|Gi)$",
-          "default": "1Gi",
-          "mutable": true,
-          "editDisabled": true
-        },
-        "storageClass": {
-          "type": "string",
-          "description": "StorageClass. Empty uses the cluster default.",
-          "default": "",
-          "mutable": true,
-          "editDisabled": true
-        },
-        "existingClaim": {
-          "type": "string",
-          "description": "Existing PersistentVolumeClaim to use instead of creating one.",
-          "default": "",
-          "mutable": true,
-          "editDisabled": true
-        }
-      }
+      "description": "Size of the volume for the SQLite store and the agent run history. Cannot be changed after install.",
+      "pattern": "^[0-9]+Gi$",
+      "default": "1Gi",
+      "mutable": true,
+      "editDisabled": true
     },
     "ingress": {
       "type": "object",
@@ -151,12 +108,12 @@
     "alerts": {
       "type": "object",
       "category": "advanced",
-      "description": "PrometheusRule alerts. Needs the Prometheus Operator CRDs.",
+      "description": "PrometheusRule alerts. Needs the Prometheus Operator CRDs, so off by default.",
       "properties": {
         "enabled": {
           "type": "boolean",
           "description": "Create the PrometheusRule.",
-          "default": true,
+          "default": false,
           "mutable": true
         }
       }
