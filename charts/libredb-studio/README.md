@@ -48,6 +48,8 @@ kubectl get secret studio-libredb-studio -o jsonpath='{.data.ADMIN_PASSWORD}' | 
 | Key | Default | Description |
 |---|---|---|
 | `version` | `0.17.0` | LibreDB Studio release, the tag of `ghcr.io/libredb/libredb-studio`. |
+| `service.type` | `ClusterIP` | Kubernetes Service type: `ClusterIP`, `NodePort` or `LoadBalancer`. |
+| `service.port` | `80` | Service port. |
 | `auth.adminEmail` | `admin@libredb.org` | Email the admin signs in with. |
 | `auth.existingSecret` | `""` | Secret with `JWT_SECRET` (32+ characters) and `ADMIN_PASSWORD`. Empty generates one. |
 | `auth.insecureCookie` | `false` | Session cookie without the Secure flag. See below. |
@@ -55,6 +57,7 @@ kubectl get secret studio-libredb-studio -o jsonpath='{.data.ADMIN_PASSWORD}' | 
 | `ingress.enabled` | `false` | Create an Ingress. Needs `ingress.host`. |
 | `ingress.className` | `""` | IngressClass. |
 | `ingress.host` | `""` | Hostname. |
+| `ingress.annotations` | `{}` | Ingress annotations. |
 | `ingress.tlsSecretName` | `""` | TLS Secret for the host. |
 | `alerts.enabled` | `false` | PrometheusRule on kube-state-metrics. |
 | `resources` | 100m / 256Mi, limit 512Mi | Pod resources. |
