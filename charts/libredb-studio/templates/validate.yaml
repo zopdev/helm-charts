@@ -1,0 +1,14 @@
+{{/*
+Fail the render on values that would install and then misbehave.
+*/}}
+
+{{- if and .Values.ingress.enabled (not .Values.ingress.host) }}
+{{- fail "ingress.enabled requires ingress.host." }}
+{{- end }}
+
+{{- $owned := splitList "," (include "libredb-studio.ownedEnv" .) }}
+{{- range $key := $owned }}
+{{- if hasKey $.Values.env $key }}
+{{- fail (printf "%s is set by the chart and cannot be overridden through `env`. See values.yaml." $key) }}
+{{- end }}
+{{- end }}

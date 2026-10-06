@@ -1,0 +1,31 @@
+LibreDB Studio is installed as release {{ .Release.Name }}.
+
+Open it:
+
+  kubectl port-forward -n {{ .Release.Namespace }} svc/{{ include "libredb-studio.fullname" . }} 3000:{{ .Values.service.port }}
+  open http://localhost:3000
+{{- if .Values.ingress.enabled }}
+
+Or at http{{ if .Values.ingress.tlsSecretName }}s{{ end }}://{{ .Values.ingress.host }}
+{{- end }}
+
+Sign in as {{ .Values.auth.adminEmail }}. The password:
+
+  kubectl get secret -n {{ .Release.Namespace }} {{ include "libredb-studio.secretName" . }} \
+    -o jsonpath='{.data.ADMIN_PASSWORD}' | base64 -d; echo
+{{- if not .Values.auth.existingSecret }}
+
+That Secret also holds JWT_SECRET, which seals the passwords of saved
+connections. It and the volume are kept on `helm uninstall`; back them up
+together.
+{{- end }}
+{{- if and .Values.ingress.enabled (not .Values.ingress.tlsSecretName) (not .Values.auth.insecureCookie) }}
+
+The ingress has no TLS. If the browser reaches it over plain http, login will
+loop back to /login. Serve TLS (ingress.tlsSecretName, or at the load
+balancer), or set auth.insecureCookie=true on a trusted network.
+{{- end }}
+{{- if .Values.auth.insecureCookie }}
+
+auth.insecureCookie is on: the session cookie travels in clear over http.
+{{- end }}

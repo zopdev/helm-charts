@@ -1,0 +1,49 @@
+{{- if .Values.alerts.enabled }}
+{{/*
+Studio exposes no /metrics, so both rules read kube-state-metrics. Named after
+the fullname rather than the release, so it cannot collide with another
+chart's rule in the same release. Label values are quoted: a null label fails
+the whole install.
+*/}}
+{{- $deployment := include "libredb-studio.fullname" . }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ $deployment }}
+  namespace: {{ .Release.Namespace }}
+  # Not the shared label helper: its app and release keys would replace
+  # these two, and release: prometheus is what the rule selector matches.
+  labels:
+    app: kube-prometheus-stack
+    release: prometheus
+    chart: {{ include "libredb-studio.chart" . }}
+spec:
+  groups:
+    - name: {{ .Release.Namespace }}.{{ $deployment }}.rules
+      rules:
+        # 10 minutes, so a Recreate rollout (old pod gone before the new one
+        # is ready) does not fire it.
+        - alert: LibreDBStudioUnavailable
+          expr: sum(kube_deployment_status_replicas_available{namespace="{{ .Release.Namespace }}",deployment="{{ $deployment }}"}) == 0
+          for: 10m
+          labels:
+            severity: "critical"
+            servicealert: "true"
+            service: {{ $deployment | quote }}
+            namespace: {{ .Release.Namespace | quote }}
+          annotations:
+            summary: "LibreDB Studio {{ .Release.Name }} is down"
+            description: "{{ $deployment }} in {{ .Release.Namespace }} has had no available pod for 10 minutes."
+
+        - alert: LibreDBStudioRestarting
+          expr: sum(increase(kube_pod_container_status_restarts_total{namespace="{{ .Release.Namespace }}",pod=~"{{ $deployment }}-.*"}[15m])) > 2
+          for: 5m
+          labels:
+            severity: "warning"
+            servicealert: "true"
+            service: {{ $deployment | quote }}
+            namespace: {{ .Release.Namespace | quote }}
+          annotations:
+            summary: "LibreDB Studio {{ .Release.Name }} is restarting"
+            description: "{{ $deployment }} in {{ .Release.Namespace }} restarted more than twice in 15 minutes. A memory limit below the workload is the usual cause."
+{{- end }}

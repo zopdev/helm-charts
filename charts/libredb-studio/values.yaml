@@ -1,0 +1,60 @@
+# LibreDB Studio is a web-based SQL IDE. This chart runs one instance and keeps
+# its own data (saved connections, queries, history, agent runs) in SQLite on a
+# volume. The databases you connect to are not part of this chart.
+
+# LibreDB Studio release. Defaults to the chart's appVersion.
+version: "0.17.0"
+
+service:
+  type: ClusterIP
+  port: 80
+
+auth:
+  adminEmail: "admin@libredb.org"
+  # Empty generates a Secret with JWT_SECRET and ADMIN_PASSWORD on install,
+  # kept across upgrades. Or name one you created with the same two keys;
+  # JWT_SECRET needs at least 32 characters.
+  existingSecret: ""
+  # Drops the Secure flag from the session cookie. Only for a browser that
+  # reaches Studio over plain http on a host other than localhost, where login
+  # otherwise loops back to /login. TLS at the ingress or load balancer does
+  # not need it.
+  insecureCookie: false
+
+# Holds the SQLite store and the agent run history.
+diskSize: "1Gi"
+
+ingress:
+  enabled: false
+  className: ""
+  host: ""
+  annotations: {}
+  tlsSecretName: ""
+
+# PrometheusRule on kube-state-metrics. Needs the Prometheus Operator CRDs.
+alerts:
+  enabled: false
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "256Mi"
+  limits:
+    memory: "512Mi"
+
+# Plain environment variables, e.g. to turn on the AI assistant:
+#   env:
+#     LLM_PROVIDER: openai
+#     LLM_MODEL: gpt-4o
+# Variables the chart sets itself are rejected; see templates/validate.yaml.
+env: {}
+
+# Existing Secrets loaded with envFrom, for keys such as LLM_API_KEY.
+extraEnvFrom: []
+#  - secretName: libredb-studio-llm
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
