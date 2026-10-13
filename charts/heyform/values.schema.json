@@ -1,0 +1,382 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "HeyForm",
+  "properties": {
+    "version": {
+      "type": "string",
+      "category": "runtime",
+      "description": "HeyForm release (heyform/community-edition:<version>). Empty uses the chart's appVersion.",
+      "default": "v3.0.3",
+      "mutable": true
+    },
+    "publicUrl": {
+      "type": "string",
+      "category": "runtime",
+      "description": "URL people open HeyForm at, e.g. https://forms.example.com. Must be https unless it is localhost; sign-in only works at this exact URL. Empty uses https://<ingress host>, or http://localhost:9157 without an ingress.",
+      "pattern": "^$|^https?://[^/]+",
+      "default": "",
+      "mutable": true
+    },
+    "trustProxy": {
+      "type": "string",
+      "category": "advanced",
+      "description": "Express trust-proxy value: how many proxies in front may set X-Forwarded-For. Empty uses 1 with the ingress on and false without. Set 1 or 2 when an ingress or load balancer this chart did not create fronts the Service.",
+      "default": "",
+      "mutable": true
+    },
+    "service": {
+      "type": "object",
+      "category": "advanced",
+      "description": "Service in front of HeyForm.",
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Kubernetes Service type.",
+          "enum": [
+            "ClusterIP",
+            "NodePort",
+            "LoadBalancer"
+          ],
+          "default": "ClusterIP",
+          "mutable": true
+        },
+        "port": {
+          "type": "integer",
+          "description": "Service port.",
+          "default": 80,
+          "mutable": true
+        }
+      }
+    },
+    "ingress": {
+      "type": "object",
+      "category": "runtime",
+      "description": "How HeyForm is reached from outside the cluster.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Create an Ingress.",
+          "default": false,
+          "mutable": true
+        },
+        "className": {
+          "type": "string",
+          "description": "IngressClass. Empty uses the cluster default.",
+          "default": "",
+          "mutable": true
+        },
+        "host": {
+          "type": "string",
+          "description": "Hostname. Required when enabled.",
+          "default": "",
+          "mutable": true
+        },
+        "annotations": {
+          "type": "object",
+          "description": "Ingress annotations.",
+          "default": {},
+          "mutable": true
+        },
+        "tlsSecretName": {
+          "type": "string",
+          "description": "Existing TLS Secret for the host. Sign-in needs https, so leave empty only when TLS ends in front of the ingress.",
+          "default": "",
+          "mutable": true
+        }
+      }
+    },
+    "secrets": {
+      "type": "object",
+      "category": "advanced",
+      "description": "Session and form keys and the datastore passwords. Generated on install into a Secret and kept across upgrades.",
+      "properties": {
+        "existingSecret": {
+          "type": "string",
+          "description": "Existing Secret with SESSION_KEY and FORM_ENCRYPTION_KEY, plus MONGO_PASSWORD and REDIS_PASSWORD for the bundled stores. Empty generates one. Cannot be changed after install without signing everyone out.",
+          "default": "",
+          "mutable": true,
+          "editDisabled": true
+        }
+      }
+    },
+    "diskSize": {
+      "type": "string",
+      "category": "compute",
+      "description": "Size of the volume for uploaded files. Cannot be changed after install.",
+      "pattern": "^[0-9]+Gi$",
+      "default": "5Gi",
+      "mutable": true,
+      "editDisabled": true
+    },
+    "storageClassName": {
+      "type": "string",
+      "category": "compute",
+      "description": "StorageClass for the uploads, MongoDB and Redis volumes. Empty uses the cluster default. Cannot be changed after install.",
+      "default": "",
+      "mutable": true,
+      "editDisabled": true
+    },
+    "resources": {
+      "type": "object",
+      "category": "compute",
+      "description": "CPU and memory for the HeyForm pod.",
+      "properties": {
+        "requests": {
+          "type": "object",
+          "properties": {
+            "cpu": {
+              "type": "string",
+              "description": "CPU request.",
+              "default": "100m",
+              "mutable": true
+            },
+            "memory": {
+              "type": "string",
+              "description": "Memory request.",
+              "pattern": "^[0-9]+(Mi|Gi)$",
+              "default": "384Mi",
+              "mutable": true
+            }
+          }
+        },
+        "limits": {
+          "type": "object",
+          "properties": {
+            "memory": {
+              "type": "string",
+              "description": "Memory limit.",
+              "pattern": "^[0-9]+(Mi|Gi)$",
+              "default": "1Gi",
+              "mutable": true
+            }
+          }
+        }
+      }
+    },
+    "mongodb": {
+      "type": "object",
+      "category": "compute",
+      "description": "Bundled MongoDB (Percona Server for MongoDB 4.4), with authentication on.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Run the bundled MongoDB. Turn off only together with externalMongodb.uri.",
+          "default": true,
+          "mutable": true,
+          "editDisabled": true
+        },
+        "version": {
+          "type": "string",
+          "description": "percona/percona-server-mongodb:<version>. Keep to the 4.4 series and a -multi tag.",
+          "default": "4.4.29-28-multi",
+          "mutable": true
+        },
+        "diskSize": {
+          "type": "string",
+          "description": "Size of the MongoDB data volume. Cannot be changed after install.",
+          "pattern": "^[0-9]+Gi$",
+          "default": "10Gi",
+          "mutable": true,
+          "editDisabled": true
+        },
+        "resources": {
+          "type": "object",
+          "properties": {
+            "requests": {
+              "type": "object",
+              "properties": {
+                "cpu": {
+                  "type": "string",
+                  "description": "CPU request.",
+                  "default": "100m",
+                  "mutable": true
+                },
+                "memory": {
+                  "type": "string",
+                  "description": "Memory request.",
+                  "pattern": "^[0-9]+(Mi|Gi)$",
+                  "default": "512Mi",
+                  "mutable": true
+                }
+              }
+            },
+            "limits": {
+              "type": "object",
+              "properties": {
+                "memory": {
+                  "type": "string",
+                  "description": "Memory limit. MongoDB sizes its cache from it.",
+                  "pattern": "^[0-9]+(Mi|Gi)$",
+                  "default": "1Gi",
+                  "mutable": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "externalMongodb": {
+      "type": "object",
+      "category": "advanced",
+      "description": "An existing MongoDB, used when mongodb.enabled is false.",
+      "properties": {
+        "uri": {
+          "type": "string",
+          "description": "mongodb://host:27017/heyform, without credentials. Supply MONGO_USER and MONGO_PASSWORD from a Secret in extraEnvFrom.",
+          "default": "",
+          "mutable": true
+        }
+      }
+    },
+    "redis": {
+      "type": "object",
+      "category": "compute",
+      "description": "Bundled Redis (official image), with a password and append-only persistence.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Run the bundled Redis. Turn off only together with externalRedis.host.",
+          "default": true,
+          "mutable": true,
+          "editDisabled": true
+        },
+        "version": {
+          "type": "string",
+          "description": "redis:<version>.",
+          "default": "7.2.16-alpine",
+          "mutable": true
+        },
+        "diskSize": {
+          "type": "string",
+          "description": "Size of the Redis data volume. Cannot be changed after install.",
+          "pattern": "^[0-9]+Gi$",
+          "default": "1Gi",
+          "mutable": true,
+          "editDisabled": true
+        },
+        "resources": {
+          "type": "object",
+          "properties": {
+            "requests": {
+              "type": "object",
+              "properties": {
+                "cpu": {
+                  "type": "string",
+                  "description": "CPU request.",
+                  "default": "50m",
+                  "mutable": true
+                },
+                "memory": {
+                  "type": "string",
+                  "description": "Memory request.",
+                  "pattern": "^[0-9]+(Mi|Gi)$",
+                  "default": "64Mi",
+                  "mutable": true
+                }
+              }
+            },
+            "limits": {
+              "type": "object",
+              "properties": {
+                "memory": {
+                  "type": "string",
+                  "description": "Memory limit.",
+                  "pattern": "^[0-9]+(Mi|Gi)$",
+                  "default": "256Mi",
+                  "mutable": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "externalRedis": {
+      "type": "object",
+      "category": "advanced",
+      "description": "An existing Redis, used when redis.enabled is false.",
+      "properties": {
+        "host": {
+          "type": "string",
+          "description": "Redis host. Supply REDIS_PASSWORD from a Secret in extraEnvFrom.",
+          "default": "",
+          "mutable": true
+        },
+        "port": {
+          "type": "integer",
+          "description": "Redis port.",
+          "default": 6379,
+          "mutable": true
+        }
+      }
+    },
+    "alerts": {
+      "type": "object",
+      "category": "advanced",
+      "description": "PrometheusRule alerts. Needs the Prometheus Operator CRDs, so off by default.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Create the PrometheusRule.",
+          "default": false,
+          "mutable": true
+        }
+      }
+    },
+    "env": {
+      "type": "object",
+      "category": "environment",
+      "description": "Plain environment variables, for example SMTP_HOST, SMTP_PORT, SMTP_FROM and SMTP_USER to send mail.",
+      "additionalProperties": {
+        "type": [
+          "string",
+          "number",
+          "boolean"
+        ]
+      },
+      "default": {},
+      "mutable": true
+    },
+    "extraEnvFrom": {
+      "type": "array",
+      "category": "environment",
+      "description": "Existing Secrets loaded as environment variables, for keys such as SMTP_PASSWORD or OPENAI_API_KEY.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "secretName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "secretName"
+        ]
+      },
+      "default": [],
+      "mutable": true
+    },
+    "nodeSelector": {
+      "type": "object",
+      "category": "advanced",
+      "description": "Node labels all three pods must match.",
+      "default": {},
+      "mutable": true
+    },
+    "tolerations": {
+      "type": "array",
+      "category": "advanced",
+      "description": "Tolerations for tainted nodes.",
+      "default": [],
+      "mutable": true
+    },
+    "affinity": {
+      "type": "object",
+      "category": "advanced",
+      "description": "Pod affinity rules.",
+      "default": {},
+      "mutable": true
+    }
+  }
+}

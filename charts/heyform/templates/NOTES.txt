@@ -1,0 +1,35 @@
+HeyForm is installed as release {{ .Release.Name }}.
+
+It is configured to be opened at:
+
+  {{ include "heyform.publicUrl" . }}
+{{- if and (not .Values.ingress.enabled) (not .Values.publicUrl) }}
+
+Reach that address with a port-forward:
+
+  kubectl port-forward -n {{ .Release.Namespace }} svc/{{ include "heyform.fullname" . }} 9157:{{ .Values.service.port }}
+
+To serve it on a real hostname, set publicUrl (and the ingress values, or
+your own ingress in front of the Service). Sign-in only works at the URL
+HeyForm is configured with.
+{{- end }}
+{{- if and .Values.ingress.enabled (not .Values.ingress.tlsSecretName) }}
+
+The ingress has no TLS Secret. HeyForm's session cookie is Secure, so sign-in
+fails over plain http: serve TLS (ingress.tlsSecretName, or at the load
+balancer in front).
+{{- end }}
+
+The first account is created from the sign-up page; there is no default
+login.
+{{- if not .Values.secrets.existingSecret }}
+
+Secret {{ include "heyform.fullname" . }} holds the session and form keys
+and the MongoDB and Redis passwords. It and the volumes are kept on
+`helm uninstall`; back them up together.
+{{- end }}
+{{- if not (or (hasKey .Values.env "SMTP_HOST") .Values.extraEnvFrom) }}
+
+No SMTP is configured, so HeyForm cannot send mail (password resets, team
+invites, submission notifications). See `env` in values.yaml.
+{{- end }}

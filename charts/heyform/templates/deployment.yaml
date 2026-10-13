@@ -1,0 +1,153 @@
+{{- $image := printf "heyform/community-edition:%s" (.Values.version | default .Chart.AppVersion) }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "heyform.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "heyform.labels" (list . "app") | nindent 4 }}
+spec:
+  # Uploads live on a ReadWriteOnce volume, so one pod. Recreate, because a
+  # rolling update would wait forever for the volume the old pod still holds.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "heyform.selectorLabels" (list . "app") | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+      labels:
+        {{- include "heyform.selectorLabels" (list . "app") | nindent 8 }}
+    spec:
+      {{- include "heyform.scheduling" . | nindent 6 }}
+      # HeyForm never talks to the Kubernetes API.
+      automountServiceAccountToken: false
+      securityContext:
+        # The image sets no USER and would run as root; 1000 is the node user
+        # its base image ships. fsGroup makes a fresh volume writable for it.
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      {{- if or .Values.mongodb.enabled .Values.redis.enabled }}
+      initContainers:
+        # HeyForm gives a missing MongoDB about 30 seconds and then exits 1.
+        # On a first install the stores are still pulling their images at
+        # that point, so wait here instead of crash-looping into back-off.
+        - name: wait-for-stores
+          image: {{ $image | quote }}
+          command:
+            - sh
+            - -c
+            - |
+              {{- if .Values.mongodb.enabled }}
+              until nc -z -w 2 {{ include "heyform.mongodb.fullname" . }} 27017; do echo "waiting for mongodb"; sleep 2; done
+              {{- end }}
+              {{- if .Values.redis.enabled }}
+              until nc -z -w 2 {{ include "heyform.redis.fullname" . }} 6379; do echo "waiting for redis"; sleep 2; done
+              {{- end }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "16Mi"
+            limits:
+              memory: "32Mi"
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: {{ $image | quote }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - name: http
+              containerPort: 9157
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ include "heyform.fullname" . }}-config
+            {{- range .Values.extraEnvFrom }}
+            - secretRef:
+                name: {{ .secretName }}
+            {{- end }}
+          env:
+            - name: SESSION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "heyform.secretName" . }}
+                  key: SESSION_KEY
+            - name: FORM_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "heyform.secretName" . }}
+                  key: FORM_ENCRYPTION_KEY
+            {{- if .Values.mongodb.enabled }}
+            - name: MONGO_USER
+              value: heyform
+            - name: MONGO_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "heyform.secretName" . }}
+                  key: MONGO_PASSWORD
+            {{- end }}
+            {{- if .Values.redis.enabled }}
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "heyform.secretName" . }}
+                  key: REDIS_PASSWORD
+            {{- end }}
+          # /health/ready answers 200 only when MongoDB and Redis both
+          # respond; /health only says the process is up. Liveness uses the
+          # second, so a store outage takes the pod out of the Service
+          # without restarting it.
+          startupProbe:
+            httpGet:
+              path: /health/ready
+              port: http
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 3
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            # Uploads are written to static/upload. HeyForm's compose file
+            # mounts the same directory at uploads/ as well, so both paths
+            # share the volume here too.
+            - name: uploads
+              mountPath: /app/packages/server/static/upload
+            - name: uploads
+              mountPath: /app/packages/server/uploads
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: uploads
+          persistentVolumeClaim:
+            claimName: {{ include "heyform.fullname" . }}-uploads
+        - name: tmp
+          emptyDir: {}

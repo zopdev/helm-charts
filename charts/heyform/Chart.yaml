@@ -1,0 +1,16 @@
+apiVersion: v2
+# The HeyForm release this chart was tested with; the version value defaults
+# to it.
+appVersion: "v3.0.3"
+description: Open-source form builder for surveys, quizzes and polls, bundled with the MongoDB and Redis it needs
+name: heyform
+version: 0.0.1
+type: application
+home: https://heyform.net
+sources:
+  - https://github.com/heyform/heyform
+maintainers:
+  - name: ZopDev
+    url: zop.dev
+annotations:
+  type: application

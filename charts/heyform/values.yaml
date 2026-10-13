@@ -1,0 +1,136 @@
+# HeyForm is a form builder. It cannot start without MongoDB and a
+# Redis-compatible store, so this chart runs all three: one HeyForm pod, one
+# MongoDB and one Redis, each with its own volume.
+
+# HeyForm release (heyform/community-edition:<version>). Defaults to the
+# chart's appVersion.
+version: "v3.0.3"
+
+# The URL people open HeyForm at, e.g. https://forms.example.com. HeyForm
+# builds its links, its CORS allow-list and its cookie domain from it, so
+# sign-in only works when the browser uses exactly this URL.
+# Empty means https://<ingress.host> when the ingress is on, and
+# http://localhost:9157 (the port-forward in the install notes) when it is not.
+# It has to be https for any host but localhost: the image runs with
+# NODE_ENV=production, which marks the session cookie Secure, and a browser
+# drops a Secure cookie that arrives over plain http.
+publicUrl: ""
+
+# Express "trust proxy" setting (TRUST_PROXY): how many proxies in front of
+# HeyForm may set X-Forwarded-For. HeyForm rate-limits by client address, so
+# behind a proxy it does not trust, every visitor shares one limit.
+# Empty means "1" when the ingress is on and "false" when it is not. Set it
+# yourself when something this chart did not create fronts the Service: "1"
+# for one ingress controller, "2" for a load balancer in front of one.
+trustProxy: ""
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: false
+  className: ""
+  host: ""
+  annotations: {}
+  # Existing TLS Secret for the host. Leave empty only when TLS ends in
+  # front of the ingress; see publicUrl for why plain http cannot sign in.
+  tlsSecretName: ""
+
+secrets:
+  # Empty generates a Secret on install and keeps it across upgrades. It
+  # holds SESSION_KEY (seals session cookies), FORM_ENCRYPTION_KEY (seals
+  # form access tokens), MONGO_PASSWORD and REDIS_PASSWORD. Any string works
+  # for the two keys; HeyForm derives the AES key from it with an HMAC.
+  # To supply your own, name a Secret with those keys. The two passwords are
+  # only read while the bundled MongoDB and Redis are on.
+  existingSecret: ""
+
+# Volume for uploaded files (images, attachments on submissions).
+diskSize: "5Gi"
+
+# StorageClass for all three volumes. Empty uses the cluster default class,
+# which is what EKS (EBS CSI), GKE and AKS provide out of the box.
+storageClassName: ""
+
+# Measured idle on v3.0.3: about 180Mi. The limit leaves room for image
+# processing on upload; 512Mi is enough to start but not much more.
+resources:
+  requests:
+    cpu: "100m"
+    memory: "384Mi"
+  limits:
+    memory: "1Gi"
+
+# Bundled MongoDB: Percona Server for MongoDB 4.4, the image and series
+# HeyForm's own docker-compose uses. Authentication is on; the root user is
+# "heyform" and its password is in the Secret above.
+mongodb:
+  enabled: true
+  # percona/percona-server-mongodb:<version>. The -multi tags carry both
+  # amd64 and arm64; the plain 4.4 tags are amd64 only.
+  version: "4.4.29-28-multi"
+  diskSize: "10Gi"
+  # MongoDB sizes its cache from the memory limit (half of what is above
+  # 1Gi, never under 256Mi), so raise the limit before the data outgrows it.
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "512Mi"
+    limits:
+      memory: "1Gi"
+
+# Used when mongodb.enabled is false. No credentials in the URI: put
+# MONGO_USER and MONGO_PASSWORD in a Secret and list it under extraEnvFrom.
+externalMongodb:
+  # mongodb://host:27017/heyform
+  uri: ""
+
+# Bundled Redis: the official redis image with append-only persistence and a
+# password. HeyForm's compose uses KeyDB, which speaks the same protocol but
+# publishes version tags per CPU architecture, so it cannot be pinned for a
+# mixed cluster. Holds the job queue and rate-limit state.
+redis:
+  enabled: true
+  # redis:<version>
+  version: "7.2.16-alpine"
+  diskSize: "1Gi"
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "64Mi"
+    limits:
+      memory: "256Mi"
+
+# Used when redis.enabled is false. A password goes in a Secret listed under
+# extraEnvFrom, as REDIS_PASSWORD.
+externalRedis:
+  host: ""
+  port: 6379
+
+# PrometheusRule on kube-state-metrics. Needs the Prometheus Operator CRDs.
+alerts:
+  enabled: false
+
+# Plain environment variables, e.g. to send mail and verify addresses:
+#   env:
+#     SMTP_FROM: "HeyForm <noreply@example.com>"
+#     SMTP_HOST: smtp.example.com
+#     SMTP_PORT: "465"
+#     SMTP_SECURE: "true"
+#     SMTP_USER: noreply@example.com
+#     VERIFY_USER_EMAIL: "true"
+# Variables the chart sets itself are rejected; see templates/validate.yaml.
+env: {}
+
+# Existing Secrets loaded with envFrom, for keys such as SMTP_PASSWORD,
+# OPENAI_API_KEY or GOOGLE_LOGIN_CLIENT_SECRET.
+extraEnvFrom: []
+#  - secretName: heyform-smtp
+
+# Applied to all three pods.
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

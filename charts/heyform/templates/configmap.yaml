@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "heyform.fullname" . }}-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "heyform.labels" (list . "app") | nindent 4 }}
+data:
+  APP_LISTEN_PORT: "9157"
+  APP_HOMEPAGE_URL: {{ include "heyform.publicUrl" . | quote }}
+  TRUST_PROXY: {{ include "heyform.trustProxy" . | quote }}
+  MONGO_URI: {{ include "heyform.mongoUri" . | quote }}
+  REDIS_HOST: {{ include "heyform.redisHost" . | quote }}
+  REDIS_PORT: {{ ternary 6379 .Values.externalRedis.port .Values.redis.enabled | quote }}
+  {{- range $key, $value := .Values.env }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}

@@ -1,0 +1,111 @@
+{{- if .Values.mongodb.enabled }}
+{{- $name := include "heyform.mongodb.fullname" . }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "heyform.labels" (list . "mongodb") | nindent 4 }}
+spec:
+  clusterIP: None
+  ports:
+    - name: mongodb
+      port: 27017
+      targetPort: mongodb
+  selector:
+    {{- include "heyform.selectorLabels" (list . "mongodb") | nindent 4 }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "heyform.labels" (list . "mongodb") | nindent 4 }}
+spec:
+  # A standalone server, as in HeyForm's compose file. More replicas would
+  # be independent databases, not a replica set.
+  replicas: 1
+  serviceName: {{ $name }}
+  selector:
+    matchLabels:
+      {{- include "heyform.selectorLabels" (list . "mongodb") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "heyform.selectorLabels" (list . "mongodb") | nindent 8 }}
+    spec:
+      {{- include "heyform.scheduling" . | nindent 6 }}
+      automountServiceAccountToken: false
+      securityContext:
+        # The image's mongodb user. Its primary group is root (0), so fsGroup
+        # is what lets it write a fresh volume.
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: mongodb
+          image: "percona/percona-server-mongodb:{{ .Values.mongodb.version }}"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - name: mongodb
+              containerPort: 27017
+              protocol: TCP
+          env:
+            # Read only on a first start with an empty volume, where the
+            # entrypoint creates this user in the admin database and turns
+            # authentication on.
+            - name: MONGO_INITDB_ROOT_USERNAME
+              value: heyform
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "heyform.secretName" . }}
+                  key: MONGO_PASSWORD
+          # While it creates the user the entrypoint runs mongod on
+          # 127.0.0.1 only, so these pass once the real server is up.
+          startupProbe:
+            tcpSocket:
+              port: mongodb
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            tcpSocket:
+              port: mongodb
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: mongodb
+            periodSeconds: 30
+          resources:
+            {{- toYaml .Values.mongodb.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /data/db
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+  # Claims made from a template stay behind on `helm uninstall`.
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        {{- if .Values.storageClassName }}
+        storageClassName: {{ .Values.storageClassName | quote }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.mongodb.diskSize | quote }}
+{{- end }}

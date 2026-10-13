@@ -1,0 +1,42 @@
+{{/*
+Fail the render on values that would install and then crash-loop or refuse
+sign-in. Only inconsistent values fail; a default install needs none set.
+*/}}
+
+{{- if and .Values.ingress.enabled (not .Values.ingress.host) }}
+{{- fail "ingress.enabled requires ingress.host." }}
+{{- end }}
+
+{{- if and .Values.publicUrl (not (regexMatch "^https?://[^/]+" .Values.publicUrl)) }}
+{{- fail (printf "publicUrl must be a full URL such as https://forms.example.com, got %q." .Values.publicUrl) }}
+{{- end }}
+
+{{- if and (not .Values.mongodb.enabled) (not .Values.externalMongodb.uri) }}
+{{- fail "mongodb.enabled is false, so HeyForm has no database. Set externalMongodb.uri (mongodb://host:27017/heyform) or turn mongodb.enabled back on." }}
+{{- end }}
+{{- if and .Values.mongodb.enabled .Values.externalMongodb.uri }}
+{{- fail "externalMongodb.uri is set while the bundled MongoDB is on. Set mongodb.enabled=false to use the external one, or clear externalMongodb.uri." }}
+{{- end }}
+{{- if regexMatch "^mongodb(\\+srv)?://[^/@]*:[^/@]*@" .Values.externalMongodb.uri }}
+{{- fail "externalMongodb.uri carries a password. Remove it from the URI and supply MONGO_USER and MONGO_PASSWORD from a Secret listed under extraEnvFrom." }}
+{{- end }}
+
+{{- if and (not .Values.redis.enabled) (not .Values.externalRedis.host) }}
+{{- fail "redis.enabled is false, so HeyForm has no Redis. Set externalRedis.host or turn redis.enabled back on." }}
+{{- end }}
+{{- if and .Values.redis.enabled .Values.externalRedis.host }}
+{{- fail "externalRedis.host is set while the bundled Redis is on. Set redis.enabled=false to use the external one, or clear externalRedis.host." }}
+{{- end }}
+
+{{- $owned := splitList "," (include "heyform.ownedEnv" .) }}
+{{- if .Values.mongodb.enabled }}
+{{- $owned = concat $owned (splitList "," (include "heyform.ownedMongoEnv" .)) }}
+{{- end }}
+{{- if .Values.redis.enabled }}
+{{- $owned = concat $owned (splitList "," (include "heyform.ownedRedisEnv" .)) }}
+{{- end }}
+{{- range $key := $owned }}
+{{- if hasKey $.Values.env $key }}
+{{- fail (printf "%s is set by the chart and cannot be overridden through `env`. See values.yaml." $key) }}
+{{- end }}
+{{- end }}
