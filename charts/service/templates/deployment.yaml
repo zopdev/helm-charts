@@ -16,6 +16,10 @@ metadata:
     app: {{ .Values.name }}
 spec:
   replicas: {{ .Values.minReplicas }}
+  {{- with .Values.strategy }}
+  strategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   selector:
     matchLabels:
       app: {{ .Values.name }}
@@ -103,6 +107,14 @@ spec:
       initContainers:
         - name: {{ .Values.name }}-init
           image: {{ .Values.initContainer.image }}
+          {{- with .Values.initContainer.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.initContainer.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           {{- if .Values.initContainer.args }}
           args: {{ .Values.initContainer.args }}
           {{- end }}

@@ -4,6 +4,12 @@
   "title": "Service Helm Chart Values",
   "description": "Configuration values for the Service Helm chart",
   "properties": {
+    "strategy": {
+      "type": "object",
+      "category": "advanced",
+      "description": "Deployment update strategy, rendered verbatim into spec.strategy, e.g. {\"type\": \"Recreate\"}. Empty keeps the Kubernetes default (RollingUpdate)",
+      "default": {}
+    },
     "name": {
       "type": "string",
       "description": "Name of the service"

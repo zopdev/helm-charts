@@ -16,9 +16,15 @@ spec:
   groups:
     - name: {{ .Release.Namespace }}.{{ .Release.Name }}-mongodb.rules
       rules:
+        # mongodb_up == 0 only fires while the exporter is alive to report it.
+        # If the exporter container or the whole pod is gone the series goes
+        # absent instead, which absent() catches.
         - alert: MongodbDown
-          expr: mongodb_up{namespace="{{ .Release.Namespace }}", service="{{ include "mongodb.fullname" . }}-headless"} == 0
-          for: 0m
+          expr: |
+            mongodb_up{namespace="{{ .Release.Namespace }}", service="{{ include "mongodb.fullname" . }}-headless"} == 0
+              or
+            absent(mongodb_up{namespace="{{ .Release.Namespace }}", service="{{ include "mongodb.fullname" . }}-headless"})
+          for: 1m
           labels:
             severity: critical
             servicealert: "true"
@@ -26,7 +32,7 @@ spec:
             service: {{ .Values.name | default .Release.Name | quote }}
           annotations:
             summary: 'MongoDB instance {{ .Release.Name }} is down'
-            description: 'The exporter for {{ .Release.Name }} cannot reach mongod'
+            description: 'MongoDB {{ .Release.Name }} is unreachable, or its exporter has stopped reporting'
 
         - alert: MongodbRestarted
           expr: mongodb_ss_uptime{namespace="{{ .Release.Namespace }}", service="{{ include "mongodb.fullname" . }}-headless"} < 60

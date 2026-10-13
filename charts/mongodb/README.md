@@ -87,6 +87,11 @@ The `service` chart looks for `<datastore>-<db>-<its release>-mongodb-*`, so thi
 
 The root password lives in `<release>-mongodb-root-secret`.
 
+### Credential caveats
+
+- **Render with a cluster connection.** Credentials are kept stable by reading the live Secrets with `lookup`. Under `helm template`, or a GitOps tool that renders without cluster access (for example Argo CD), `lookup` returns nothing, so every render generates a new username and password. The postgres chart behaves the same way. Install and upgrade with `helm install` / `helm upgrade`.
+- **Don't hand-edit `MONGO_PASSWORD`.** The init Job's name hashes the username but deliberately not the password, so changing only the password in the Secret does not re-run the Job, and mongod keeps the old password. If the Secret is deleted instead, the next upgrade generates a new username as well, which changes the Job name and re-runs it.
+
 ---
 
 ## Monitoring
@@ -95,9 +100,11 @@ A `percona/mongodb_exporter` sidecar serves metrics on port `2121`, scraped thro
 
 | Alert | Fires when |
 |-------|------------|
-| `MongodbDown` | the exporter cannot reach `mongod` |
+| `MongodbDown` | `mongod` is unreachable, or the exporter has stopped reporting (pod or exporter gone) for 1 minute |
 | `MongodbRestarted` | `mongod` has been up for less than a minute |
 | `MongodbTooManyConnections` | more than 80% of available connections are in use for 2 minutes |
+
+Every alert carries a `service` label set to `name` (the owning service), or to the release name when `name` is empty, so alerts can be routed to whoever owns the app.
 
 The rule is named `<release>-mongodb`, not after the bare release name, so an application chart can bundle mongodb next to redis or postgres without a PrometheusRule name collision.
 

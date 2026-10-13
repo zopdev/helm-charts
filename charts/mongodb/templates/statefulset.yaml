@@ -65,19 +65,17 @@ spec:
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          # ping needs no authentication, so the probes do not depend on the
-          # root password.
+          # Liveness only needs "is mongod accepting connections", so it is a
+          # TCP check: running mongosh (a Node process) inside this container
+          # every few seconds would count against its memory limit. Readiness
+          # keeps the real ping, less often and with a generous timeout so CPU
+          # throttling does not flap it. ping needs no authentication.
           livenessProbe:
-            exec:
-              command:
-                - mongosh
-                - --quiet
-                - --norc
-                - --eval
-                - "db.adminCommand('ping')"
+            tcpSocket:
+              port: tcp-mongodb
             initialDelaySeconds: 30
             periodSeconds: 20
-            timeoutSeconds: 10
+            timeoutSeconds: 5
             failureThreshold: 6
           readinessProbe:
             exec:
@@ -88,9 +86,9 @@ spec:
                 - --eval
                 - "db.adminCommand('ping')"
             initialDelaySeconds: 10
-            periodSeconds: 10
-            timeoutSeconds: 10
-            failureThreshold: 6
+            periodSeconds: 30
+            timeoutSeconds: 20
+            failureThreshold: 4
           volumeMounts:
             - name: {{ .Release.Name }}-mongodb-persistent-storage
               mountPath: /data/db

@@ -202,6 +202,12 @@ grafanaDashboard:
 #  custom_dashboard.json: 
 #  {"annotations":{"list":[{"builtIn":1,"datasource":"-- Grafana --","enable":true,"hide":true,"iconColor":"rgba(0, 211, 255, 1)","name":"Annotations & Alerts","target":{"limit":100,"matchAny":false,"tags":[],"type":"dashboard"},"type":"dashboard"}]},"editable":true,"gnetId":null,"graphTooltip":0,"id":27,"links":[],"panels":[],"schemaVersion":30,"style":"dark","tags":[],"templating":{"list":[]},"time":{"from":"now-6h","to":"now"},"timepicker":{},"timezone":"","title":"Custom dashboard","version":1} 
 
+# Deployment update strategy, rendered verbatim into spec.strategy. Empty keeps
+# the Kubernetes default (RollingUpdate). Use {type: Recreate} for a single
+# replica on a ReadWriteOnce volume: a RollingUpdate surge pod scheduled on
+# another node waits forever for the volume the old pod still holds.
+strategy: {}
+
 datastores:
   mysql:
   postgres: 
