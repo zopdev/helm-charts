@@ -292,6 +292,14 @@ spec:
                 name: {{ $k.datastore }}-{{ replace "_" "-" $k.database }}-{{ $.Release.Name}}-clickhouse-database-secret
             {{- end }}
             {{- end }}
+            {{- if and .Values.datastores .Values.datastores.mongodb }}
+            {{- range $i, $k := .Values.datastores.mongodb }}
+            - configMapRef:
+                name: {{ $k.datastore }}-{{ replace "_" "-" $k.database }}-{{ $.Release.Name}}-mongodb-configmap
+            - secretRef:
+                name: {{ $k.datastore }}-{{ replace "_" "-" $k.database }}-{{ $.Release.Name}}-mongodb-database-secret
+            {{- end }}
+            {{- end }}
           volumeMounts:
           {{- if .Values.volumeMounts }}
           {{- range $k,$v := .Values.volumeMounts.configmaps }}

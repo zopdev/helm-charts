@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "mongodb.fullname" . }}-headless
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "mongodb.fullname" . }}
+    release: {{ .Release.Name | quote }}
+    # Only this Service carries the metrics port, so the ServiceMonitor selects
+    # on this label and each pod is scraped once rather than once per Service.
+    monitoring: "true"
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+    - name: tcp-mongodb
+      port: 27017
+      targetPort: tcp-mongodb
+    - name: metrics-port
+      port: 2121
+      targetPort: 2121
+  selector:
+    app: {{ include "mongodb.fullname" . }}

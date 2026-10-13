@@ -1,0 +1,43 @@
+# Name of the service this datastore belongs to. Used as the
+# `service` label on the alerts, so they can be attributed to an
+# owner. Defaults to the release name when unset.
+name: ""
+
+# mongo:<version> from Docker Hub. 7.0 is the newest line that the
+# MongoDB 5.x Node driver (mongoose 7) supports.
+version: "7.0"
+
+diskSize: "10Gi"
+
+# WiredTiger cache in GB. mongod otherwise sizes it from the node's RAM rather
+# than the container limit; keep it well under resources.limits.memory.
+wiredTigerCacheSizeGB: "0.25"
+
+resources:
+  requests:
+    cpu: "250m"
+    memory: "500Mi"
+  limits:
+    cpu: "1000m"
+    memory: "1Gi"
+
+# One database + user per entry. Each entry gets its own ConfigMap and Secret
+# carrying MONGO_HOST/MONGO_PORT/MONGO_DB and MONGO_USER/MONGO_PASSWORD/MONGO_URI,
+# which the service chart pulls in via datastores.mongodb.
+services: []
+#  - name: "myapp"
+#    database: "myapp"
+
+# Pod scheduling. All three are optional and render nothing when left empty,
+# so existing releases are unaffected. Use them to pin the workload to a
+# dedicated (optionally tainted) node pool.
+nodeSelector: {}
+#  workload: stateful
+
+tolerations: []
+#  - key: workload
+#    operator: Equal
+#    value: stateful
+#    effect: NoSchedule
+
+affinity: {}

@@ -1,0 +1,152 @@
+{{- range $index, $service := .Values.services }}
+{{- $dbName := replace "_" "-" $service.database }}
+{{- $host := include "mongodb.fullname" $ }}
+{{- $generatedUsername := printf "%s_%s_user" (trunc 27 $service.name) (randAlphaNum 4 | lower) }}
+{{- $generatedPassword := printf "%s%s%s" (randAlpha 6) (randNumeric 6) (randAlpha 6 | upper) }}
+
+{{/* Same naming as the other datastore charts, so the service chart can find
+     these by datastore/database/release: <release>-<database>-<service>-mongodb-* */}}
+{{- $secretName := printf "%s-%s-%s-mongodb-database-secret" $.Release.Name $dbName $service.name }}
+
+{{/* Keep the credentials of an existing install: the user already exists in
+     mongod with this password, and regenerating it would lock the app out. */}}
+{{- $username := $generatedUsername }}
+{{- $password := $generatedPassword }}
+{{- $existingSecret := lookup "v1" "Secret" $.Release.Namespace $secretName }}
+{{- if $existingSecret }}
+  {{- with $existingSecret.data }}
+    {{- if hasKey . "MONGO_USER" }}
+      {{- $username = index . "MONGO_USER" | b64dec }}
+    {{- end }}
+    {{- if hasKey . "MONGO_PASSWORD" }}
+      {{- $password = index . "MONGO_PASSWORD" | b64dec }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- $uri := printf "mongodb://%s:%s@%s:27017/%s?authSource=%s" $username $password $host $service.database $service.database }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $.Release.Name }}-{{ $dbName }}-{{ $service.name }}-mongodb-configmap
+  namespace: {{ $.Release.Namespace }}
+data:
+  MONGO_HOST: {{ $host | quote }}
+  MONGO_PORT: "27017"
+  MONGO_DB: {{ $service.database | quote }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $secretName }}
+  namespace: {{ $.Release.Namespace }}
+type: Opaque
+data:
+  MONGO_USER: {{ $username | b64enc }}
+  MONGO_PASSWORD: {{ $password | b64enc }}
+  # The user is created inside its own database, so authSource points there.
+  MONGO_URI: {{ $uri | b64enc }}
+  MONGODB_URI: {{ $uri | b64enc }}
+---
+{{/* A Job's spec.template is immutable, so anything that changes the pod must
+     change the name too: helm then creates a new Job and prunes the old one
+     instead of failing the upgrade with "field is immutable". The password is
+     left out of the hash on purpose - Job names are visible to anyone who can
+     list jobs - and is read from the Secret at run time instead of being
+     templated into the script. */}}
+{{- $sig := printf "%s|%s|%s|%s" $.Chart.Version $.Values.version $username $service.database | sha256sum | trunc 8 }}
+{{- $initName := printf "mongodb-%s-%s-init" $.Release.Name $service.name | trunc 54 | trimSuffix "-" }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ $initName }}-{{ $sig }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: mongodb
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/component: db-init
+    helm.sh/chart: {{ include "mongodb.chart" $ }}
+spec:
+  # A Job, not a bare Pod, so `helm --wait` is satisfied once it succeeds.
+  # The script itself waits for mongod; activeDeadlineSeconds caps the case
+  # where mongod never comes up.
+  activeDeadlineSeconds: 1800
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: mongodb
+        app.kubernetes.io/instance: {{ $.Release.Name }}
+        app.kubernetes.io/component: db-init
+    spec:
+      {{- with $.Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      restartPolicy: OnFailure
+      containers:
+        - name: mongodb-init-user
+          image: "mongo:{{ $.Values.version }}"
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              set -euo pipefail
+              until mongosh --quiet --norc --host "$MONGO_HOST" --eval "db.adminCommand('ping')" >/dev/null 2>&1; do
+                echo "waiting for $MONGO_HOST"; sleep 3
+              done
+              mongosh --quiet --norc --host "$MONGO_HOST" \
+                -u "$ROOT_USER" -p "$ROOT_PASSWORD" --authenticationDatabase admin \
+                --eval '
+                  const d = db.getSiblingDB(process.env.APP_DB);
+                  const roles = [{ role: "readWrite", db: process.env.APP_DB }, { role: "dbAdmin", db: process.env.APP_DB }];
+                  if (d.getUser(process.env.APP_USER)) {
+                    d.updateUser(process.env.APP_USER, { pwd: process.env.APP_PASSWORD, roles: roles });
+                    print("updated user " + process.env.APP_USER);
+                  } else {
+                    d.createUser({ user: process.env.APP_USER, pwd: process.env.APP_PASSWORD, roles: roles });
+                    print("created user " + process.env.APP_USER);
+                  }
+                '
+          env:
+            - name: MONGO_HOST
+              value: {{ $host | quote }}
+            - name: APP_DB
+              value: {{ $service.database | quote }}
+            - name: ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "mongodb.rootSecretName" $ }}
+                  key: mongodb-root-username
+            - name: ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "mongodb.rootSecretName" $ }}
+                  key: mongodb-root-password
+            - name: APP_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretName }}
+                  key: MONGO_USER
+            - name: APP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretName }}
+                  key: MONGO_PASSWORD
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              # mongosh is a Node process and needs headroom over its idle size.
+              memory: "512Mi"
+---
+{{- end }}

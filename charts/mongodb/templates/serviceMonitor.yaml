@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "mongodb.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "mongodb.fullname" . }}
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: {{ include "mongodb.fullname" . }}
+      monitoring: "true"
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  endpoints:
+    - port: metrics-port
+      interval: 30s
+      path: /metrics

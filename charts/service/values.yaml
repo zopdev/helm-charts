@@ -217,6 +217,7 @@ datastores:
   kafka: 
   solrcloud:
   clickhouse:
+  mongodb:
 
 # Pod scheduling. All three are optional and render nothing when left empty,
 # so existing releases are unaffected. Use them to pin the workload to a

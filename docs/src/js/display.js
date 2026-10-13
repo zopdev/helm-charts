@@ -69,6 +69,9 @@ const CHART_DISPLAY = {
     name: "MariaDB",
     description: "The open source relational database",
   },
+  mongodb: {
+    name: "MongoDB",
+  },
   mysql: {
     name: "MySQL",
     description: "Deploy a MySQL database service",
