@@ -40,6 +40,9 @@ const CHART_DISPLAY = {
     name: "Dgraph",
     description: "The high-performance database for modern applications",
   },
+  heyform: {
+    name: "HeyForm",
+  },
   holmesgpt: {
     name: "HolmesGPT",
     description: "AI agent that investigates production incidents for you",

@@ -1,0 +1,92 @@
+# MongoDB backing store (zopdev/mongodb subchart). Creates database "heyform"
+# and a user scoped to it; the credentials arrive as MONGO_URI through
+# service.datastores.mongodb below.
+mongodb:
+  name: "heyform"
+  diskSize: "10Gi"
+  services:
+    - name: "heyform"
+      database: "heyform"
+
+# Redis (zopdev/redis subchart), used for HeyForm's job queues.
+redis:
+  name: "heyform"
+  diskSize: "10Gi"
+
+service:
+  # NOT "heyform". The service subchart names its PrometheusRule after this value
+  # and the redis subchart names its own after the release, which has to be
+  # "heyform" (see README). Two objects of one kind+name make helm refuse to
+  # install:
+  #   Error: prometheusrules.monitoring.coreos.com "heyform" already exists
+  name: heyform-app
+  image: "heyform/community-edition:v3.0.3"
+  minCPU: "250m"
+  minMemory: "512Mi"
+  maxCPU: "1000m"
+  maxMemory: "1Gi"
+  minReplicas: 1
+  # Uploads live on a ReadWriteOnce disk (below), so one pod is the ceiling too.
+  maxReplicas: 1
+
+  nginx:
+    # Hostname HeyForm is served on. Empty means no Ingress is created.
+    host: ""
+    annotations:
+      kubernetes.io/ingress.class: "nginx"
+    tlsHost: ""
+    tlsSecretName: ""
+
+  env:
+    # The public address HeyForm is reached at. The session cookie is scoped to
+    # this URL's hostname, so a value that does not match the address in the
+    # browser gives working pods and a login that silently never sticks.
+    APP_HOMEPAGE_URL: "http://localhost:9157"
+    APP_LISTEN_PORT: "9157"
+    # These two defaults are PLACEHOLDERS that ship in a public chart, so every
+    # install that leaves them alone shares the same keys. Replace both before
+    # collecting real submissions: `openssl rand -hex 32`.
+    # SESSION_KEY signs session cookies; changing it signs everyone out.
+    SESSION_KEY: "69dd83f05af2f83c5f70fb8739eecf9be0e9f908e27c1f4891a92c2c0338c951"
+    # FORM_ENCRYPTION_KEY encrypts stored form data. Changing it later makes
+    # existing encrypted data unreadable.
+    FORM_ENCRYPTION_KEY: "67d5025420829172e3feef987716e8945e7944dfe95b3674f8d4d96a93f81df2"
+
+  datastores:
+    mongodb:
+      - datastore: heyform
+        database: heyform
+    redis:
+      - datastore: heyform
+
+  alerts:
+    enabled: true
+
+  # /health answers without touching MongoDB or Redis, so a datastore blip does
+  # not get the pod killed. (/health/ready also checks both datastores, but the
+  # service chart uses one path for both probes.)
+  heartbeatURL: /health
+  httpPort: 9157
+
+  livenessProbe:
+    enable: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 6
+
+  readinessProbe:
+    enable: true
+    initialDelaySeconds: 15
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+  # Uploaded images and files are written under static/upload in the app
+  # directory. Without a volume they would be lost on every pod restart.
+  volumeMounts:
+    pvc:
+      - name: heyform-uploads
+        mountPath: /app/packages/server/static/upload
+        subPath: ""
+        storage: "10Gi"

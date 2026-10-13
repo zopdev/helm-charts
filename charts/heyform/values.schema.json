@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "service": {
+      "type": "object",
+      "category": "runtime",
+      "description": "The HeyForm deployment itself",
+      "properties": {
+        "env": {
+          "type": "object",
+          "description": "Environment the HeyForm container runs with",
+          "properties": {
+            "APP_HOMEPAGE_URL": {
+              "type": "string",
+              "description": "Public address HeyForm is reached at, e.g. https://forms.example.com. The login cookie is scoped to this hostname, so a value that does not match the browser's address gives working pods and a login that never sticks",
+              "default": "http://localhost:9157",
+              "mutable": true
+            },
+            "SESSION_KEY": {
+              "type": "string",
+              "description": "Signs session cookies. The shipped default is a PUBLIC placeholder - generate your own with `openssl rand -hex 32`. Changing it later signs every user out",
+              "default": "69dd83f05af2f83c5f70fb8739eecf9be0e9f908e27c1f4891a92c2c0338c951",
+              "mutable": true
+            },
+            "FORM_ENCRYPTION_KEY": {
+              "type": "string",
+              "description": "Encrypts stored form data. The shipped default is a PUBLIC placeholder - generate your own with `openssl rand -hex 32` before collecting real submissions. Changing it later makes existing encrypted data unreadable",
+              "default": "67d5025420829172e3feef987716e8945e7944dfe95b3674f8d4d96a93f81df2",
+              "mutable": true
+            }
+          },
+          "required": [
+            "APP_HOMEPAGE_URL",
+            "SESSION_KEY",
+            "FORM_ENCRYPTION_KEY"
+          ]
+        },
+        "image": {
+          "type": "string",
+          "minLength": 1,
+          "description": "HeyForm container image, e.g. heyform/community-edition:v3.0.3. Raising the tag upgrades HeyForm on the next rollout",
+          "default": "heyform/community-edition:v3.0.3",
+          "mutable": true
+        },
+        "nginx": {
+          "type": "object",
+          "description": "nginx Ingress for HeyForm. Created only when host is set",
+          "properties": {
+            "host": {
+              "type": "string",
+              "description": "Hostname to serve HeyForm on, e.g. forms.example.com. Leave empty and no Ingress is created. Set service.env.APP_HOMEPAGE_URL to match",
+              "default": "",
+              "mutable": true
+            },
+            "tlsHost": {
+              "type": "string",
+              "description": "Hostname to put in the TLS certificate. Defaults to the host above",
+              "default": "",
+              "mutable": true
+            },
+            "tlsSecretName": {
+              "type": "string",
+              "description": "Name of an existing Kubernetes TLS secret holding the certificate for that host",
+              "default": "",
+              "mutable": true
+            }
+          }
+        },
+        "minCPU": {
+          "type": "string",
+          "description": "CPU reserved for the HeyForm pod, e.g. 250m",
+          "default": "250m",
+          "mutable": true
+        },
+        "minMemory": {
+          "type": "string",
+          "description": "Memory reserved for the HeyForm pod, e.g. 512Mi",
+          "default": "512Mi",
+          "mutable": true
+        },
+        "maxCPU": {
+          "type": "string",
+          "description": "CPU ceiling for the HeyForm pod, e.g. 1000m",
+          "default": "1000m",
+          "mutable": true
+        },
+        "maxMemory": {
+          "type": "string",
+          "description": "Memory ceiling for the HeyForm pod, e.g. 1Gi",
+          "default": "1Gi",
+          "mutable": true
+        },
+        "volumeMounts": {
+          "type": "object",
+          "description": "Storage attached to the HeyForm container",
+          "properties": {
+            "pvc": {
+              "type": "array",
+              "description": "Disks mounted into HeyForm. The default entry gives the upload directory a 10Gi volume. Set \"storage\" to change the size, at install time only - a live volume cannot be resized",
+              "default": [
+                {
+                  "name": "heyform-uploads",
+                  "mountPath": "/app/packages/server/static/upload",
+                  "subPath": "",
+                  "storage": "10Gi"
+                }
+              ],
+              "mutable": true,
+              "editDisabled": true
+            }
+          }
+        }
+      },
+      "required": [
+        "image",
+        "minCPU",
+        "minMemory",
+        "maxCPU",
+        "maxMemory"
+      ]
+    },
+    "mongodb": {
+      "type": "object",
+      "category": "advanced",
+      "description": "Bundled MongoDB holding forms, submissions, users and workspaces",
+      "properties": {
+        "diskSize": {
+          "type": "string",
+          "description": "Disk for the bundled MongoDB, e.g. 10Gi. Fixed at install time - a live volume cannot be resized afterwards",
+          "default": "10Gi",
+          "mutable": true,
+          "editDisabled": true
+        }
+      }
+    },
+    "redis": {
+      "type": "object",
+      "category": "advanced",
+      "description": "Bundled Redis used for sessions and background job queues",
+      "properties": {
+        "diskSize": {
+          "type": "string",
+          "description": "Disk for the bundled Redis, e.g. 10Gi. Fixed at install time - a live volume cannot be resized afterwards",
+          "default": "10Gi",
+          "mutable": true,
+          "editDisabled": true
+        }
+      }
+    }
+  },
+  "title": "HeyForm Helm Chart Values"
+}
