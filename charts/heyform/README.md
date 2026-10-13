@@ -45,7 +45,7 @@ kubectl port-forward svc/heyform-app 9157:80
 # http://localhost:9157
 ```
 
-The first pod can restart once on a fresh install: Redis's headless Service publishes no DNS record until Redis is ready, and HeyForm exits if it cannot resolve it. The restarted pod connects normally.
+On a fresh install the HeyForm pod waits in an init container until Redis accepts connections and MongoDB accepts HeyForm's own credentials (the user is created by the mongodb init Job). HeyForm exits at boot if either is missing, so starting it any earlier would cost a restart.
 
 ## Uninstall Helm Chart
 

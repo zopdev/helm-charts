@@ -52,6 +52,32 @@ service:
     # existing encrypted data unreadable.
     FORM_ENCRYPTION_KEY: "67d5025420829172e3feef987716e8945e7944dfe95b3674f8d4d96a93f81df2"
 
+  # Holds HeyForm back until both datastores can actually serve it. Without
+  # this the first pod of a fresh install exits once and is restarted, because
+  # HeyForm treats either of these as fatal at boot:
+  #   getaddrinfo ENOTFOUND heyform-redis-headless-service
+  #     (a headless Service has no DNS record until redis is Ready)
+  #   MongoServerError: Authentication failed.
+  #     (the mongodb init Job has not created the heyform user yet)
+  # so this waits for redis to accept a TCP connection and for a ping that
+  # authenticates with HeyForm's own MONGO_URI. The mongo image is already on
+  # the node for the mongodb pod and ships both bash and mongosh.
+  initContainer:
+    image: "mongo:7.0"
+    command:
+      - /bin/bash
+      - -c
+      - |
+        until (exec 3<>/dev/tcp/heyform-redis-headless-service/6379) 2>/dev/null; do
+          echo "waiting for redis"; sleep 2
+        done
+        until mongosh --quiet --norc "$MONGO_URI" --eval "db.runCommand({ping: 1})" >/dev/null 2>&1; do
+          echo "waiting for mongodb user"; sleep 3
+        done
+    envFrom:
+      secrets:
+        - heyform-heyform-heyform-mongodb-database-secret
+
   datastores:
     mongodb:
       - datastore: heyform
