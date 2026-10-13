@@ -1,0 +1,87 @@
+{{- /*
+HACK - auto-verifies the email address of every HeyForm account.
+
+HeyForm (v3.0.3) has no setting for this: after a password signup the webapp
+always sends the user to /verify-email until users.isEmailVerified is true,
+and the only way to set it is a 6-digit code sent over SMTP. The
+VERIFY_USER_EMAIL variables in HeyForm's server and webapp are declared but
+never read, so setting them changes nothing. Without SMTP, nobody can get
+past the verify screen.
+
+This Deployment flips isEmailVerified to true for any account that does not
+have it yet, every 2 seconds, using HeyForm's own scoped MongoDB user. It
+depends on HeyForm's collection and field names (usermodels.isEmailVerified)
+and has to be re-checked on every HeyForm image bump. Turn it off with
+autoVerifyEmail=false once SMTP is configured.
+*/ -}}
+{{- if .Values.autoVerifyEmail }}
+{{- $db := index .Values.mongodb.services 0 }}
+{{- $secretName := printf "%s-%s-%s-mongodb-database-secret" .Release.Name (replace "_" "-" $db.database) $db.name }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-email-autoverify
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Release.Name }}-email-autoverify
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    helm.sh/chart: {{ printf "%s-%s" .Chart.Name .Chart.Version | quote }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-email-autoverify
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-email-autoverify
+    spec:
+      containers:
+        - name: email-autoverify
+          # Same image as the mongodb subchart, so it is already on the node.
+          image: "mongo:{{ .Values.mongodb.version | default "7.0" }}"
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              # Wait for the heyform user the mongodb init Job creates, so a
+              # fresh install does not crash-loop this pod.
+              until mongosh --quiet --norc "$MONGO_URI" --eval "db.runCommand({ping: 1})" >/dev/null 2>&1; do
+                echo "waiting for mongodb user"; sleep 3
+              done
+              echo "auto-verifying HeyForm accounts every 2s"
+              exec mongosh --quiet --norc "$MONGO_URI" --eval '
+                while (true) {
+                  try {
+                    const r = db.usermodels.updateMany(
+                      { isEmailVerified: { $ne: true } },
+                      { $set: { isEmailVerified: true } }
+                    );
+                    if (r.modifiedCount > 0) {
+                      print(new Date().toISOString() + " auto-verified " + r.modifiedCount + " account(s)");
+                    }
+                  } catch (e) {
+                    print(new Date().toISOString() + " error: " + e.message);
+                  }
+                  sleep(2000);
+                }
+              '
+          envFrom:
+            - secretRef:
+                name: {{ $secretName }}
+          securityContext:
+            runAsNonRoot: true
+            # the mongodb user in the mongo image; its home is writable
+            runAsUser: 999
+            runAsGroup: 999
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "96Mi"
+            limits:
+              cpu: "200m"
+              memory: "256Mi"
+{{- end }}

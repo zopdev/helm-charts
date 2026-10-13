@@ -1,3 +1,10 @@
+# HACK, on by default: marks every HeyForm account's email as verified, so
+# signup works without an SMTP server. HeyForm has no setting for this (its
+# VERIFY_USER_EMAIL variables are never read); see
+# templates/email-autoverify.yaml. Set to false once SMTP is configured
+# under service.env and users should verify their address by email.
+autoVerifyEmail: true
+
 # MongoDB backing store (zopdev/mongodb subchart). Creates database "heyform"
 # and a user scoped to it; the credentials arrive as MONGO_URI through
 # service.datastores.mongodb below.
@@ -43,14 +50,18 @@ service:
     # browser gives working pods and a login that silently never sticks.
     APP_HOMEPAGE_URL: "http://localhost:9157"
     APP_LISTEN_PORT: "9157"
-    # These two defaults are PLACEHOLDERS that ship in a public chart, so every
-    # install that leaves them alone shares the same keys. Replace both before
-    # collecting real submissions: `openssl rand -hex 32`.
-    # SESSION_KEY signs session cookies; changing it signs everyone out.
-    SESSION_KEY: "69dd83f05af2f83c5f70fb8739eecf9be0e9f908e27c1f4891a92c2c0338c951"
-    # FORM_ENCRYPTION_KEY encrypts stored form data. Changing it later makes
-    # existing encrypted data unreadable.
-    FORM_ENCRYPTION_KEY: "67d5025420829172e3feef987716e8945e7944dfe95b3674f8d4d96a93f81df2"
+
+  # SESSION_KEY and FORM_ENCRYPTION_KEY, generated per install by
+  # templates/app-secret.yaml and kept stable across upgrades.
+  envFrom:
+    secrets:
+      - "{{ .Release.Name }}-app-secret"
+
+  # Recreate, not the default RollingUpdate: with one replica on the
+  # ReadWriteOnce uploads volume, a surge pod scheduled on another node would
+  # wait forever for the volume the old pod still holds, and the rollout stalls.
+  strategy:
+    type: Recreate
 
   # Holds HeyForm back until both datastores can actually serve it. Without
   # this the first pod of a fresh install exits once and is restarted, because
@@ -68,15 +79,43 @@ service:
       - /bin/bash
       - -c
       - |
-        until (exec 3<>/dev/tcp/heyform-redis-headless-service/6379) 2>/dev/null; do
-          echo "waiting for redis"; sleep 2
+        # Gives up after 10 minutes so a misconfiguration fails the pod
+        # visibly instead of leaving it in Init forever, and logs the last
+        # error every 30s so the cause is in the logs.
+        deadline=$((SECONDS + 600))
+        until err=$( (exec 3<>/dev/tcp/{{ .Release.Name }}-redis-headless-service/6379) 2>&1 ); do
+          [ $SECONDS -ge $deadline ] && { echo "gave up waiting for redis: $err"; exit 1; }
+          [ $((SECONDS % 30)) -lt 2 ] && echo "waiting for redis: $err"
+          sleep 2
         done
-        until mongosh --quiet --norc "$MONGO_URI" --eval "db.runCommand({ping: 1})" >/dev/null 2>&1; do
-          echo "waiting for mongodb user"; sleep 3
+        until err=$(mongosh --quiet --norc "$MONGO_URI" --eval "db.runCommand({ping: 1})" 2>&1); do
+          [ $SECONDS -ge $deadline ] && { echo "gave up waiting for mongodb user: $err" | tail -3; exit 1; }
+          [ $((SECONDS % 30)) -lt 3 ] && echo "waiting for mongodb user: $(echo "$err" | tail -1)"
+          sleep 3
         done
+        echo "redis and mongodb are ready"
     envFrom:
       secrets:
-        - heyform-heyform-heyform-mongodb-database-secret
+        # Built from the release name; database and user name both "heyform",
+        # matching mongodb.services[0] above.
+        - "{{ .Release.Name }}-heyform-heyform-mongodb-database-secret"
+    resources:
+      requests:
+        cpu: "10m"
+        memory: "96Mi"
+      limits:
+        cpu: "200m"
+        memory: "256Mi"
+    # Same hardening as the main container. uid 999 is the mongodb user in
+    # the mongo image, whose home (/data/db) is writable for mongosh.
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 999
+      runAsGroup: 999
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
 
   datastores:
     mongodb:

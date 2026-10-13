@@ -31,12 +31,12 @@ helm dependency build charts/heyform
 ```bash
 helm repo add zopdev https://helm.zop.dev
 helm repo update
-helm install heyform zopdev/heyform \
-  --set service.env.SESSION_KEY=$(openssl rand -hex 32) \
-  --set service.env.FORM_ENCRYPTION_KEY=$(openssl rand -hex 32)
+helm install heyform zopdev/heyform
 ```
 
 **The release name must be `heyform`.** The service chart finds the MongoDB and Redis ConfigMaps/Secrets by names built from the release name and the `datastore` entries in `values.yaml`, which are set to `heyform`.
+
+`SESSION_KEY` and `FORM_ENCRYPTION_KEY` are generated for each install into the `<release>-app-secret` Secret and kept across upgrades, so there is nothing to set.
 
 Then open it:
 
@@ -45,7 +45,7 @@ kubectl port-forward svc/heyform-app 9157:80
 # http://localhost:9157
 ```
 
-On a fresh install the HeyForm pod waits in an init container until Redis accepts connections and MongoDB accepts HeyForm's own credentials (the user is created by the mongodb init Job). HeyForm exits at boot if either is missing, so starting it any earlier would cost a restart.
+On a fresh install the HeyForm pod waits in an init container until Redis accepts connections and MongoDB accepts HeyForm's own credentials (the user is created by the mongodb init Job). HeyForm exits at boot if either is missing, so starting it any earlier would cost a restart. If they are not ready within 10 minutes the init container fails with the last error in its log (`kubectl logs deploy/heyform-app -c heyform-app-init`).
 
 ## Uninstall Helm Chart
 
@@ -62,8 +62,7 @@ The MongoDB and Redis volumes are kept, as with any StatefulSet. Delete their PV
 | Input | Description | Default |
 |-------|-------------|---------|
 | `service.env.APP_HOMEPAGE_URL` | Public address HeyForm is reached at. The login cookie is scoped to its hostname, so it must match what users type into the browser | `http://localhost:9157` |
-| `service.env.SESSION_KEY` | Signs session cookies. **Replace the shipped placeholder** | placeholder |
-| `service.env.FORM_ENCRYPTION_KEY` | Encrypts stored form data. **Replace the shipped placeholder before collecting real data**; changing it later makes existing data unreadable | placeholder |
+| `autoVerifyEmail` | Mark every account's email as verified automatically, so signup works without SMTP (see below) | `true` |
 | `service.image` | HeyForm image | `heyform/community-edition:v3.0.3` |
 | `service.nginx.host` | Hostname for the Ingress. Empty means no Ingress | `""` |
 | `service.nginx.tlsSecretName` | TLS secret for that host | `""` |
@@ -75,7 +74,39 @@ The MongoDB and Redis volumes are kept, as with any StatefulSet. Delete their PV
 
 Any other [HeyForm environment variable](https://docs.heyform.net/configuration), such as SMTP or social login, can be added under `service.env`.
 
-HeyForm runs as a single replica: uploads live on a ReadWriteOnce volume, which several pods cannot share.
+HeyForm runs as a single replica with the `Recreate` update strategy: uploads live on a ReadWriteOnce volume, which several pods cannot share, and a rolling update's surge pod on another node would wait forever for it.
+
+---
+
+## Email verification and SMTP
+
+HeyForm makes every password signup confirm a 6-digit code sent by email, and v3.0.3 has no setting to turn that off (its `VERIFY_USER_EMAIL` variables exist but are never read). Without SMTP, nobody could get past the verify screen.
+
+So, **by default (`autoVerifyEmail: true`) the chart auto-verifies accounts.** A small `heyform-email-autoverify` Deployment marks every account's email as verified in MongoDB within about 2 seconds of signup. HeyForm's web app still shows the "Verify email address" screen right after signup; click the HeyForm logo (or reload `/`) and you are in, no code needed.
+
+This is a workaround, not a HeyForm feature: it relies on HeyForm's internal field names and is re-checked on every image bump.
+
+**SMTP is optional.** Without it, signup and login work, but nothing that sends mail does: password reset, workspace invites and submission notifications. To use it, and have users verify their address for real:
+
+```bash
+# service.env ends up in a ConfigMap, so keep the password in a Secret
+kubectl create secret generic heyform-smtp --from-literal=SMTP_PASSWORD='...'
+```
+
+```yaml
+autoVerifyEmail: false
+service:
+  env:
+    SMTP_FROM: "HeyForm <noreply@example.com>"
+    SMTP_HOST: "smtp.example.com"
+    SMTP_PORT: "465"
+    SMTP_USER: "..."
+    SMTP_SECURE: "true"
+  envFrom:
+    secrets:
+      - "{{ .Release.Name }}-app-secret"   # keep: generated session/encryption keys
+      - heyform-smtp
+```
 
 ---
 

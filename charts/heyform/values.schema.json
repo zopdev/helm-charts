@@ -2,6 +2,13 @@
   "$schema": "https://json-schema.org/draft-07/schema#",
   "type": "object",
   "properties": {
+    "autoVerifyEmail": {
+      "type": "boolean",
+      "category": "runtime",
+      "description": "Mark every account's email as verified automatically, so signup works without an SMTP server. Turn off once SMTP is configured and users should confirm their address by email",
+      "default": true,
+      "mutable": true
+    },
     "service": {
       "type": "object",
       "category": "runtime",
@@ -16,24 +23,10 @@
               "description": "Public address HeyForm is reached at, e.g. https://forms.example.com. The login cookie is scoped to this hostname, so a value that does not match the browser's address gives working pods and a login that never sticks",
               "default": "http://localhost:9157",
               "mutable": true
-            },
-            "SESSION_KEY": {
-              "type": "string",
-              "description": "Signs session cookies. The shipped default is a PUBLIC placeholder - generate your own with `openssl rand -hex 32`. Changing it later signs every user out",
-              "default": "69dd83f05af2f83c5f70fb8739eecf9be0e9f908e27c1f4891a92c2c0338c951",
-              "mutable": true
-            },
-            "FORM_ENCRYPTION_KEY": {
-              "type": "string",
-              "description": "Encrypts stored form data. The shipped default is a PUBLIC placeholder - generate your own with `openssl rand -hex 32` before collecting real submissions. Changing it later makes existing encrypted data unreadable",
-              "default": "67d5025420829172e3feef987716e8945e7944dfe95b3674f8d4d96a93f81df2",
-              "mutable": true
             }
           },
           "required": [
-            "APP_HOMEPAGE_URL",
-            "SESSION_KEY",
-            "FORM_ENCRYPTION_KEY"
+            "APP_HOMEPAGE_URL"
           ]
         },
         "image": {
