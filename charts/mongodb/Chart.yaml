@@ -1,0 +1,11 @@
+apiVersion: v2
+appVersion: "7.0"
+description: Helm chart for deploying a MongoDB datastore
+name: mongodb
+version: 0.0.1
+icon: "https://storage.googleapis.com/zopdev-blog-resources/1/internal-dashboard/2f3de4b7-aad3-466a-82a1-d0f0a3b34f84-mongodb.webp"
+maintainers:
+  - name: ZopDev
+    url: zop.dev
+annotations:
+  type: datasource

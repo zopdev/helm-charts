@@ -1,0 +1,64 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  # <release>-mongodb, NOT the bare release name the postgres and redis charts
+  # use. An application chart that bundles mongodb next to redis would otherwise
+  # render two PrometheusRules named after the release, and helm refuses to
+  # install two objects of one kind+name:
+  #   Error: prometheusrules.monitoring.coreos.com "<release>" already exists
+  name: {{ include "mongodb.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: kube-prometheus-stack
+    heritage: Helm
+    release: prometheus
+spec:
+  groups:
+    - name: {{ .Release.Namespace }}.{{ .Release.Name }}-mongodb.rules
+      rules:
+        # mongodb_up == 0 only fires while the exporter is alive to report it.
+        # If the exporter container or the whole pod is gone the series goes
+        # absent instead, which absent() catches.
+        - alert: MongodbDown
+          expr: |
+            mongodb_up{namespace="{{ .Release.Namespace }}", service="{{ include "mongodb.fullname" . }}-headless"} == 0
+              or
+            absent(mongodb_up{namespace="{{ .Release.Namespace }}", service="{{ include "mongodb.fullname" . }}-headless"})
+          for: 1m
+          labels:
+            severity: critical
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name | default .Release.Name | quote }}
+          annotations:
+            summary: 'MongoDB instance {{ .Release.Name }} is down'
+            description: 'MongoDB {{ .Release.Name }} is unreachable, or its exporter has stopped reporting'
+
+        - alert: MongodbRestarted
+          expr: mongodb_ss_uptime{namespace="{{ .Release.Namespace }}", service="{{ include "mongodb.fullname" . }}-headless"} < 60
+          for: 0m
+          labels:
+            severity: critical
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name | default .Release.Name | quote }}
+          annotations:
+            summary: 'MongoDB instance {{ .Release.Name }} restarted'
+            description: 'MongoDB instance {{ .Release.Name }} restarted < 1 minute ago'
+
+        - alert: MongodbTooManyConnections
+          expr: |
+            mongodb_ss_connections{namespace="{{ .Release.Namespace }}", service="{{ include "mongodb.fullname" . }}-headless", conn_type="current"}
+              / ignoring(conn_type)
+            (mongodb_ss_connections{namespace="{{ .Release.Namespace }}", service="{{ include "mongodb.fullname" . }}-headless", conn_type="current"}
+              + ignoring(conn_type)
+             mongodb_ss_connections{namespace="{{ .Release.Namespace }}", service="{{ include "mongodb.fullname" . }}-headless", conn_type="available"}) * 100 > 80
+          for: 2m
+          labels:
+            severity: warning
+            servicealert: "true"
+            namespace: {{ .Release.Namespace }}
+            service: {{ .Values.name | default .Release.Name | quote }}
+          annotations:
+            summary: 'MongoDB instance {{ .Release.Name }} has too many connections (> 80%)'
+            description: 'More than 80% of MongoDB connections of instance {{ .Release.Name }} are in use'

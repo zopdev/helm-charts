@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "Configuration values for the MongoDB Helm chart",
+  "properties": {
+    "name": {
+      "category": "advanced",
+      "type": "string",
+      "description": "Service the alerts are attributed to. Defaults to the release name",
+      "default": ""
+    },
+    "version": {
+      "category": "runtime",
+      "type": "string",
+      "description": "MongoDB image tag (mongo:<version>), e.g. 7.0.45. Pin a patch release. Moving to a new major version must go one major at a time, as MongoDB requires",
+      "default": "7.0.45",
+      "mutable": true
+    },
+    "diskSize": {
+      "category": "compute",
+      "type": "string",
+      "description": "Size of the persistent volume backing /data/db. Cannot be changed after install",
+      "pattern": "^[0-9]+Gi$",
+      "default": "10Gi",
+      "mutable": true,
+      "editDisabled": true
+    },
+    "wiredTigerCacheSizeGB": {
+      "category": "compute",
+      "type": [
+        "number",
+        "string"
+      ],
+      "description": "WiredTiger cache size in GB, e.g. 0.25. mongod's minimum is 0.25. Keep it at about half of the memory limit or less - mongod otherwise sizes the cache from the node's RAM",
+      "minimum": 0.25,
+      "default": 0.25,
+      "mutable": true,
+      "pattern": "^(0\\.(2[5-9]|[3-9])[0-9]*|[1-9][0-9]*(\\.[0-9]+)?)$"
+    },
+    "services": {
+      "category": "runtime",
+      "type": "array",
+      "description": "Databases to create, one user per entry",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "database": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "database"
+        ]
+      }
+    },
+    "resources": {
+      "category": "compute",
+      "type": "object",
+      "description": "CPU and memory requests and limits for the MongoDB container",
+      "properties": {
+        "requests": {
+          "type": "object",
+          "properties": {
+            "cpu": {
+              "type": "string",
+              "pattern": "^[0-9]+m$",
+              "default": "250m",
+              "mutable": true
+            },
+            "memory": {
+              "type": "string",
+              "pattern": "^[0-9]+(Mi|Gi)$",
+              "default": "500Mi",
+              "mutable": true
+            }
+          },
+          "required": [
+            "cpu",
+            "memory"
+          ]
+        },
+        "limits": {
+          "type": "object",
+          "properties": {
+            "cpu": {
+              "type": "string",
+              "pattern": "^[0-9]+m$",
+              "default": "1000m",
+              "mutable": true
+            },
+            "memory": {
+              "type": "string",
+              "pattern": "^[0-9]+(Mi|Gi)$",
+              "default": "1Gi",
+              "mutable": true
+            }
+          },
+          "required": [
+            "cpu",
+            "memory"
+          ]
+        }
+      },
+      "required": [
+        "requests",
+        "limits"
+      ]
+    },
+    "nodeSelector": {
+      "category": "advanced",
+      "type": "object",
+      "description": "Node labels the pod must match, for pinning the workload to a node pool",
+      "default": {},
+      "mutable": true
+    },
+    "tolerations": {
+      "category": "advanced",
+      "type": "array",
+      "description": "Taints the pod tolerates, so it can schedule onto a tainted node pool",
+      "default": [],
+      "mutable": true
+    },
+    "affinity": {
+      "category": "advanced",
+      "type": "object",
+      "description": "Pod affinity / anti-affinity rules, applied verbatim to the pod spec",
+      "default": {},
+      "mutable": true
+    }
+  },
+  "required": [
+    "version",
+    "diskSize",
+    "resources"
+  ]
+}

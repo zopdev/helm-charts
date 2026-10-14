@@ -1,0 +1,144 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "mongodb.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "mongodb.fullname" . }}
+    chart: {{ include "mongodb.chart" . }}
+    release: {{ .Release.Name | quote }}
+    heritage: {{ .Release.Service | quote }}
+spec:
+  serviceName: {{ include "mongodb.fullname" . }}-headless
+  replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: {{ include "mongodb.fullname" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "mongodb.fullname" . }}
+        release: {{ .Release.Name | quote }}
+    spec:
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        # Run as the image's own mongodb user (uid/gid 999) from the start,
+        # instead of starting as root and dropping privileges in the entrypoint.
+        # fsGroup makes the fresh volume writable by it.
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: mongodb
+          image: "mongo:{{ .Values.version }}"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          args:
+            # mongod sizes its cache from the node's RAM, not the container
+            # limit, so without this it would grow past resources.limits.memory
+            # and be OOM-killed under load.
+            - "--wiredTigerCacheSizeGB"
+            - {{ .Values.wiredTigerCacheSizeGB | quote }}
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "mongodb.rootSecretName" . }}
+                  key: mongodb-root-username
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "mongodb.rootSecretName" . }}
+                  key: mongodb-root-password
+          ports:
+            - name: tcp-mongodb
+              containerPort: 27017
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          # Both probes are TCP checks. Running mongosh (a Node process) inside
+          # this container counts against its memory limit and was OOM-killed
+          # under load. A client can only connect once the real mongod is up:
+          # the temporary mongod the image's entrypoint runs during first-boot
+          # init listens on localhost only.
+          livenessProbe:
+            tcpSocket:
+              port: tcp-mongodb
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+          readinessProbe:
+            tcpSocket:
+              port: tcp-mongodb
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          volumeMounts:
+            - name: {{ .Release.Name }}-mongodb-persistent-storage
+              mountPath: /data/db
+
+        - name: mongodb-exporter
+          image: "percona/mongodb_exporter:0.40.0"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          args:
+            - "--web.listen-address=:2121"
+            - "--collector.diagnosticdata"
+            - "--compatible-mode"
+          env:
+            - name: MONGODB_URI
+              value: "mongodb://localhost:27017/admin"
+            - name: MONGODB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "mongodb.rootSecretName" . }}
+                  key: mongodb-root-username
+            - name: MONGODB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "mongodb.rootSecretName" . }}
+                  key: mongodb-root-password
+          ports:
+            - containerPort: 2121
+              name: metrics
+          resources:
+            requests:
+              memory: "50Mi"
+              cpu: "10m"
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
+  volumeClaimTemplates:
+    - metadata:
+        name: {{ .Release.Name }}-mongodb-persistent-storage
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: {{ .Values.diskSize | quote }}
