@@ -3,6 +3,7 @@ appVersion: "3.0.3"
 description: Helm chart for deploying HeyForm, an open-source form builder
 name: heyform
 version: 0.0.1
+icon: "https://storage.googleapis.com/zopdev-blog-resources/1/internal-dashboard/79f476db-8c07-4ea0-b244-75dfe447b72d-heyform.jpeg"
 type: application
 dependencies:
   # MongoDB holds every form, submission, user and workspace. The subchart emits
