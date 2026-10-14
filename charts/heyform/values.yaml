@@ -7,9 +7,11 @@ autoVerifyEmail: true
 
 # MongoDB backing store (zopdev/mongodb subchart). Creates database "heyform"
 # and a user scoped to it; the credentials arrive as MONGO_URI through
-# service.datastores.mongodb below.
+# service.envFrom below.
 mongodb:
   name: "heyform"
+  # Also used by the init container and the auto-verify Deployment below.
+  version: "7.0.45"
   diskSize: "10Gi"
   services:
     - name: "heyform"
@@ -51,11 +53,23 @@ service:
     APP_HOMEPAGE_URL: "http://localhost:9157"
     APP_LISTEN_PORT: "9157"
 
-  # SESSION_KEY and FORM_ENCRYPTION_KEY, generated per install by
-  # templates/app-secret.yaml and kept stable across upgrades.
+  # Everything HeyForm needs beyond env, by name. These go through envFrom,
+  # not service.datastores, because the service chart runs these names through
+  # tpl: {{ .Release.Name }} resolves for any release name. (datastores builds
+  # "<datastore>-<db>-<release>" from fixed values, which only matched when the
+  # release was literally called "heyform".)
   envFrom:
+    configmaps:
+      # REDIS_HOST, REDIS_PORT
+      - "{{ .Release.Name }}-redis-service-configmap"
+      # MONGO_HOST, MONGO_PORT, MONGO_DB (mongodb.services[0] is heyform/heyform)
+      - "{{ .Release.Name }}-heyform-heyform-mongodb-configmap"
     secrets:
+      # SESSION_KEY, FORM_ENCRYPTION_KEY - generated per install by
+      # templates/app-secret.yaml and kept across upgrades and uninstall.
       - "{{ .Release.Name }}-app-secret"
+      # MONGO_URI, MONGO_USER, MONGO_PASSWORD
+      - "{{ .Release.Name }}-heyform-heyform-mongodb-database-secret"
 
   # Recreate, not the default RollingUpdate: with one replica on the
   # ReadWriteOnce uploads volume, a surge pod scheduled on another node would
@@ -74,7 +88,8 @@ service:
   # authenticates with HeyForm's own MONGO_URI. The mongo image is already on
   # the node for the mongodb pod and ships both bash and mongosh.
   initContainer:
-    image: "mongo:7.0"
+    # Keep in step with mongodb.version above.
+    image: "mongo:7.0.45"
     command:
       - /bin/bash
       - -c
@@ -88,7 +103,9 @@ service:
           [ $((SECONDS % 30)) -lt 2 ] && echo "waiting for redis: $err"
           sleep 2
         done
-        until err=$(mongosh --quiet --norc "$MONGO_URI" --eval "db.runCommand({ping: 1})" 2>&1); do
+        # MONGO_URI carries the password, so it is read inside the script
+        # (connect(process.env.MONGO_URI)), not passed on the command line.
+        until err=$(mongosh --quiet --norc --nodb --eval 'connect(process.env.MONGO_URI).runCommand({ping: 1})' 2>&1); do
           [ $SECONDS -ge $deadline ] && { echo "gave up waiting for mongodb user: $err" | tail -3; exit 1; }
           [ $((SECONDS % 30)) -lt 3 ] && echo "waiting for mongodb user: $(echo "$err" | tail -1)"
           sleep 3
@@ -116,13 +133,6 @@ service:
       capabilities:
         drop:
           - ALL
-
-  datastores:
-    mongodb:
-      - datastore: heyform
-        database: heyform
-    redis:
-      - datastore: heyform
 
   alerts:
     enabled: true
@@ -155,3 +165,7 @@ service:
         mountPath: /app/packages/server/static/upload
         subPath: ""
         storage: "10Gi"
+        # Outlives helm uninstall, like the MongoDB volume that references
+        # these files. Delete the PVC by hand to drop the uploads.
+        annotations:
+          helm.sh/resource-policy: keep

@@ -39,17 +39,20 @@ spec:
       containers:
         - name: email-autoverify
           # Same image as the mongodb subchart, so it is already on the node.
-          image: "mongo:{{ .Values.mongodb.version | default "7.0" }}"
+          image: "mongo:{{ .Values.mongodb.version }}"
           command: ["/bin/bash", "-c"]
           args:
             - |
               # Wait for the heyform user the mongodb init Job creates, so a
               # fresh install does not crash-loop this pod.
-              until mongosh --quiet --norc "$MONGO_URI" --eval "db.runCommand({ping: 1})" >/dev/null 2>&1; do
+              # MONGO_URI carries the password, so it is read inside the script
+              # rather than passed on the command line.
+              until mongosh --quiet --norc --nodb --eval 'connect(process.env.MONGO_URI).runCommand({ping: 1})' >/dev/null 2>&1; do
                 echo "waiting for mongodb user"; sleep 3
               done
               echo "auto-verifying HeyForm accounts every 2s"
-              exec mongosh --quiet --norc "$MONGO_URI" --eval '
+              exec mongosh --quiet --norc --nodb --eval '
+                const db = connect(process.env.MONGO_URI);
                 while (true) {
                   try {
                     const r = db.usermodels.updateMany(

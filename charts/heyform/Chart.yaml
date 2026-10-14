@@ -7,7 +7,7 @@ type: application
 dependencies:
   # MongoDB holds every form, submission, user and workspace. The subchart emits
   # a per-database ConfigMap + Secret carrying MONGO_URI, which is the exact
-  # variable HeyForm reads, pulled in via service.datastores.mongodb below.
+  # variable HeyForm reads, pulled in via service.envFrom (see values.yaml).
   - name: mongodb
     version: 0.0.1
     repository: https://helm.zop.dev
@@ -19,7 +19,8 @@ dependencies:
   - name: redis
     version: 0.0.6
     repository: https://helm.zop.dev
-  # 0.0.34 is the first service version with datastores.mongodb.
+  # 0.0.34 is the first service version with strategy, initContainer
+  # resources/securityContext and PVC annotations, all used by values.yaml.
   - name: service
     version: 0.0.34
     repository: https://helm.zop.dev

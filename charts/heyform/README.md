@@ -34,7 +34,7 @@ helm repo update
 helm install heyform zopdev/heyform
 ```
 
-**The release name must be `heyform`.** The service chart finds the MongoDB and Redis ConfigMaps/Secrets by names built from the release name and the `datastore` entries in `values.yaml`, which are set to `heyform`.
+Any release name works; MongoDB and Redis are wired in by `<release>-…` names. Install **one HeyForm per namespace**: the Deployment (`heyform-app`) and uploads PVC (`heyform-uploads`) have fixed names, and don't name the release `heyform-app` (its PrometheusRule would clash with the redis one).
 
 `SESSION_KEY` and `FORM_ENCRYPTION_KEY` are generated for each install into the `<release>-app-secret` Secret and kept across upgrades, so there is nothing to set.
 
@@ -53,7 +53,7 @@ On a fresh install the HeyForm pod waits in an init container until Redis accept
 helm uninstall heyform
 ```
 
-The MongoDB and Redis volumes are kept, as with any StatefulSet. Delete their PVCs to drop the data.
+Uninstall **keeps your data**: the MongoDB and Redis volumes (as with any StatefulSet), the `heyform-uploads` volume, the MongoDB root Secret and `<release>-app-secret` (`helm.sh/resource-policy: keep`). `FORM_ENCRYPTION_KEY` and the MongoDB password must match the retained data, so reinstall with the **same release name in the same namespace** and it picks them up again. To start from scratch, delete those PVCs and Secrets as well.
 
 ---
 
@@ -74,6 +74,10 @@ The MongoDB and Redis volumes are kept, as with any StatefulSet. Delete their PV
 
 Any other [HeyForm environment variable](https://docs.heyform.net/configuration), such as SMTP or social login, can be added under `service.env`.
 
+When you set `service.nginx.host`, also set `service.env.APP_HOMEPAGE_URL` to that public address (e.g. `https://forms.example.com`): HeyForm scopes its login cookie to that host, and the chart refuses to render if the host is set while the URL still points at localhost. Behind the ingress, `service.env.TRUST_PROXY: "1"` makes HeyForm use the client address from `X-Forwarded-For`.
+
+Sessions live in the bundled Redis, which has no persistence: restarting the Redis pod signs every user out (forms and submissions are in MongoDB and are unaffected).
+
 HeyForm runs as a single replica with the `Recreate` update strategy: uploads live on a ReadWriteOnce volume, which several pods cannot share, and a rolling update's surge pod on another node would wait forever for it.
 
 ---
@@ -85,6 +89,8 @@ HeyForm makes every password signup confirm a 6-digit code sent by email, and v3
 So, **by default (`autoVerifyEmail: true`) the chart auto-verifies accounts.** A small `heyform-email-autoverify` Deployment marks every account's email as verified in MongoDB within about 2 seconds of signup. HeyForm's web app still shows the "Verify email address" screen right after signup; click the HeyForm logo (or reload `/`) and you are in, no code needed.
 
 This is a workaround, not a HeyForm feature: it relies on HeyForm's internal field names and is re-checked on every image bump.
+
+**What it means:** anyone who can reach the sign-up page can create an account with any email address, and nothing checks that they own it. If HeyForm is reachable from outside, create the accounts you need and then close public sign-up with `service.env.APP_DISABLE_REGISTRATION: "true"`; invited users can still join a workspace.
 
 **SMTP is optional.** Without it, signup and login work, but nothing that sends mail does: password reset, workspace invites and submission notifications. To use it, and have users verify their address for real:
 
