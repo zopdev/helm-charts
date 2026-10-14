@@ -12,8 +12,8 @@
     "version": {
       "category": "runtime",
       "type": "string",
-      "description": "MongoDB image tag (mongo:<version>). Moving to a new major version must go one major at a time, as MongoDB requires",
-      "default": "7.0",
+      "description": "MongoDB image tag (mongo:<version>), e.g. 7.0.45. Pin a patch release. Moving to a new major version must go one major at a time, as MongoDB requires",
+      "default": "7.0.45",
       "mutable": true
     },
     "diskSize": {
@@ -27,11 +27,15 @@
     },
     "wiredTigerCacheSizeGB": {
       "category": "compute",
-      "type": "string",
-      "description": "WiredTiger cache size in GB, e.g. 0.25. Keep it well under the memory limit - mongod otherwise sizes the cache from the node's RAM",
-      "pattern": "^[0-9]+(\\.[0-9]+)?$",
-      "default": "0.25",
-      "mutable": true
+      "type": [
+        "number",
+        "string"
+      ],
+      "description": "WiredTiger cache size in GB, e.g. 0.25. mongod's minimum is 0.25. Keep it at about half of the memory limit or less - mongod otherwise sizes the cache from the node's RAM",
+      "minimum": 0.25,
+      "default": 0.25,
+      "mutable": true,
+      "pattern": "^(0\\.(2[5-9]|[3-9])[0-9]*|[1-9][0-9]*(\\.[0-9]+)?)$"
     },
     "services": {
       "category": "runtime",
@@ -40,10 +44,17 @@
       "items": {
         "type": "object",
         "properties": {
-          "name": { "type": "string" },
-          "database": { "type": "string" }
+          "name": {
+            "type": "string"
+          },
+          "database": {
+            "type": "string"
+          }
         },
-        "required": ["name", "database"]
+        "required": [
+          "name",
+          "database"
+        ]
       }
     },
     "resources": {
@@ -54,23 +65,51 @@
         "requests": {
           "type": "object",
           "properties": {
-            "cpu": { "type": "string", "pattern": "^[0-9]+m$", "default": "250m", "mutable": true },
-            "memory": { "type": "string", "pattern": "^[0-9]+(Mi|Gi)$", "default": "500Mi", "mutable": true }
+            "cpu": {
+              "type": "string",
+              "pattern": "^[0-9]+m$",
+              "default": "250m",
+              "mutable": true
+            },
+            "memory": {
+              "type": "string",
+              "pattern": "^[0-9]+(Mi|Gi)$",
+              "default": "500Mi",
+              "mutable": true
+            }
           },
-          "required": ["cpu", "memory"]
+          "required": [
+            "cpu",
+            "memory"
+          ]
         },
         "limits": {
           "type": "object",
           "properties": {
-            "cpu": { "type": "string", "pattern": "^[0-9]+m$", "default": "1000m", "mutable": true },
-            "memory": { "type": "string", "pattern": "^[0-9]+(Mi|Gi)$", "default": "1Gi", "mutable": true }
+            "cpu": {
+              "type": "string",
+              "pattern": "^[0-9]+m$",
+              "default": "1000m",
+              "mutable": true
+            },
+            "memory": {
+              "type": "string",
+              "pattern": "^[0-9]+(Mi|Gi)$",
+              "default": "1Gi",
+              "mutable": true
+            }
           },
-          "required": ["cpu", "memory"]
+          "required": [
+            "cpu",
+            "memory"
+          ]
         }
       },
-      "required": ["requests", "limits"]
+      "required": [
+        "requests",
+        "limits"
+      ]
     },
-
     "nodeSelector": {
       "category": "advanced",
       "type": "object",
@@ -78,7 +117,6 @@
       "default": {},
       "mutable": true
     },
-
     "tolerations": {
       "category": "advanced",
       "type": "array",
@@ -86,7 +124,6 @@
       "default": [],
       "mutable": true
     },
-
     "affinity": {
       "category": "advanced",
       "type": "object",
@@ -95,5 +132,9 @@
       "mutable": true
     }
   },
-  "required": ["version", "diskSize", "resources"]
+  "required": [
+    "version",
+    "diskSize",
+    "resources"
+  ]
 }

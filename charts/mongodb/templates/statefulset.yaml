@@ -35,12 +35,23 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       securityContext:
-        # The mongo image's entrypoint drops to the mongodb user (uid/gid 999);
+        # Run as the image's own mongodb user (uid/gid 999) from the start,
+        # instead of starting as root and dropping privileges in the entrypoint.
         # fsGroup makes the fresh volume writable by it.
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
         fsGroup: 999
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: mongodb
           image: "mongo:{{ .Values.version }}"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           args:
             # mongod sizes its cache from the node's RAM, not the container
             # limit, so without this it would grow past resources.limits.memory
@@ -65,11 +76,11 @@ spec:
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          # Liveness only needs "is mongod accepting connections", so it is a
-          # TCP check: running mongosh (a Node process) inside this container
-          # every few seconds would count against its memory limit. Readiness
-          # keeps the real ping, less often and with a generous timeout so CPU
-          # throttling does not flap it. ping needs no authentication.
+          # Both probes are TCP checks. Running mongosh (a Node process) inside
+          # this container counts against its memory limit and was OOM-killed
+          # under load. A client can only connect once the real mongod is up:
+          # the temporary mongod the image's entrypoint runs during first-boot
+          # init listens on localhost only.
           livenessProbe:
             tcpSocket:
               port: tcp-mongodb
@@ -78,23 +89,23 @@ spec:
             timeoutSeconds: 5
             failureThreshold: 6
           readinessProbe:
-            exec:
-              command:
-                - mongosh
-                - --quiet
-                - --norc
-                - --eval
-                - "db.adminCommand('ping')"
-            initialDelaySeconds: 10
-            periodSeconds: 30
-            timeoutSeconds: 20
-            failureThreshold: 4
+            tcpSocket:
+              port: tcp-mongodb
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
           volumeMounts:
             - name: {{ .Release.Name }}-mongodb-persistent-storage
               mountPath: /data/db
 
         - name: mongodb-exporter
           image: "percona/mongodb_exporter:0.40.0"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           args:
             - "--web.listen-address=:2121"
             - "--collector.diagnosticdata"

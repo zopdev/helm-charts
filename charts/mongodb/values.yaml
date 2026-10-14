@@ -3,15 +3,17 @@
 # owner. Defaults to the release name when unset.
 name: ""
 
-# mongo:<version> from Docker Hub. 7.0 is the newest line that the
-# MongoDB 5.x Node driver (mongoose 7) supports.
-version: "7.0"
+# mongo:<version> from Docker Hub, pinned to a patch release so an install
+# does not change under you. 7.0 is the newest line the MongoDB 5.x Node
+# driver (mongoose 7) supports.
+version: "7.0.45"
 
 diskSize: "10Gi"
 
-# WiredTiger cache in GB. mongod otherwise sizes it from the node's RAM rather
-# than the container limit; keep it well under resources.limits.memory.
-wiredTigerCacheSizeGB: "0.25"
+# WiredTiger cache in GB, minimum 0.25 (mongod's own floor). mongod otherwise
+# sizes it from the node's RAM rather than the container limit; keep it well
+# under resources.limits.memory (about half leaves room for connections).
+wiredTigerCacheSizeGB: 0.25
 
 resources:
   requests:

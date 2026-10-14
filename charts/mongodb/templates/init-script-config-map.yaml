@@ -95,6 +95,14 @@ spec:
       containers:
         - name: mongodb-init-user
           image: "mongo:{{ $.Values.version }}"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 999
+            runAsGroup: 999
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           command: ["/bin/bash", "-c"]
           args:
             - |
@@ -102,9 +110,11 @@ spec:
               until mongosh --quiet --norc --host "$MONGO_HOST" --eval "db.adminCommand('ping')" >/dev/null 2>&1; do
                 echo "waiting for $MONGO_HOST"; sleep 3
               done
+              # Credentials are read from the environment inside the script rather
+              # than passed as -u/-p, so they never appear in the process arguments.
               mongosh --quiet --norc --host "$MONGO_HOST" \
-                -u "$ROOT_USER" -p "$ROOT_PASSWORD" --authenticationDatabase admin \
                 --eval '
+                  db.getSiblingDB("admin").auth(process.env.ROOT_USER, process.env.ROOT_PASSWORD);
                   const d = db.getSiblingDB(process.env.APP_DB);
                   const roles = [{ role: "readWrite", db: process.env.APP_DB }, { role: "dbAdmin", db: process.env.APP_DB }];
                   if (d.getUser(process.env.APP_USER)) {

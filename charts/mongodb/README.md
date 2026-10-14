@@ -39,9 +39,9 @@ The data volume (`<release>-mongodb-persistent-storage-<release>-mongodb-0`) is 
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
-| `version` | MongoDB image tag (`mongo:<version>`) | `7.0` |
+| `version` | MongoDB image tag (`mongo:<version>`), pinned to a patch release | `7.0.45` |
 | `diskSize` | Size of the PVC backing `/data/db`. Fixed at install time | `10Gi` |
-| `wiredTigerCacheSizeGB` | WiredTiger cache size. Keep it well under the memory limit | `0.25` |
+| `wiredTigerCacheSizeGB` | WiredTiger cache size, minimum `0.25`. Keep it at about half of the memory limit or less | `0.25` |
 | `resources.requests.cpu` | CPU request | `250m` |
 | `resources.requests.memory` | Memory request | `500Mi` |
 | `resources.limits.cpu` | CPU limit | `1000m` |
@@ -88,6 +88,8 @@ The `service` chart looks for `<datastore>-<db>-<its release>-mongodb-*`, so thi
 The root password lives in `<release>-mongodb-root-secret`.
 
 ### Credential caveats
+
+- **Uninstall keeps the data and the root password.** `helm uninstall` leaves the data PVC (as with any StatefulSet) and, through `helm.sh/resource-policy: keep`, the `<release>-mongodb-root-secret`. The root password is written into the volume on first boot only, so a reinstall with the **same release name in the same namespace** adopts the kept Secret and can still log in. To start from scratch, delete both: `kubectl delete pvc <release>-mongodb-persistent-storage-<release>-mongodb-0 secret <release>-mongodb-root-secret`.
 
 - **Render with a cluster connection.** Credentials are kept stable by reading the live Secrets with `lookup`. Under `helm template`, or a GitOps tool that renders without cluster access (for example Argo CD), `lookup` returns nothing, so every render generates a new username and password. The postgres chart behaves the same way. Install and upgrade with `helm install` / `helm upgrade`.
 - **Don't hand-edit `MONGO_PASSWORD`.** The init Job's name hashes the username but deliberately not the password, so changing only the password in the Secret does not re-run the Job, and mongod keeps the old password. If the Secret is deleted instead, the next upgrade generates a new username as well, which changes the Job name and re-runs it.
