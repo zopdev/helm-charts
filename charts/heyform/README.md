@@ -1,3 +1,5 @@
+<a href="https://zop.dev/zopday/app/deploy?install=heyform"><img src="https://zop.dev/deploytozopday-inkhard.svg" alt="Deploy to Zopday" align="right" height="36"></a>
+
 # HeyForm Helm Chart
 
 Deploys [HeyForm](https://heyform.net/), an open-source form builder for surveys, quizzes and polls, on Kubernetes, together with the MongoDB and Redis it needs.

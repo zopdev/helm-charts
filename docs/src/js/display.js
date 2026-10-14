@@ -42,6 +42,7 @@ const CHART_DISPLAY = {
   },
   heyform: {
     name: "HeyForm",
+    description: "Open-source form builder for surveys, quizzes and polls",
   },
   holmesgpt: {
     name: "HolmesGPT",
