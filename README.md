@@ -128,6 +128,7 @@ Below is a list of available charts along with their links:
 
 | **Name** | **Link** | **Deploy** |
 |---|---|---|
+| **HeyForm** | [helm.zop.dev/heyform](https://helm.zop.dev/src/readme.html?id=heyform) | <a href="https://zop.dev/zopday/app/deploy?install=heyform"><img src="https://zop.dev/deploytozopday-inkhard.svg" alt="Deploy to Zopday" height="28"></a> |
 | **HolmesGPT** | [helm.zop.dev/holmesgpt](https://helm.zop.dev/src/readme.html?id=holmesgpt) | <a href="https://zop.dev/zopday/app/deploy?install=holmesgpt"><img src="https://zop.dev/deploytozopday-inkhard.svg" alt="Deploy to Zopday" height="28"></a> |
 | **JupyterHub** | [helm.zop.dev/jupyterhub](https://helm.zop.dev/src/readme.html?id=jupyterhub) | <a href="https://zop.dev/zopday/app/deploy?install=jupyterhub"><img src="https://zop.dev/deploytozopday-inkhard.svg" alt="Deploy to Zopday" height="28"></a> |
 | **LibreDB Studio** | [helm.zop.dev/libredb-studio](https://helm.zop.dev/src/readme.html?id=libredb-studio) | <a href="https://zop.dev/zopday/app/deploy?install=libredb-studio"><img src="https://zop.dev/deploytozopday-inkhard.svg" alt="Deploy to Zopday" height="28"></a> |

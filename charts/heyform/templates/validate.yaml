@@ -1,0 +1,13 @@
+{{- /*
+Render-time checks for settings that otherwise give a working-looking install
+with a broken login.
+
+HeyForm scopes its session cookie to the hostname of APP_HOMEPAGE_URL. With an
+Ingress host set but APP_HOMEPAGE_URL still on the localhost default, every
+pod is healthy and nobody can stay signed in.
+*/ -}}
+{{- $host := .Values.service.nginx.host | default "" }}
+{{- $url := .Values.service.env.APP_HOMEPAGE_URL | default "" }}
+{{- if and $host (or (contains "localhost" $url) (contains "127.0.0.1" $url)) }}
+{{- fail (printf "service.nginx.host is %q but service.env.APP_HOMEPAGE_URL is still %q. HeyForm scopes its login cookie to that URL's host, so sign-in would not stick. Set service.env.APP_HOMEPAGE_URL to the public address, e.g. https://%s" $host $url $host) }}
+{{- end }}

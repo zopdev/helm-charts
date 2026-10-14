@@ -1,0 +1,32 @@
+apiVersion: v2
+appVersion: "3.0.3"
+description: Helm chart for deploying HeyForm, an open-source form builder
+name: heyform
+version: 0.0.1
+icon: "https://storage.googleapis.com/zopdev-blog-resources/1/internal-dashboard/79f476db-8c07-4ea0-b244-75dfe447b72d-heyform.jpeg"
+type: application
+dependencies:
+  # MongoDB holds every form, submission, user and workspace. The subchart emits
+  # a per-database ConfigMap + Secret carrying MONGO_URI, which is the exact
+  # variable HeyForm reads, pulled in via service.envFrom (see values.yaml).
+  - name: mongodb
+    version: 0.0.1
+    repository: https://helm.zop.dev
+  # Redis backs HeyForm's Bull job queues and sessions. Its ConfigMap carries
+  # REDIS_HOST and REDIS_PORT - again the names HeyForm reads.
+  # 0.0.6 is safe here, unlike in outline: its PrometheusRule is named after the
+  # release ("heyform"), the mongodb one is "heyform-mongodb" and the service one
+  # follows service.name ("heyform-app"), so no two objects share a name.
+  - name: redis
+    version: 0.0.6
+    repository: https://helm.zop.dev
+  # 0.0.34 is the first service version with strategy, initContainer
+  # resources/securityContext and PVC annotations, all used by values.yaml.
+  - name: service
+    version: 0.0.34
+    repository: https://helm.zop.dev
+maintainers:
+  - name: ZopDev
+    url: zop.dev
+annotations:
+  type: application

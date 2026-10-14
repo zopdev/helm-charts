@@ -1,0 +1,171 @@
+# HACK, on by default: marks every HeyForm account's email as verified, so
+# signup works without an SMTP server. HeyForm has no setting for this (its
+# VERIFY_USER_EMAIL variables are never read); see
+# templates/email-autoverify.yaml. Set to false once SMTP is configured
+# under service.env and users should verify their address by email.
+autoVerifyEmail: true
+
+# MongoDB backing store (zopdev/mongodb subchart). Creates database "heyform"
+# and a user scoped to it; the credentials arrive as MONGO_URI through
+# service.envFrom below.
+mongodb:
+  name: "heyform"
+  # Also used by the init container and the auto-verify Deployment below.
+  version: "7.0.45"
+  diskSize: "10Gi"
+  services:
+    - name: "heyform"
+      database: "heyform"
+
+# Redis (zopdev/redis subchart), used for HeyForm's job queues.
+redis:
+  name: "heyform"
+  diskSize: "10Gi"
+
+service:
+  # NOT "heyform". The service subchart names its PrometheusRule after this value
+  # and the redis subchart names its own after the release, which has to be
+  # "heyform" (see README). Two objects of one kind+name make helm refuse to
+  # install:
+  #   Error: prometheusrules.monitoring.coreos.com "heyform" already exists
+  name: heyform-app
+  image: "heyform/community-edition:v3.0.3"
+  minCPU: "250m"
+  minMemory: "512Mi"
+  maxCPU: "1000m"
+  maxMemory: "1Gi"
+  minReplicas: 1
+  # Uploads live on a ReadWriteOnce disk (below), so one pod is the ceiling too.
+  maxReplicas: 1
+
+  nginx:
+    # Hostname HeyForm is served on. Empty means no Ingress is created.
+    host: ""
+    annotations:
+      kubernetes.io/ingress.class: "nginx"
+    tlsHost: ""
+    tlsSecretName: ""
+
+  env:
+    # The public address HeyForm is reached at. The session cookie is scoped to
+    # this URL's hostname, so a value that does not match the address in the
+    # browser gives working pods and a login that silently never sticks.
+    APP_HOMEPAGE_URL: "http://localhost:9157"
+    APP_LISTEN_PORT: "9157"
+
+  # Everything HeyForm needs beyond env, by name. These go through envFrom,
+  # not service.datastores, because the service chart runs these names through
+  # tpl: {{ .Release.Name }} resolves for any release name. (datastores builds
+  # "<datastore>-<db>-<release>" from fixed values, which only matched when the
+  # release was literally called "heyform".)
+  envFrom:
+    configmaps:
+      # REDIS_HOST, REDIS_PORT
+      - "{{ .Release.Name }}-redis-service-configmap"
+      # MONGO_HOST, MONGO_PORT, MONGO_DB (mongodb.services[0] is heyform/heyform)
+      - "{{ .Release.Name }}-heyform-heyform-mongodb-configmap"
+    secrets:
+      # SESSION_KEY, FORM_ENCRYPTION_KEY - generated per install by
+      # templates/app-secret.yaml and kept across upgrades and uninstall.
+      - "{{ .Release.Name }}-app-secret"
+      # MONGO_URI, MONGO_USER, MONGO_PASSWORD
+      - "{{ .Release.Name }}-heyform-heyform-mongodb-database-secret"
+
+  # Recreate, not the default RollingUpdate: with one replica on the
+  # ReadWriteOnce uploads volume, a surge pod scheduled on another node would
+  # wait forever for the volume the old pod still holds, and the rollout stalls.
+  strategy:
+    type: Recreate
+
+  # Holds HeyForm back until both datastores can actually serve it. Without
+  # this the first pod of a fresh install exits once and is restarted, because
+  # HeyForm treats either of these as fatal at boot:
+  #   getaddrinfo ENOTFOUND heyform-redis-headless-service
+  #     (a headless Service has no DNS record until redis is Ready)
+  #   MongoServerError: Authentication failed.
+  #     (the mongodb init Job has not created the heyform user yet)
+  # so this waits for redis to accept a TCP connection and for a ping that
+  # authenticates with HeyForm's own MONGO_URI. The mongo image is already on
+  # the node for the mongodb pod and ships both bash and mongosh.
+  initContainer:
+    # Keep in step with mongodb.version above.
+    image: "mongo:7.0.45"
+    command:
+      - /bin/bash
+      - -c
+      - |
+        # Gives up after 10 minutes so a misconfiguration fails the pod
+        # visibly instead of leaving it in Init forever, and logs the last
+        # error every 30s so the cause is in the logs.
+        deadline=$((SECONDS + 600))
+        until err=$( (exec 3<>/dev/tcp/{{ .Release.Name }}-redis-headless-service/6379) 2>&1 ); do
+          [ $SECONDS -ge $deadline ] && { echo "gave up waiting for redis: $err"; exit 1; }
+          [ $((SECONDS % 30)) -lt 2 ] && echo "waiting for redis: $err"
+          sleep 2
+        done
+        # MONGO_URI carries the password, so it is read inside the script
+        # (connect(process.env.MONGO_URI)), not passed on the command line.
+        until err=$(mongosh --quiet --norc --nodb --eval 'connect(process.env.MONGO_URI).runCommand({ping: 1})' 2>&1); do
+          [ $SECONDS -ge $deadline ] && { echo "gave up waiting for mongodb user: $err" | tail -3; exit 1; }
+          [ $((SECONDS % 30)) -lt 3 ] && echo "waiting for mongodb user: $(echo "$err" | tail -1)"
+          sleep 3
+        done
+        echo "redis and mongodb are ready"
+    envFrom:
+      secrets:
+        # Built from the release name; database and user name both "heyform",
+        # matching mongodb.services[0] above.
+        - "{{ .Release.Name }}-heyform-heyform-mongodb-database-secret"
+    resources:
+      requests:
+        cpu: "10m"
+        memory: "96Mi"
+      limits:
+        cpu: "200m"
+        memory: "256Mi"
+    # Same hardening as the main container. uid 999 is the mongodb user in
+    # the mongo image, whose home (/data/db) is writable for mongosh.
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 999
+      runAsGroup: 999
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+
+  alerts:
+    enabled: true
+
+  # /health answers without touching MongoDB or Redis, so a datastore blip does
+  # not get the pod killed. (/health/ready also checks both datastores, but the
+  # service chart uses one path for both probes.)
+  heartbeatURL: /health
+  httpPort: 9157
+
+  livenessProbe:
+    enable: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 6
+
+  readinessProbe:
+    enable: true
+    initialDelaySeconds: 15
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+  # Uploaded images and files are written under static/upload in the app
+  # directory. Without a volume they would be lost on every pod restart.
+  volumeMounts:
+    pvc:
+      - name: heyform-uploads
+        mountPath: /app/packages/server/static/upload
+        subPath: ""
+        storage: "10Gi"
+        # Outlives helm uninstall, like the MongoDB volume that references
+        # these files. Delete the PVC by hand to drop the uploads.
+        annotations:
+          helm.sh/resource-policy: keep

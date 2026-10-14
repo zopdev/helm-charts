@@ -1,0 +1,12 @@
+dependencies:
+- name: mongodb
+  repository: https://helm.zop.dev
+  version: v0.0.1
+- name: redis
+  repository: https://helm.zop.dev
+  version: v0.0.6
+- name: service
+  repository: https://helm.zop.dev
+  version: v0.0.34
+digest: sha256:c8513c5cf73ad0d42dd7dab6737ca88e14aec7e678649c56e10986248f10b3c3
+generated: "2026-10-14T11:02:47.500559+05:30"
