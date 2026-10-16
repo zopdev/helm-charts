@@ -6,8 +6,7 @@
       "type": "boolean",
       "category": "runtime",
       "description": "Mark every account's email as verified automatically, so signup works without an SMTP server. Turn off once SMTP is configured and users should confirm their address by email",
-      "default": true,
-      "mutable": true
+      "default": true
     },
     "service": {
       "type": "object",
