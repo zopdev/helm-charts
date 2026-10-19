@@ -3,7 +3,7 @@ apiVersion: v2
 appVersion: "1.0.0"
 description: Web-based SQL IDE for PostgreSQL, MySQL, MongoDB, Redis and other databases, with an AI query assistant
 name: libredb-studio
-version: 0.0.1
+version: 0.0.2
 type: application
 home: https://github.com/libredb/libredb-studio
 sources:
