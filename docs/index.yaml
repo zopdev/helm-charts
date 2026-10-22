@@ -940,6 +940,27 @@ entries:
       type: application
     apiVersion: v2
     appVersion: 1.83.14
+    created: "2026-10-22T19:52:16.98156+05:30"
+    dependencies:
+    - condition: postgres.enabled
+      name: postgres
+      repository: https://helm.zop.dev
+      version: 0.0.14
+    description: Helm chart for deploying the LiteLLM proxy
+    digest: 327370a11882d07e5e069a9a86928c2809f778f7c20c05a83d524c641c803909
+    icon: https://storage.googleapis.com/zopdev-blog-resources/1/files/originals/20260716/litellm-logo-square.png
+    maintainers:
+    - name: ZopDev
+      url: zop.dev
+    name: litellm
+    type: application
+    urls:
+    - https://helm.zop.dev/litellm-v0.0.4.tgz
+    version: v0.0.4
+  - annotations:
+      type: application
+    apiVersion: v2
+    appVersion: 1.83.14
     created: "2026-10-14T11:14:22.859229+05:30"
     dependencies:
     - condition: postgres.enabled
@@ -3405,4 +3426,4 @@ entries:
     urls:
     - https://helm.zop.dev/zookeeper-operator-v0.0.1.tgz
     version: v0.0.1
-generated: "2026-10-14T11:14:22.837491+05:30"
+generated: "2026-10-22T19:52:16.980997+05:30"
