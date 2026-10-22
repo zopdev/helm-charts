@@ -50,10 +50,11 @@ The proxy takes roughly 3–7 minutes to become Ready — it loads litellm, runs
 with `--wait`, raise the timeout past helm's 5-minute default, e.g.
 `--wait --timeout 15m`, or the client gives up on a boot that is still healthy.
 
-Give the proxy at least 2Gi of memory. Starting it (loading litellm and running the
-Prisma migrations) needs more than 1Gi: with a 1Gi limit the container is OOMKilled
-before it listens and restarts until the install times out. The defaults are a 2Gi
-request and a 4Gi limit.
+Give the proxy a memory limit of at least 2Gi. Starting it (loading litellm and
+running the Prisma migrations) needs more than 1Gi: with a 1Gi limit the container
+is OOMKilled before it listens and restarts until the install times out. The
+defaults are a 1Gi request and a 4Gi limit, so the node needs about 1Gi free to
+schedule the proxy and room to grow towards the limit.
 
 The release name `litellm` is recommended: the chart wires the proxy to the postgres
 subchart's per-database secret (`<release>-litellm-litellm-postgres-database-secret`),
@@ -146,7 +147,7 @@ Kubernetes; delete them manually if you want a clean slate.
 | `extraEnvFrom`               | `array`   | Existing secrets (by `secretName`) mounted via `envFrom`.             | `[]`                                 |
 | `extraEnv`                   | `object`  | Extra plain environment variables.                                    | `{}`                                 |
 | `proxy_config.model_list`    | `array`   | Models exposed by the proxy (≥1 required to boot).                    | one `placeholder` model              |
-| `resources`                  | `object`  | CPU/memory requests and limits.                                       | `250m`/`2Gi` … `1`/`4Gi`           |
+| `resources`                  | `object`  | CPU/memory requests and limits.                                       | `250m`/`1Gi` … `1`/`4Gi`             |
 | `probes.startup.periodSeconds` | `integer` | Seconds between startup checks.                                     | `10`                                 |
 | `probes.startup.failureThreshold` | `integer` | Failed startup checks before the container is killed; x period is the whole boot budget (600s). | `60`            |
 | `probes.readiness.periodSeconds` | `integer` | Seconds between readiness checks.                                   | `10`                                 |

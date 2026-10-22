@@ -242,7 +242,7 @@
             "memory": {
               "type": "string",
               "description": "Memory request",
-              "default": "2Gi",
+              "default": "1Gi",
               "mutable": true
             }
           },

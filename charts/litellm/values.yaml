@@ -74,12 +74,13 @@ probes:
     periodSeconds: 15
     failureThreshold: 5
 
-# Startup (loading litellm + Prisma migrations) needs more than 1Gi; below ~2Gi the
-# container is OOMKilled before it listens.
+# Startup (loading litellm + Prisma migrations) needs more than a 1Gi limit; below
+# ~2Gi the container is OOMKilled before it listens. The request stays at 1Gi so a
+# lower limit set on its own is still valid.
 resources:
   requests:
     cpu: 250m
-    memory: 2Gi
+    memory: 1Gi
   limits:
     cpu: "1"
     memory: 4Gi
