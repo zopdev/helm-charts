@@ -141,7 +141,7 @@ Kubernetes; delete them manually if you want a clean slate.
 | `extraEnvFrom`               | `array`   | Existing secrets (by `secretName`) mounted via `envFrom`.             | `[]`                                 |
 | `extraEnv`                   | `object`  | Extra plain environment variables.                                    | `{}`                                 |
 | `proxy_config.model_list`    | `array`   | Models exposed by the proxy (≥1 required to boot).                    | one `placeholder` model              |
-| `resources`                  | `object`  | CPU/memory requests and limits.                                       | `250m`/`1Gi` … `1`/`2Gi`           |
+| `resources`                  | `object`  | CPU/memory requests and limits.                                       | `250m`/`2Gi` … `1`/`4Gi`           |
 | `probes.startup.periodSeconds` | `integer` | Seconds between startup checks.                                     | `10`                                 |
 | `probes.startup.failureThreshold` | `integer` | Failed startup checks before the container is killed; x period is the whole boot budget (600s). | `60`            |
 | `probes.readiness.periodSeconds` | `integer` | Seconds between readiness checks.                                   | `10`                                 |
