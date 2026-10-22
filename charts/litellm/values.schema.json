@@ -241,7 +241,7 @@
             },
             "memory": {
               "type": "string",
-              "description": "Memory request. Startup needs about 2Gi; less is OOMKilled before the proxy listens",
+              "description": "Memory request",
               "default": "2Gi",
               "mutable": true
             }
@@ -259,7 +259,7 @@
             },
             "memory": {
               "type": "string",
-              "description": "Memory limit. Keep it at 2Gi or more; startup is OOMKilled at 1Gi",
+              "description": "Memory limit",
               "default": "4Gi",
               "mutable": true
             }
