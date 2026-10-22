@@ -50,6 +50,11 @@ The proxy takes roughly 3–7 minutes to become Ready — it loads litellm, runs
 with `--wait`, raise the timeout past helm's 5-minute default, e.g.
 `--wait --timeout 15m`, or the client gives up on a boot that is still healthy.
 
+Give the proxy at least 2Gi of memory. Starting it (loading litellm and running the
+Prisma migrations) needs more than 1Gi: with a 1Gi limit the container is OOMKilled
+before it listens and restarts until the install times out. The defaults are a 2Gi
+request and a 4Gi limit.
+
 The release name `litellm` is recommended: the chart wires the proxy to the postgres
 subchart's per-database secret (`<release>-litellm-litellm-postgres-database-secret`),
 and using `litellm` keeps names predictable.
