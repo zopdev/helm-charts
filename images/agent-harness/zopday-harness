@@ -1,0 +1,249 @@
+#!/bin/sh
+# zopday-harness — one agent turn, inside the sandbox.
+#
+# This is the entrypoint the runner host invokes (agentTaskRunScript's
+# agent-start step). It is the HARNESS, not the agent: it runs the agent, and
+# then it is the thing that pushes the branch and opens the pull request.
+#
+# Why the harness and not the agent:
+#
+#   * the agent is assumed hostile, so "it opened a PR" must not be something it
+#     can decline, duplicate or redirect;
+#   * a crash must not be able to produce two pull requests, so the check for an
+#     existing one and the create live in the same place (plan: E5);
+#   * P1 is `propose_only`, so what gets opened is a DRAFT and nothing merges.
+#
+# The contract with the runner host, in one place. Every path is under the
+# workspace, so the host reads them back out of the sandbox by path alone:
+#
+#   $PWD                       the git clone (the host clones it before this runs)
+#   $ZOPDAY_PROMPT             the submitter's instruction, as BYTES on a file
+#   $CLAUDE_CONFIG_DIR         PINNED, so the session file is at an identical
+#                              path on every host and a resume finds it
+#   $CLAUDE_CONFIG_DIR/session.jsonl   the transcript (the agent appends)
+#   $CLAUDE_CONFIG_DIR/session-id      the session id a resume needs
+#   $ZOPDAY_AGENT_CLI          the agent binary: `claude`, `codex`, or the fake
+#   $ZOPDAY_AGENT_RESUME       a session id to continue, empty on a first attempt
+#   $ZOPDAY_TASK_ID            the task, for the commit trailer and the PR body
+#   $ZOPDAY_TASK_BRANCH        the one ref this script pushes. NOT enforced
+#                              by anything outside this file - see the
+#                              note above the checkout
+#
+# Exit codes, which the host maps to a task outcome:
+#
+#   0   done. Either a pull request exists, or the agent changed nothing (D1)
+#   65  the agent needs input, and P1 cannot hold a task mid-run (D5)
+#   1   the harness itself failed — the branch survives, the task is FAILED
+#       with the work preserved (D2)
+#   *   the agent's own exit code, passed through (D3)
+#
+# A real harness image must honour exactly this contract; the fake one in this
+# directory is the reference it was developed against.
+
+set -eu
+
+fail() {
+	echo "zopday-harness: $1" >&2
+	exit 1
+}
+
+: "${ZOPDAY_AGENT_CLI:?zopday-harness: the image must name the agent binary in ZOPDAY_AGENT_CLI}"
+: "${ZOPDAY_PROMPT:?zopday-harness: the host must write the instruction to a file and name it in ZOPDAY_PROMPT}"
+: "${CLAUDE_CONFIG_DIR:?zopday-harness: CLAUDE_CONFIG_DIR must be pinned, or a resume cannot find the session}"
+: "${ZOPDAY_TASK_ID:?zopday-harness: ZOPDAY_TASK_ID is required}"
+: "${ZOPDAY_TASK_BRANCH:?zopday-harness: ZOPDAY_TASK_BRANCH is required — it is the only ref that can be pushed}"
+
+[ -r "$ZOPDAY_PROMPT" ] || fail "the prompt file $ZOPDAY_PROMPT is not readable"
+git rev-parse --git-dir >/dev/null 2>&1 || fail "this is not a git clone, so there is nothing to work on"
+
+# ---------------------------------------------------------------------------
+# The filter's certificate, which nothing in this image trusts until this runs.
+#
+# A sandbox created with a credential proxy has its TLS TERMINATED by sbx's
+# egress filter: every https connection out of here is answered by a leaf the
+# filter signs with a per-sandbox authority that no public root can vouch for.
+# sbx mounts that authority, names its path in SBX_CREDENTIAL_VAULT_CA and sets
+# NODE_EXTRA_CA_CERTS - which ADDS to Node's root set - and it deliberately
+# refuses to set SSL_CERT_FILE or REQUESTS_CA_BUNDLE, because those REPLACE the
+# root set and naming one certificate in either would leave every call to an
+# unbound host unable to verify anything at all. It leaves the merge to the
+# caller and says so in its own source; THIS IS THAT CALLER. Without this block
+# git clone, git push, curl, pip and the two pull-request calls at the bottom of
+# this file all fail certificate verification.
+#
+# Two things, because neither covers the other:
+#
+#   * the authority goes into the IMAGE'S OWN trust store, which is what makes
+#     every client built against it trust the filter - curl, git, openssl,
+#     python - and not only the ones that read an environment variable;
+#   * a MERGED bundle, the image's roots PLUS the authority, is written and
+#     named in the variables that replace the root set. Merged, and never the
+#     authority alone: alone is precisely the break sbx refused to ship.
+#
+# No authority named means this sandbox has no credential proxy, so nothing
+# terminates its TLS and there is nothing to add. That carries on normally.
+# ---------------------------------------------------------------------------
+trust_credential_vault_ca() {
+	vault_ca=${SBX_CREDENTIAL_VAULT_CA:-}
+	if [ -z "$vault_ca" ]; then
+		return 0
+	fi
+
+	# Named and unreadable is a FAILURE and not a carry-on: the variable being
+	# set is the sandbox saying its traffic is intercepted, and every https call
+	# from here would then fail verification with a message that points at the
+	# host it was calling rather than at this.
+	[ -r "$vault_ca" ] ||
+		fail "the sandbox names its credential-vault authority at $vault_ca and this image cannot read it, so every https call would fail certificate verification"
+
+	vault_ca_stored=no
+	if command -v update-ca-certificates >/dev/null 2>&1 && [ -d /usr/local/share/ca-certificates ]; then
+		# Debian, Ubuntu and Alpine all read this directory, and all three want
+		# the .crt suffix whatever the file actually holds.
+		if cp "$vault_ca" /usr/local/share/ca-certificates/sbx-credential-vault.crt 2>/dev/null &&
+			update-ca-certificates >/dev/null 2>&1; then
+			vault_ca_stored=yes
+		fi
+	elif command -v update-ca-trust >/dev/null 2>&1 && [ -d /etc/pki/ca-trust/source/anchors ]; then
+		if cp "$vault_ca" /etc/pki/ca-trust/source/anchors/sbx-credential-vault.crt 2>/dev/null &&
+			update-ca-trust extract >/dev/null 2>&1; then
+			vault_ca_stored=yes
+		fi
+	fi
+
+	# The image's own roots, wherever this distribution keeps them.
+	vault_ca_roots=
+	for candidate in /etc/ssl/certs/ca-certificates.crt /etc/pki/tls/certs/ca-bundle.crt \
+		/etc/ssl/cert.pem /etc/ssl/ca-bundle.pem; do
+		if [ -r "$candidate" ]; then
+			vault_ca_roots=$candidate
+			break
+		fi
+	done
+
+	if [ -n "$vault_ca_roots" ]; then
+		vault_ca_bundle=${TMPDIR:-/tmp}/sbx-credential-vault-bundle.pem
+		# A blank line between the two halves: a root bundle that does not end
+		# in a newline would otherwise glue its last line onto the first line of
+		# the authority and leave both unparseable.
+		{ cat "$vault_ca_roots"; echo; cat "$vault_ca"; } >"$vault_ca_bundle" ||
+			fail "could not write the merged certificate bundle at $vault_ca_bundle"
+
+		GIT_SSL_CAINFO=$vault_ca_bundle
+		SSL_CERT_FILE=$vault_ca_bundle
+		REQUESTS_CA_BUNDLE=$vault_ca_bundle
+		export GIT_SSL_CAINFO SSL_CERT_FILE REQUESTS_CA_BUNDLE
+
+		echo "zopday-harness: trusting this sandbox's credential-vault authority (image store: $vault_ca_stored, merged bundle: $vault_ca_bundle)"
+		return 0
+	fi
+
+	# Neither half worked, so nothing in this sandbox can verify the filter and
+	# every https call is about to fail on a certificate. Said HERE, where the
+	# cause is, rather than left to surface as a push that cannot reach the git
+	# host for no stated reason.
+	[ "$vault_ca_stored" = yes ] ||
+		fail "this image has no trust store to add $vault_ca to and no root bundle to merge it with, so nothing here can verify the egress filter's certificate"
+
+	echo "zopday-harness: added this sandbox's credential-vault authority to the image trust store; no root bundle to merge, so the replacing variables are left unset"
+}
+
+trust_credential_vault_ca
+
+SESSION_FILE=$CLAUDE_CONFIG_DIR/session.jsonl
+
+# NO BASE BRANCH IS COMPUTED HERE any more. It was read off this clone's
+# origin/HEAD for the pull request this script used to open; the host opens
+# that now and asks GitHub for the repository's own default branch, which is a
+# fact the agent cannot have changed in this working copy. Nothing left in this
+# script needs it, so nothing left computes it.
+BEFORE=$(git rev-parse HEAD)
+
+# The work happens ON the task branch, and THIS SCRIPT is the only thing that
+# holds it there.
+#
+# Nothing outside this file enforces the branch. sbx's filter is header-only -
+# it swaps an Authorization header and inspects no git traffic, with no refspec,
+# receive-pack or refs/heads handling in it anywhere - and the task token it
+# swaps in carries contents:write on the whole repository. So the only thing
+# between a hostile agent and a push to main is a shell script running inside
+# the sandbox that agent is hostile in.
+#
+# STILL OWED, and it has to be enforced on the far side of the boundary: a push
+# ruleset on the repository admitting only refs/heads/zopday/task/*, or a filter
+# that reads the git wire protocol. Until one of those exists, the branch below
+# is the branch an HONEST agent writes.
+git checkout -q -B "$ZOPDAY_TASK_BRANCH"
+
+# ---------------------------------------------------------------------------
+# The agent.
+#
+# The prompt is REDIRECTED onto its stdin. It is never an argument and never
+# part of a command string: it is free-form prose from whoever submitted the
+# task, and the only safe way to hand prose to a program is as bytes.
+# ---------------------------------------------------------------------------
+agent_status=0
+if [ -n "${ZOPDAY_AGENT_RESUME:-}" ]; then
+	"$ZOPDAY_AGENT_CLI" --resume "$ZOPDAY_AGENT_RESUME" <"$ZOPDAY_PROMPT" || agent_status=$?
+else
+	"$ZOPDAY_AGENT_CLI" <"$ZOPDAY_PROMPT" || agent_status=$?
+fi
+
+# D3: the agent's own exit code and its own words on stderr, straight through.
+if [ "$agent_status" -ne 0 ]; then
+	echo "zopday-harness: the agent exited $agent_status" >&2
+	exit "$agent_status"
+fi
+
+# D5: the agent asked a question. The TRANSCRIPT is where it says so — an exit
+# code cannot carry a question — and P1 cannot hold a task mid-run, so this
+# fails cleanly and names the cause.
+if [ -s "$SESSION_FILE" ] && [ "$(tail -1 "$SESSION_FILE" | sed -n 's/.*"type":[[:space:]]*"\([a-z_]*\)".*/\1/p')" = input_required ]; then
+	echo "zopday-harness: the agent needs input before it can continue, and a task cannot be held mid-run" >&2
+	exit 65
+fi
+
+# ---------------------------------------------------------------------------
+# D1 — finished, changed nothing.
+#
+# COMPLETED with "no changes", not a failure. Nothing is pushed, and no empty
+# pull request is opened for a branch identical to its base.
+# ---------------------------------------------------------------------------
+AFTER=$(git rev-parse HEAD)
+if [ "$AFTER" = "$BEFORE" ] && [ -z "$(git status --porcelain)" ]; then
+	echo "zopday-harness: the agent made no changes; nothing to push"
+	exit 0
+fi
+
+[ -z "$(git status --porcelain)" ] || fail "the agent left uncommitted changes, so there is nothing to push that it meant"
+
+# ONE refspec, written out in full - and nothing but this line keeps it to one;
+# see the note above the checkout. Spelling it out lets a reader see which ref
+# this attempt is meant to write, not that it is the only ref it CAN write.
+git push --set-upstream origin "HEAD:refs/heads/$ZOPDAY_TASK_BRANCH" ||
+	fail "the push failed; the commits are still on $ZOPDAY_TASK_BRANCH in this sandbox"
+
+echo "zopday-harness: pushed $AFTER to refs/heads/$ZOPDAY_TASK_BRANCH"
+
+# ---------------------------------------------------------------------------
+# AND THAT IS WHERE THIS SCRIPT STOPS. The pull request is NOT opened here.
+#
+# It used to be. The task token carries pull_requests:write so that something
+# can open it, the vault bound that credential for api.github.com as well as
+# for github.com, and this script opened a draft from inside the sandbox. But
+# the AGENT runs in this sandbox, behind that same binding - so an agent told
+# "open a pull request" opened its own instead, and on a live run it did: not a
+# draft, titled and worded by the agent, carrying its own tool attribution into
+# a customer's repository. Decision 15 ("a draft pull request, and nothing
+# merges itself") cannot rest on this script being the only thing that asks.
+#
+# So the host script opens it, from OUTSIDE the sandbox, after this script's
+# push (see open_draft_pull_request in the deployer's agentTaskRunScript), and
+# api.github.com is no longer in this sandbox's egress policy or its vault at
+# all. An agent that calls the pull request API from in here is denied by the
+# filter rather than trusted not to.
+#
+# What this script still owns is everything up to the push: the branch, the
+# refspec, the "did the agent actually change anything" decision, and the
+# commits themselves.
+# ---------------------------------------------------------------------------
