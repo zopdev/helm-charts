@@ -26,7 +26,7 @@ const CHART_DISPLAY = {
   },
   chisel: {
     name: "Chisel",
-    description: "Fast TCP tunnel over HTTP, secured with SSH",
+    description: "Tunnel server for TCP and reverse SOCKS tunnels over a websocket",
   },
   chromadb: {
     name: "ChromaDB",

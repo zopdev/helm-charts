@@ -28,8 +28,9 @@ auth:
   # Secret with a `users.json` entry: {"user:pass": ["<remote-regex>", ...]}.
   # It must hold at least one user. chisel reloads it when the kubelet updates
   # the mounted Secret; no restart is needed.
-  # Empty (and feed off) generates one user `chisel` with full access and a
-  # random password, kept across upgrades and on uninstall.
+  # Empty (and feed off) generates one user `chisel` that may open only
+  # reverse remotes on 0.0.0.0 (R:0.0.0.0:<port>), with a random password,
+  # kept across upgrades and on uninstall.
   existingSecret: ""
 
 # Sidecar that polls a gRPC method for the users file and writes it on
@@ -53,7 +54,7 @@ feed:
 # Ports clients open on the server with reverse remotes (R:0.0.0.0:<port>:...).
 # They go on their own Service, <release>-chisel-reverse, which is always
 # ClusterIP. It lists each port, so the range holds at most 101 ports.
-# 0 and 0 means none.
+# 0 and 0 means none. Ports start at 1024: chisel runs without root.
 reversePorts:
   start: 0
   end: 0

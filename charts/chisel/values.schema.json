@@ -51,7 +51,7 @@
       "properties": {
         "existingSecret": {
           "type": "string",
-          "description": "Secret with a users.json entry holding at least one user. Empty generates one user with full access.",
+          "description": "Secret with a users.json entry holding at least one user. Empty generates one user that may open only reverse remotes on 0.0.0.0.",
           "default": "",
           "mutable": true
         }
@@ -104,11 +104,11 @@
     "reversePorts": {
       "type": "object",
       "category": "runtime",
-      "description": "Ports clients open on the server with reverse remotes, put on a separate ClusterIP Service <release>-chisel-reverse. At most 101 ports. 0 and 0 means none.",
+      "description": "Ports clients open on the server with reverse remotes, put on a separate ClusterIP Service <release>-chisel-reverse. At most 101 ports, from 1024 up. 0 and 0 means none.",
       "properties": {
         "start": {
           "type": "integer",
-          "description": "First port.",
+          "description": "First port: 0 for none, or 1024 and up.",
           "minimum": 0,
           "maximum": 65535,
           "default": 0,

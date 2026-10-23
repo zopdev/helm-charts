@@ -2,6 +2,11 @@
 Fail the render on values that would install and then misbehave.
 */}}
 
+{{- $tag := .Values.image.tag | default .Chart.AppVersion | toString }}
+{{- if and (regexMatch "^v?[0-9]+\\.[0-9]+\\.[0-9]+$" $tag) (not (semverCompare ">=1.11.7" $tag)) }}
+{{- fail "image.tag must be 1.11.7 or later: older chisel servers do not enforce per-user ACLs." }}
+{{- end }}
+
 {{- if and .Values.ingress.enabled (not .Values.ingress.host) }}
 {{- fail "ingress.enabled requires ingress.host." }}
 {{- end }}
@@ -24,6 +29,9 @@ Fail the render on values that would install and then misbehave.
 {{- $end := int .Values.reversePorts.end }}
 {{- if or (and $start (not $end)) (and $end (not $start)) }}
 {{- fail "Set both reversePorts.start and reversePorts.end, or neither." }}
+{{- end }}
+{{- if and $start (lt $start 1024) }}
+{{- fail "reversePorts.start must be 1024 or more: chisel runs without root and cannot listen below 1024." }}
 {{- end }}
 {{- if lt $end $start }}
 {{- fail "reversePorts.end must not be below reversePorts.start." }}

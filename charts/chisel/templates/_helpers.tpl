@@ -1,5 +1,5 @@
 {{- define "chisel.name" -}}
-  {{- default .Chart.Name | trunc 63 | trimSuffix "-" -}}
+  {{- .Chart.Name | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{- define "chisel.fullname" -}}

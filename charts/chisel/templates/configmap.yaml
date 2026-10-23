@@ -18,10 +18,6 @@ data:
     set -u
     : "${GRPC_ADDR:?}" "${GRPC_METHOD:?}" "${RESPONSE_FIELD:?}" "${AUTH_FILE:?}" "${PROTO_DIR:?}" "${PROTO_FILE:?}"
     INTERVAL_SECONDS="${INTERVAL_SECONDS:-5}"
-    tls=""
-    if [ "${GRPC_PLAINTEXT:-true}" = "true" ]; then
-      tls="-plaintext"
-    fi
     work="${TMPDIR:-/tmp}/auth-feed"
     mkdir -p "$work"
     state=""
@@ -78,8 +74,7 @@ data:
     }
 
     while true; do
-      # $tls is unquoted on purpose: empty must expand to no argument.
-      if grpcurl $tls -connect-timeout 3 -max-time 4 \
+      if grpcurl -plaintext -connect-timeout 3 -max-time 4 \
           -import-path "$PROTO_DIR" -proto "$PROTO_FILE" -d '{}' \
           "$GRPC_ADDR" "$GRPC_METHOD" \
           > "$work/resp.json" 2> "$work/err"; then

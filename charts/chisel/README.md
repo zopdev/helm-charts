@@ -2,7 +2,7 @@
 
 # Chisel Helm Chart
 
-[Chisel](https://github.com/jpillora/chisel) is a fast TCP/UDP tunnel over HTTP, secured with SSH.
+[Chisel](https://github.com/jpillora/chisel) is a tunnel server for TCP and reverse SOCKS tunnels over a websocket, secured with SSH.
 Clients dial the server over a websocket and open tunnels through it.
 With reverse remotes, a client opens a listener on the server, for example a SOCKS proxy into the client's own network.
 
@@ -63,7 +63,7 @@ chisel 1.12 clients reject a shortened fingerprint.
 | `feed.proto` | `""` | The `.proto` that defines the method, as text. |
 | `feed.responseField` | `""` | Response field with the users file, e.g. `authFileJson`. |
 | `feed.interval` | `5` | Seconds between polls. |
-| `reversePorts.start`, `reversePorts.end` | `0`, `0` | Reverse ports, on their own ClusterIP Service `<release>-chisel-reverse`. At most 101. `0` means none. |
+| `reversePorts.start`, `reversePorts.end` | `0`, `0` | Reverse ports, on their own ClusterIP Service `<release>-chisel-reverse`. At most 101, from 1024 up. `0` means none. |
 | `service.type` | `ClusterIP` | Type of the websocket Service: `ClusterIP`, `NodePort` or `LoadBalancer`. The reverse ports Service is always `ClusterIP`. |
 | `ingress.enabled` | `false` | Create an Ingress. Needs `ingress.host`. |
 | `ingress.className` | `""` | IngressClass. |
@@ -96,7 +96,7 @@ kubectl create secret generic chisel-key --from-file=server.key
 chisel lets everyone in when the users file is empty.
 The chart never starts chisel without at least one user.
 
-- **Generated** (default): one user `chisel` with full access and a random password, kept across upgrades and on uninstall.
+- **Generated** (default): one user `chisel` that may open only reverse listeners on all interfaces (`^R:0\.0\.0\.0:[0-9]+$`), with a random password, kept across upgrades and on uninstall. It cannot open forward remotes, so it cannot reach what the pod can reach.
 - **Static**: `auth.existingSecret` names a Secret with a `users.json` entry, in chisel's format: `{"user:pass": ["<remote-regex>", ...]}`. It must hold at least one user. chisel reloads it when the kubelet updates the mounted Secret, so no restart is needed.
 - **Feed**: `feed.enabled=true`. See below.
 
@@ -138,7 +138,7 @@ The chart puts these ports on a separate Service, `<release>-chisel-reverse`, wh
 The client must bind it on all interfaces, `R:0.0.0.0:<port>:socks`; a bare `R:<port>:socks` binds to `127.0.0.1` inside the pod.
 
 Point the SOCKS consumers at the reverse Service, not the websocket one.
-For example, ZopNight's `TUNNEL_SOCKS_HOST` is `tunnel-chisel-reverse.<namespace>.svc.cluster.local` for a release named `tunnel`.
+For a release named `tunnel`, a SOCKS consumer in another namespace uses `socks5://tunnel-chisel-reverse.<namespace>.svc.cluster.local:<port>`.
 
 A reverse port has no login of its own: whoever reaches it uses the tunnel.
 Turn on `networkPolicy.enabled` and list the allowed peers in `networkPolicy.reversePortsFrom`.
@@ -154,7 +154,7 @@ Clients dial `https://<host><path>` exactly as written, with no trailing slash.
 
 - Ingress: the websocket port from anywhere (it has its own login), the reverse ports from `reversePortsFrom` only.
 - Egress: with the feed on, DNS (ports 53 and 5353) and the port of `feed.address`. With the feed off, none.
-- NetworkPolicy matches the destination pod's port, after Service translation. So `feed.address` must name a Service whose `port` equals its `targetPort`, such as ZopNight's config Service (9000 to 9000).
+- NetworkPolicy matches the destination pod's port, after Service translation. So `feed.address` must name a Service whose `port` equals its `targetPort`, for example a gRPC Service that maps 9000 to 9000.
 - chisel needs no egress for reverse tunnels. Forward remotes, where the server dials out, do not work with the policy on.
 
 ---
