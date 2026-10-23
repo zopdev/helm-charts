@@ -1,6 +1,6 @@
 apiVersion: v2
 # Keep in step with values.yaml `image.tag`.
-appVersion: "1.12.0"
+appVersion: "1.12.1"
 description: Tunnel server that clients reach over a websocket to open TCP and reverse SOCKS tunnels
 name: chisel
 version: 0.0.1

@@ -106,11 +106,11 @@ entries:
   - annotations:
       type: application
     apiVersion: v2
-    appVersion: 1.12.0
-    created: "2026-10-23T13:20:29.053997+05:30"
+    appVersion: 1.12.1
+    created: "2026-10-23T15:52:05.062116+05:30"
     description: Tunnel server that clients reach over a websocket to open TCP and
       reverse SOCKS tunnels
-    digest: 23ede6d9ba46f745e008ab70077574c5497abb0333fae7b8d385574581dbb7a5
+    digest: 859f465662d6defc4e16f3d190bc73fafa9ca7006430d3d84433858eab43f58a
     home: https://github.com/jpillora/chisel
     icon: https://zop.dev/logo.png
     maintainers:

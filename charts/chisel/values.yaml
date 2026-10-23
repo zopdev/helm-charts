@@ -5,7 +5,7 @@
 image:
   repository: jpillora/chisel
   # Must be 1.11.7 or later: older servers do not enforce per-user ACLs.
-  tag: "1.12.0"
+  tag: "1.12.1"
 
 # Websocket keepalive. Keep it below the idle timeout of every proxy on the
 # path; "0s" turns it off.
@@ -14,7 +14,7 @@ keepalive: "25s"
 # Server key. Clients pin its fingerprint, so a new key breaks every client.
 key:
   # Secret with a `server.key` entry. Make one with:
-  #   docker run --rm -v "$PWD:/out" jpillora/chisel:1.12.0 \
+  #   docker run --rm -v "$PWD:/out" jpillora/chisel:1.12.1 \
   #     server --keygen /out/server.key
   #   kubectl create secret generic chisel-key --from-file=server.key
   # Empty generates a key on install, kept across upgrades and on uninstall.
