@@ -26,8 +26,8 @@ key:
 # the chart always gives it at least one user.
 auth:
   # Secret with a `users.json` entry: {"user:pass": ["<remote-regex>", ...]}.
-  # It must hold at least one user. chisel reads it at start; restart the pod
-  # after you change it.
+  # It must hold at least one user. chisel reloads it when the kubelet updates
+  # the mounted Secret; no restart is needed.
   # Empty (and feed off) generates one user `chisel` with full access and a
   # random password, kept across upgrades and on uninstall.
   existingSecret: ""
@@ -51,12 +51,14 @@ feed:
   interval: 5
 
 # Ports clients open on the server with reverse remotes (R:0.0.0.0:<port>:...).
-# The Service lists each port, so the range holds at most 101 ports.
+# They go on their own Service, <release>-chisel-reverse, which is always
+# ClusterIP. It lists each port, so the range holds at most 101 ports.
 # 0 and 0 means none.
 reversePorts:
   start: 0
   end: 0
 
+# The websocket Service. The reverse ports never ride on it.
 service:
   type: ClusterIP
 

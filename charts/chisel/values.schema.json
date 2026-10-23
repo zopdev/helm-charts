@@ -104,7 +104,7 @@
     "reversePorts": {
       "type": "object",
       "category": "runtime",
-      "description": "Ports clients open on the server with reverse remotes, added to the Service. At most 101 ports. 0 and 0 means none.",
+      "description": "Ports clients open on the server with reverse remotes, put on a separate ClusterIP Service <release>-chisel-reverse. At most 101 ports. 0 and 0 means none.",
       "properties": {
         "start": {
           "type": "integer",
@@ -131,7 +131,7 @@
       "properties": {
         "type": {
           "type": "string",
-          "description": "Kubernetes Service type.",
+          "description": "Kubernetes Service type of the websocket Service. The reverse ports Service is always ClusterIP.",
           "enum": [
             "ClusterIP",
             "NodePort",

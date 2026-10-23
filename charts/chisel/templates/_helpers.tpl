@@ -6,6 +6,10 @@
   {{- printf "%s-chisel" .Release.Name | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
+{{- define "chisel.reverseServiceName" -}}
+  {{- printf "%s-reverse" (include "chisel.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
 {{- define "chisel.chart" -}}
   {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" -}}
 {{- end -}}

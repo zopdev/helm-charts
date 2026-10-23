@@ -44,6 +44,9 @@ chisel client --fingerprint <fingerprint> --auth chisel:<password> \
   http://tunnel-chisel:8080 R:0.0.0.0:11001:socks
 ```
 
+Give `--fingerprint` in full, all 44 characters with the trailing `=`.
+chisel 1.12 clients reject a shortened fingerprint.
+
 ---
 
 ## Configuration
@@ -60,8 +63,8 @@ chisel client --fingerprint <fingerprint> --auth chisel:<password> \
 | `feed.proto` | `""` | The `.proto` that defines the method, as text. |
 | `feed.responseField` | `""` | Response field with the users file, e.g. `authFileJson`. |
 | `feed.interval` | `5` | Seconds between polls. |
-| `reversePorts.start`, `reversePorts.end` | `0`, `0` | Reverse ports to add to the Service, at most 101. `0` means none. |
-| `service.type` | `ClusterIP` | Kubernetes Service type: `ClusterIP`, `NodePort` or `LoadBalancer`. |
+| `reversePorts.start`, `reversePorts.end` | `0`, `0` | Reverse ports, on their own ClusterIP Service `<release>-chisel-reverse`. At most 101. `0` means none. |
+| `service.type` | `ClusterIP` | Type of the websocket Service: `ClusterIP`, `NodePort` or `LoadBalancer`. The reverse ports Service is always `ClusterIP`. |
 | `ingress.enabled` | `false` | Create an Ingress. Needs `ingress.host`. |
 | `ingress.className` | `""` | IngressClass. |
 | `ingress.host` | `""` | Hostname. |
@@ -74,7 +77,7 @@ chisel client --fingerprint <fingerprint> --auth chisel:<password> \
 | `resources` | 50m / 64Mi, limit 512Mi | chisel container resources. |
 | `nodeSelector`, `tolerations`, `affinity` | empty | Pod scheduling. |
 
-The websocket port is always `8080`, on the pod and on the Service.
+The websocket port is always `8080`, on the pod and on the Service `<release>-chisel`.
 
 ### Server key
 
@@ -94,7 +97,7 @@ chisel lets everyone in when the users file is empty.
 The chart never starts chisel without at least one user.
 
 - **Generated** (default): one user `chisel` with full access and a random password, kept across upgrades and on uninstall.
-- **Static**: `auth.existingSecret` names a Secret with a `users.json` entry, in chisel's format: `{"user:pass": ["<remote-regex>", ...]}`. It must hold at least one user. Restart the pod after you change it.
+- **Static**: `auth.existingSecret` names a Secret with a `users.json` entry, in chisel's format: `{"user:pass": ["<remote-regex>", ...]}`. It must hold at least one user. chisel reloads it when the kubelet updates the mounted Secret, so no restart is needed.
 - **Feed**: `feed.enabled=true`. See below.
 
 ### Feed
@@ -105,7 +108,7 @@ chisel reloads the file on its own.
 
 - Before the first good answer, chisel has only a placeholder user that can open nothing.
 - An empty or invalid answer, or a failed call, keeps the last good file. Open tunnels keep working.
-- The file is written in place in an in-memory volume. chisel does not reload a replaced file, so a mounted Secret or ConfigMap cannot be the live file.
+- The file is written in place in an in-memory volume, because Secret and ConfigMap volumes are read-only. chisel 1.12 watches the file's directory and reloads about 100 ms after a write.
 
 A subset of the `.proto` with the service, the method and its two messages is enough:
 
@@ -130,8 +133,12 @@ feed:
 ### Reverse ports
 
 A client's reverse listener lives on the server pod.
-To reach it from other pods, put its port in `reversePorts.start`..`reversePorts.end`; the chart adds each one to the Service.
+To reach it from other pods, put its port in `reversePorts.start`..`reversePorts.end`.
+The chart puts these ports on a separate Service, `<release>-chisel-reverse`, which is always `ClusterIP`, so `service.type` never exposes them.
 The client must bind it on all interfaces, `R:0.0.0.0:<port>:socks`; a bare `R:<port>:socks` binds to `127.0.0.1` inside the pod.
+
+Point the SOCKS consumers at the reverse Service, not the websocket one.
+For example, ZopNight's `TUNNEL_SOCKS_HOST` is `tunnel-chisel-reverse.<namespace>.svc.cluster.local` for a release named `tunnel`.
 
 A reverse port has no login of its own: whoever reaches it uses the tunnel.
 Turn on `networkPolicy.enabled` and list the allowed peers in `networkPolicy.reversePortsFrom`.
@@ -147,6 +154,7 @@ Clients dial `https://<host><path>` exactly as written, with no trailing slash.
 
 - Ingress: the websocket port from anywhere (it has its own login), the reverse ports from `reversePortsFrom` only.
 - Egress: with the feed on, DNS (ports 53 and 5353) and the port of `feed.address`. With the feed off, none.
+- NetworkPolicy matches the destination pod's port, after Service translation. So `feed.address` must name a Service whose `port` equals its `targetPort`, such as ZopNight's config Service (9000 to 9000).
 - chisel needs no egress for reverse tunnels. Forward remotes, where the server dials out, do not work with the policy on.
 
 ---

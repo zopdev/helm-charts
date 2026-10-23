@@ -85,8 +85,8 @@ data:
           > "$work/resp.json" 2> "$work/err"; then
         if extract < "$work/resp.json" > "$work/new" && valid "$work/new"; then
           if ! cmp -s "$work/new" "$AUTH_FILE"; then
-            # In place: chisel reloads only on an in-place write. A replaced or
-            # renamed file is not reloaded until restart.
+            # chisel reloads 100 ms after the last write. A read of a
+            # half-written file fails to parse and keeps the old users.
             cat "$work/new" > "$AUTH_FILE"
             log "auth file updated ($(wc -c < "$work/new") bytes)"
           fi

@@ -33,7 +33,8 @@ same release name keeps the fingerprint and the password.
 {{- end }}
 {{- if include "chisel.reversePortsEnabled" . }}
 
-Reverse ports {{ .Values.reversePorts.start }}-{{ .Values.reversePorts.end }} are on Service {{ include "chisel.fullname" . }}.
+Reverse ports {{ .Values.reversePorts.start }}-{{ .Values.reversePorts.end }} are on Service {{ include "chisel.reverseServiceName" . }} (ClusterIP),
+in-cluster at {{ include "chisel.reverseServiceName" . }}.{{ .Release.Namespace }}.svc.cluster.local.
 Clients must bind them on all interfaces: R:0.0.0.0:<port>:socks.
 {{- if not .Values.networkPolicy.enabled }}
 They have no login of their own. Set networkPolicy.enabled and

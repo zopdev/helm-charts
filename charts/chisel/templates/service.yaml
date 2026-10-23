@@ -12,13 +12,28 @@ spec:
       port: 8080
       targetPort: http
       protocol: TCP
-    {{- if include "chisel.reversePortsEnabled" . }}
+  selector:
+    {{- include "chisel.selectorLabels" . | nindent 4 }}
+{{- if include "chisel.reversePortsEnabled" . }}
+---
+# A reverse port has no login of its own, so it stays in-cluster whatever
+# service.type is.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "chisel.reverseServiceName" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "chisel.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
     {{- range $port := untilStep (int .Values.reversePorts.start) (int (add1 .Values.reversePorts.end)) 1 }}
     - name: reverse-{{ $port }}
       port: {{ $port }}
       targetPort: {{ $port }}
       protocol: TCP
     {{- end }}
-    {{- end }}
   selector:
     {{- include "chisel.selectorLabels" . | nindent 4 }}
+{{- end }}

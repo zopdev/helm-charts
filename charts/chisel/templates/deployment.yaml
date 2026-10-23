@@ -164,9 +164,8 @@ spec:
         {{- end }}
       volumes:
         {{- if .Values.feed.enabled }}
-        # The feed rewrites the users file in place, which chisel reloads. A
-        # mounted Secret or ConfigMap is swapped, not written, so it cannot be
-        # the live file.
+        # The feed rewrites the users file in place, which chisel reloads.
+        # Secret and ConfigMap volumes are read-only, so the file lives here.
         - name: auth
           emptyDir:
             medium: Memory
