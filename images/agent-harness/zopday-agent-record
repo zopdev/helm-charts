@@ -1,0 +1,116 @@
+#!/usr/bin/env python3
+"""zopday-agent-record — turns Claude Code's event stream into the two files
+the harness contract names, and passes it through untouched.
+
+It is the back half of zopday-agent-cli and exists only because the contract
+wants the transcript at ONE pinned path:
+
+    $CLAUDE_CONFIG_DIR/session.jsonl   every event, one JSON object per line
+    $CLAUDE_CONFIG_DIR/session-id      the session id a resume needs
+
+Claude Code in `--output-format stream-json` already emits one JSON object per
+line, so this neither reformats nor summarises: each line is APPENDED verbatim
+and echoed on stdout, which the harness forwards to $ZOPDAY_AGENT_LOG.
+
+APPENDED, never truncated, for the reason the contract gives: on a resume the
+earlier turns are the only record of what has already been done.
+
+FLUSHED after every line, because the runner host reads this file out of the
+sandbox while the agent is still working and counts new lines as progress — a
+buffered writer would make a busy agent look wedged and let its lease expire.
+
+The session id is taken from the first event that carries one (the `system`
+init event, which Claude Code emits before it does any work) so the host's
+learn_session_id finds it on its first poll. It is held to the host's own rule
+- [A-Za-z0-9._-], at most 64 characters - because the host REFUSES anything
+else and keeps the id already on the row, which would silently send the next
+resume to the wrong conversation. It is written by rename, so a host that cats
+the file mid-write reads either nothing or the whole id, never half of one.
+
+It prints no part of the environment: the only bytes it writes are bytes it
+read from the agent's own stream.
+"""
+
+import json
+import os
+import sys
+
+SESSION_ID_MAX = 64
+SESSION_ID_OK = frozenset(
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-"
+)
+
+
+def session_id_of(line):
+    """The session id this event names, or None.
+
+    A line that is not JSON, or not an object, is still a transcript line and
+    is still recorded — it just cannot name an id.
+    """
+    try:
+        event = json.loads(line)
+    except ValueError:
+        return None
+
+    if not isinstance(event, dict):
+        return None
+
+    for key in ("session_id", "sessionId"):
+        got = event.get(key)
+        if not isinstance(got, str) or not got:
+            continue
+        if len(got) > SESSION_ID_MAX or set(got) - SESSION_ID_OK:
+            # Reported here rather than written: the host would refuse it, and
+            # a refusal with no cause sends the next reader to the wrong file.
+            sys.stderr.write(
+                "zopday-agent-record: the agent named a session id a session id "
+                "cannot have; not writing one\n"
+            )
+            return None
+        return got
+
+    return None
+
+
+def write_session_id(path, session_id):
+    tmp = path + ".tmp"
+    with open(tmp, "w") as out:
+        out.write(session_id)
+        out.flush()
+        os.fsync(out.fileno())
+    os.replace(tmp, path)
+
+
+def main():
+    if len(sys.argv) != 2:
+        sys.exit("zopday-agent-record: usage: zopday-agent-record CLAUDE_CONFIG_DIR")
+
+    config_dir = sys.argv[1]
+    session_path = os.path.join(config_dir, "session.jsonl")
+    id_path = os.path.join(config_dir, "session-id")
+
+    # An id already on disk is the one a resume was told to continue, so it is
+    # never overwritten by a later turn's.
+    have_id = os.path.exists(id_path) and os.path.getsize(id_path) > 0
+
+    with open(session_path, "a") as session:
+        for line in sys.stdin:
+            line = line.rstrip("\n")
+            if not line.strip():
+                continue
+
+            session.write(line + "\n")
+            session.flush()
+
+            sys.stdout.write(line + "\n")
+            sys.stdout.flush()
+
+            if not have_id:
+                session_id = session_id_of(line)
+                if session_id:
+                    write_session_id(id_path, session_id)
+                    have_id = True
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,155 @@
+#!/bin/sh
+# zopday-agent-cli — Claude Code, shaped to the harness contract.
+#
+# This is what $ZOPDAY_AGENT_CLI points at in the real harness image, and the
+# image is the only thing that sets it (zopday-harness refuses to start without
+# it). The raw `claude` binary does not satisfy the contract on its own:
+#
+#   * the harness invokes the agent as `CLI <prompt` and `CLI --resume ID
+#     <prompt` and passes nothing else, so print mode, the output format and the
+#     permission mode have to be decided HERE;
+#   * the contract pins the transcript at $CLAUDE_CONFIG_DIR/session.jsonl and
+#     the session id at $CLAUDE_CONFIG_DIR/session-id, and Claude Code keeps its
+#     own transcript somewhere else under its config dir;
+#   * `claude` with a terminal attached would open a session nobody can answer.
+#
+# So: argv is exactly the two shapes the harness uses, and everything else is
+# this script's decision.
+#
+#   zopday-agent-cli <prompt              a first attempt
+#   zopday-agent-cli --resume ID <prompt  continue session ID
+#
+# THE PROMPT IS NEVER AN ARGUMENT. It arrives on stdin, as bytes, and is handed
+# to `claude` the same way — stdin is inherited, not re-read, not quoted, not
+# interpolated. It is free-form prose from whoever submitted the task.
+#
+# NOTHING HERE PRINTS A CREDENTIAL. $ANTHROPIC_API_KEY and $GITHUB_TOKEN are
+# read by `claude` and by git out of the environment they are already in; this
+# script never names them, never echoes its environment and never puts a key on
+# a command line, where it would be readable in /proc to everything in the
+# sandbox.
+#
+# EXIT CODE: the agent's own, straight through (contract D3). The one code this
+# script would have to synthesise is 65, "the agent needs input" (D5), and it
+# does not: see the note at the bottom of this file.
+
+set -eu
+
+: "${CLAUDE_CONFIG_DIR:?zopday-agent-cli: CLAUDE_CONFIG_DIR must be pinned, or a resume cannot find the session}"
+
+RECORD=/usr/local/libexec/zopday-agent-record
+
+# --- argv: only the two shapes the harness uses -----------------------------
+#
+# Anything else is a bug in the caller rather than something to guess at, and a
+# guess here would run a turn the harness did not ask for.
+RESUME=""
+if [ "${1:-}" = "--resume" ]; then
+	shift
+	[ "$#" -gt 0 ] || { echo "zopday-agent-cli: --resume needs a session id" >&2; exit 2; }
+	RESUME=$1
+	shift
+fi
+
+if [ "$#" -ne 0 ]; then
+	echo "zopday-agent-cli: unexpected argument $1; the harness passes only --resume ID" >&2
+	exit 2
+fi
+
+mkdir -p "$CLAUDE_CONFIG_DIR"
+
+# --- the flags, and why each one is here ------------------------------------
+#
+#   --print                      one non-interactive turn; the prompt is read
+#                                from stdin because no prompt argument is given
+#   --output-format stream-json  one JSON object per line, which is exactly the
+#                                transcript shape the contract wants
+#   --verbose                    required by Claude Code for stream-json in
+#                                print mode, and it is what puts the tool calls
+#                                in the transcript rather than only the answer
+#   --dangerously-skip-permissions
+#                                there is no human on this terminal to approve a
+#                                tool call. The isolation is the SANDBOX - deny
+#                                -by-default egress, a per-task token, a
+#                                throwaway clone - not a prompt the agent would
+#                                be waiting on forever
+set -- --print --verbose --output-format stream-json --dangerously-skip-permissions
+
+# The model, if the host named one. Not defaulted here: the profile is where a
+# model is chosen, and a default in the image would quietly override a profile
+# that stopped setting it.
+MODEL=${ZOPDAY_AGENT_MODEL:-${ANTHROPIC_MODEL:-}}
+if [ -n "$MODEL" ]; then
+	set -- "$@" --model "$MODEL"
+fi
+
+if [ -n "$RESUME" ]; then
+	set -- "$@" --resume "$RESUME"
+fi
+
+# --- run it -----------------------------------------------------------------
+#
+# The stream goes through the recorder, which appends every line to
+# session.jsonl, lifts the session id out of the first event that carries one
+# and echoes the line on stdout for $ZOPDAY_AGENT_LOG.
+#
+# The agent's exit code cannot be read off the pipeline - that is the
+# recorder's - so it is written to a file inside the left-hand side. `if`
+# rather than `;` because `set -e` would exit before an `echo $?` ever ran.
+#
+# EACH printf CARRIES ITS OWN REDIRECTION, and that is not a style choice: a
+# `>` on the `fi` would redirect the whole if-statement, which includes the
+# agent's stdout - the stream the recorder exists to read. That spelling was
+# tried first, and it put the entire transcript into the exit-code file and
+# left session.jsonl empty.
+STATUS=$CLAUDE_CONFIG_DIR/.agent-exit
+rm -f "$STATUS"
+
+RECORD_STATUS=0
+{ if claude "$@"; then printf 0 >"$STATUS"; else printf %s "$?" >"$STATUS"; fi; } \
+	| python3 "$RECORD" "$CLAUDE_CONFIG_DIR" || RECORD_STATUS=$?
+
+if [ ! -s "$STATUS" ]; then
+	echo "zopday-agent-cli: the agent did not report an exit code" >&2
+	exit 1
+fi
+
+AGENT_STATUS=$(cat "$STATUS")
+rm -f "$STATUS"
+
+# Digits only. `exit` with anything else is a shell error whose message is the
+# whole offending value - which is how the redirection bug above announced
+# itself, by printing a transcript into an error about an illegal number.
+case $AGENT_STATUS in
+"" | *[!0-9]*)
+	echo "zopday-agent-cli: the agent's exit code could not be read" >&2
+	exit 1
+	;;
+esac
+
+# A broken transcript is a failure even when the agent succeeded: the host
+# counts lines in session.jsonl to decide the attempt made progress, and a
+# turn whose transcript was not written would have its lease expire instead.
+if [ "$AGENT_STATUS" = 0 ] && [ "$RECORD_STATUS" -ne 0 ]; then
+	echo "zopday-agent-cli: the agent finished but its transcript could not be recorded" >&2
+	exit 1
+fi
+
+# --- 65, and why this script never returns it -------------------------------
+#
+# The contract's D5 is "the agent needs input", and the harness decides it by
+# reading the LAST line of session.jsonl for an event of type `input_required`.
+# Claude Code has no such event. In print mode it ends every turn with one
+# `result` event whose subtype is success, error_max_turns or
+# error_during_execution; a turn that ended by asking a question is a `success`
+# whose text happens to be a question, and no field distinguishes it from a
+# turn that ended by answering one.
+#
+# So nothing here synthesises an input_required line. A mapping invented from
+# "the result text looks like a question" would fail a task that finished its
+# work and signed off with one, and would miss the case it was meant to catch
+# whenever the agent phrased it as a statement. Until Claude Code reports it,
+# this stays unimplemented and said out loud rather than guessed at. A turn
+# that ran out of room reaches the host as the agent's own non-zero exit (D3),
+# which is true, instead of as a 65 that is not.
+exit "$AGENT_STATUS"
