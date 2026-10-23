@@ -1,0 +1,102 @@
+{{- if .Values.feed.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "chisel.fullname" . }}-feed
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "chisel.labels" . | nindent 4 }}
+data:
+  feed.proto: |
+    {{- .Values.feed.proto | nindent 4 }}
+  # Polls a gRPC method for the chisel users file and writes it on change.
+  # The image has busybox sh/awk but no jq, so awk decodes the JSON string.
+  # Keeps the last good file on any error, and never writes a file with no
+  # "user:pass" entry (chisel would then let anyone in).
+  feed.sh: |
+    #!/bin/sh
+    set -u
+    : "${GRPC_ADDR:?}" "${GRPC_METHOD:?}" "${RESPONSE_FIELD:?}" "${AUTH_FILE:?}" "${PROTO_DIR:?}" "${PROTO_FILE:?}"
+    INTERVAL_SECONDS="${INTERVAL_SECONDS:-5}"
+    tls=""
+    if [ "${GRPC_PLAINTEXT:-true}" = "true" ]; then
+      tls="-plaintext"
+    fi
+    work="${TMPDIR:-/tmp}/auth-feed"
+    mkdir -p "$work"
+    state=""
+
+    log() { echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) auth-feed: $*"; }
+
+    # Prints the decoded RESPONSE_FIELD string from grpcurl's JSON output.
+    # Fails when the field is missing or holds a non-ASCII \u escape.
+    extract() {
+      awk -v key="\"$RESPONSE_FIELD\"" '
+        { buf = buf $0 "\n" }
+        END {
+          i = index(buf, key)
+          if (i == 0) exit 2
+          rest = substr(buf, i + length(key))
+          q = index(rest, "\"")
+          if (q == 0) exit 2
+          s = substr(rest, q + 1)
+          hex = "0123456789abcdef"
+          out = ""
+          n = length(s)
+          for (k = 1; k <= n; k++) {
+            c = substr(s, k, 1)
+            if (c == "\"") { printf "%s", out; exit 0 }
+            if (c != "\\") { out = out c; continue }
+            k++
+            e = substr(s, k, 1)
+            if (e == "n") out = out "\n"
+            else if (e == "t") out = out "\t"
+            else if (e == "r") out = out "\r"
+            else if (e == "u") {
+              v = 0
+              for (h = 1; h <= 4; h++) v = v * 16 + index(hex, tolower(substr(s, k + h, 1))) - 1
+              if (v < 32 || v > 126) exit 3
+              out = out sprintf("%c", v)
+              k += 4
+            }
+            else out = out e
+          }
+          exit 2
+        }'
+    }
+
+    # A usable file is one JSON object with at least one "user:pass" key.
+    valid() {
+      tr -d ' \t\r\n' < "$1" | grep -Eq '^\{"[^":]+:[^"]+":\[.*\]\}$'
+    }
+
+    report() {
+      if [ "$state" != "$1" ]; then
+        log "$2"
+        state="$1"
+      fi
+    }
+
+    while true; do
+      # $tls is unquoted on purpose: empty must expand to no argument.
+      if grpcurl $tls -connect-timeout 3 -max-time 4 \
+          -import-path "$PROTO_DIR" -proto "$PROTO_FILE" -d '{}' \
+          "$GRPC_ADDR" "$GRPC_METHOD" \
+          > "$work/resp.json" 2> "$work/err"; then
+        if extract < "$work/resp.json" > "$work/new" && valid "$work/new"; then
+          if ! cmp -s "$work/new" "$AUTH_FILE"; then
+            # In place: chisel reloads only on an in-place write. A replaced or
+            # renamed file is not reloaded until restart.
+            cat "$work/new" > "$AUTH_FILE"
+            log "auth file updated ($(wc -c < "$work/new") bytes)"
+          fi
+          report ok "gRPC server reachable; auth file in sync"
+        else
+          report bad "gRPC server answered without a usable auth file; keeping the last good file"
+        fi
+      else
+        report down "gRPC call failed, keeping the last good file: $(head -c 300 "$work/err" | tr '\n' ' ')"
+      fi
+      sleep "$INTERVAL_SECONDS"
+    done
+{{- end }}

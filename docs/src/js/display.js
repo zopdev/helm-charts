@@ -24,6 +24,10 @@ const CHART_DISPLAY = {
     description:
       "Storing and managing large volumes of structured, semi-structured, and unstructured data.",
   },
+  chisel: {
+    name: "Chisel",
+    description: "Fast TCP tunnel over HTTP, secured with SSH",
+  },
   chromadb: {
     name: "ChromaDB",
     description: "The AI-native embedding database",

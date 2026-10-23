@@ -1,0 +1,36 @@
+{{/*
+Fail the render on values that would install and then misbehave.
+*/}}
+
+{{- if and .Values.ingress.enabled (not .Values.ingress.host) }}
+{{- fail "ingress.enabled requires ingress.host." }}
+{{- end }}
+
+{{- if .Values.feed.enabled }}
+{{- if .Values.auth.existingSecret }}
+{{- fail "feed.enabled and auth.existingSecret are two sources for the same users file. Set only one." }}
+{{- end }}
+{{- if not (regexMatch "^[^:]+:[0-9]+$" .Values.feed.address) }}
+{{- fail "feed.enabled requires feed.address as host:port." }}
+{{- end }}
+{{- range $field := list "method" "proto" "responseField" }}
+{{- if not (index $.Values.feed $field) }}
+{{- fail (printf "feed.enabled requires feed.%s." $field) }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{- $start := int .Values.reversePorts.start }}
+{{- $end := int .Values.reversePorts.end }}
+{{- if or (and $start (not $end)) (and $end (not $start)) }}
+{{- fail "Set both reversePorts.start and reversePorts.end, or neither." }}
+{{- end }}
+{{- if lt $end $start }}
+{{- fail "reversePorts.end must not be below reversePorts.start." }}
+{{- end }}
+{{- if gt (sub $end $start) 100 }}
+{{- fail "reversePorts holds at most 101 ports (end - start <= 100)." }}
+{{- end }}
+{{- if and $start (le $start 8080) (ge $end 8080) }}
+{{- fail "reversePorts must not include 8080, the websocket port." }}
+{{- end }}

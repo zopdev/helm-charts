@@ -1,0 +1,299 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Chisel",
+  "properties": {
+    "image": {
+      "type": "object",
+      "category": "runtime",
+      "description": "Chisel server image.",
+      "properties": {
+        "repository": {
+          "type": "string",
+          "description": "Image repository.",
+          "default": "jpillora/chisel",
+          "editDisabled": true
+        },
+        "tag": {
+          "type": "string",
+          "description": "Image tag. Empty uses the chart's appVersion.",
+          "default": "1.11.3",
+          "mutable": true
+        }
+      }
+    },
+    "keepalive": {
+      "type": "string",
+      "category": "runtime",
+      "description": "Websocket keepalive, e.g. 25s. Keep it below the idle timeout of every proxy on the path. 0s turns it off.",
+      "pattern": "^[0-9]+(ms|s|m|h)$",
+      "default": "25s",
+      "mutable": true
+    },
+    "key": {
+      "type": "object",
+      "category": "runtime",
+      "description": "Server key. Clients pin its fingerprint, so a new key breaks every client.",
+      "properties": {
+        "existingSecret": {
+          "type": "string",
+          "description": "Secret with a server.key entry (chisel server --keygen). Empty generates one on install. Cannot be changed after install.",
+          "default": "",
+          "mutable": true,
+          "editDisabled": true
+        }
+      }
+    },
+    "auth": {
+      "type": "object",
+      "category": "runtime",
+      "description": "Static users file. Not used when feed is enabled.",
+      "properties": {
+        "existingSecret": {
+          "type": "string",
+          "description": "Secret with a users.json entry holding at least one user. Empty generates one user with full access.",
+          "default": "",
+          "mutable": true
+        }
+      }
+    },
+    "feed": {
+      "type": "object",
+      "category": "runtime",
+      "description": "Sidecar that keeps the users file in sync from a gRPC method.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Read the users from a gRPC method instead of a static users file.",
+          "default": false,
+          "mutable": true
+        },
+        "address": {
+          "type": "string",
+          "description": "host:port of the gRPC server. Called without TLS.",
+          "default": "",
+          "mutable": true
+        },
+        "method": {
+          "type": "string",
+          "description": "Full method name, e.g. pkg.Service/GetAuthFile. Called with an empty request.",
+          "default": "",
+          "mutable": true
+        },
+        "proto": {
+          "type": "string",
+          "description": "The .proto that defines the method, as text.",
+          "default": "",
+          "mutable": true
+        },
+        "responseField": {
+          "type": "string",
+          "description": "Response field holding the users file as a JSON string, in lowerCamelCase.",
+          "default": "",
+          "mutable": true
+        },
+        "interval": {
+          "type": "integer",
+          "description": "Seconds between polls.",
+          "minimum": 1,
+          "default": 5,
+          "mutable": true
+        }
+      }
+    },
+    "reversePorts": {
+      "type": "object",
+      "category": "runtime",
+      "description": "Ports clients open on the server with reverse remotes, added to the Service. At most 101 ports. 0 and 0 means none.",
+      "properties": {
+        "start": {
+          "type": "integer",
+          "description": "First port.",
+          "minimum": 0,
+          "maximum": 65535,
+          "default": 0,
+          "mutable": true
+        },
+        "end": {
+          "type": "integer",
+          "description": "Last port.",
+          "minimum": 0,
+          "maximum": 65535,
+          "default": 0,
+          "mutable": true
+        }
+      }
+    },
+    "service": {
+      "type": "object",
+      "category": "advanced",
+      "description": "Service in front of the server.",
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Kubernetes Service type.",
+          "enum": [
+            "ClusterIP",
+            "NodePort",
+            "LoadBalancer"
+          ],
+          "default": "ClusterIP",
+          "mutable": true
+        }
+      }
+    },
+    "ingress": {
+      "type": "object",
+      "category": "runtime",
+      "description": "How clients reach the server from outside the cluster.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Create an Ingress.",
+          "default": false,
+          "mutable": true
+        },
+        "className": {
+          "type": "string",
+          "description": "IngressClass. Empty uses the cluster default.",
+          "default": "",
+          "mutable": true
+        },
+        "host": {
+          "type": "string",
+          "description": "Hostname. Required when enabled.",
+          "default": "",
+          "mutable": true
+        },
+        "path": {
+          "type": "string",
+          "description": "Path clients dial. Clients do not follow redirects.",
+          "pattern": "^/",
+          "default": "/",
+          "mutable": true
+        },
+        "pathType": {
+          "type": "string",
+          "description": "Ingress path type. Use Exact for a path other than /.",
+          "enum": [
+            "Exact",
+            "Prefix",
+            "ImplementationSpecific"
+          ],
+          "default": "Prefix",
+          "mutable": true
+        },
+        "annotations": {
+          "type": "object",
+          "description": "Ingress annotations. The defaults suit ingress-nginx with long-lived websockets.",
+          "default": {
+            "nginx.ingress.kubernetes.io/proxy-read-timeout": "3600",
+            "nginx.ingress.kubernetes.io/proxy-send-timeout": "3600",
+            "nginx.ingress.kubernetes.io/proxy-buffering": "off",
+            "nginx.ingress.kubernetes.io/proxy-body-size": "0"
+          },
+          "mutable": true
+        },
+        "tlsSecretName": {
+          "type": "string",
+          "description": "Existing TLS Secret for the host.",
+          "default": "",
+          "mutable": true
+        }
+      }
+    },
+    "networkPolicy": {
+      "type": "object",
+      "category": "advanced",
+      "description": "Limits who reaches the reverse ports. The websocket port stays open.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Create a NetworkPolicy.",
+          "default": false,
+          "mutable": true
+        },
+        "reversePortsFrom": {
+          "type": "array",
+          "description": "NetworkPolicy peers that may reach the reverse ports. Empty: nobody.",
+          "items": {
+            "type": "object"
+          },
+          "default": [],
+          "mutable": true
+        }
+      }
+    },
+    "alerts": {
+      "type": "object",
+      "category": "advanced",
+      "description": "PrometheusRule alerts. Needs the Prometheus Operator CRDs, so off by default.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Create the PrometheusRule.",
+          "default": false,
+          "mutable": true
+        }
+      }
+    },
+    "resources": {
+      "type": "object",
+      "category": "compute",
+      "description": "CPU and memory for the chisel container.",
+      "properties": {
+        "requests": {
+          "type": "object",
+          "properties": {
+            "cpu": {
+              "type": "string",
+              "description": "CPU request.",
+              "default": "50m",
+              "mutable": true
+            },
+            "memory": {
+              "type": "string",
+              "description": "Memory request.",
+              "pattern": "^[0-9]+(Mi|Gi)$",
+              "default": "64Mi",
+              "mutable": true
+            }
+          }
+        },
+        "limits": {
+          "type": "object",
+          "properties": {
+            "memory": {
+              "type": "string",
+              "description": "Memory limit.",
+              "pattern": "^[0-9]+(Mi|Gi)$",
+              "default": "512Mi",
+              "mutable": true
+            }
+          }
+        }
+      }
+    },
+    "nodeSelector": {
+      "type": "object",
+      "category": "advanced",
+      "description": "Node labels the pod must match.",
+      "default": {},
+      "mutable": true
+    },
+    "tolerations": {
+      "type": "array",
+      "category": "advanced",
+      "description": "Tolerations for tainted nodes.",
+      "default": [],
+      "mutable": true
+    },
+    "affinity": {
+      "type": "object",
+      "category": "advanced",
+      "description": "Pod affinity rules.",
+      "default": {},
+      "mutable": true
+    }
+  }
+}
