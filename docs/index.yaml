@@ -107,6 +107,25 @@ entries:
       type: application
     apiVersion: v2
     appVersion: 1.12.1
+    created: "2026-10-23T19:20:59.528218+05:30"
+    description: Tunnel server for TCP and reverse SOCKS tunnels over a websocket
+    digest: d36c4b373ed5987fea44326c5fa42e23625ae247774d2c3b36db56657c46429e
+    home: https://github.com/jpillora/chisel
+    icon: https://storage.googleapis.com/zopdev-blog-resources/1/internal-dashboard/e1c72cee-4da6-40b8-83c2-81ccfb63daba-chisel.png
+    maintainers:
+    - name: ZopDev
+      url: zop.dev
+    name: chisel
+    sources:
+    - https://github.com/jpillora/chisel
+    type: application
+    urls:
+    - https://helm.zop.dev/chisel-v0.0.2.tgz
+    version: v0.0.2
+  - annotations:
+      type: application
+    apiVersion: v2
+    appVersion: 1.12.1
     created: "2026-10-23T16:44:59.351044+05:30"
     description: Tunnel server for TCP and reverse SOCKS tunnels over a websocket
     digest: df1e66986d6333c4d2e8527c1db801c9b1faa7ec371d24d181e3ef530181a254
