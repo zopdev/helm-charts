@@ -16,8 +16,8 @@
         },
         "tag": {
           "type": "string",
-          "description": "Image tag. Empty uses the chart's appVersion.",
-          "default": "1.11.3",
+          "description": "Image tag. Empty uses the chart's appVersion. Must be 1.11.7 or later for per-user ACLs.",
+          "default": "1.12.0",
           "mutable": true
         }
       }

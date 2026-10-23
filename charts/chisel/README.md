@@ -50,7 +50,7 @@ chisel client --fingerprint <fingerprint> --auth chisel:<password> \
 
 | Key | Default | Description |
 |---|---|---|
-| `image.tag` | `1.11.3` | Tag of `jpillora/chisel`. |
+| `image.tag` | `1.12.0` | Tag of `jpillora/chisel`. Must be `1.11.7` or later for per-user ACLs. |
 | `keepalive` | `25s` | Websocket keepalive. `0s` turns it off. |
 | `key.existingSecret` | `""` | Secret with `server.key`. Empty generates one. Fixed after install. |
 | `auth.existingSecret` | `""` | Secret with `users.json`. Empty (and feed off) generates one user. |
@@ -84,7 +84,7 @@ Tools that render with `helm template`, such as Argo CD, cannot read it back and
 With them, make the key once and set `key.existingSecret`:
 
 ```bash
-docker run --rm -v "$PWD:/out" jpillora/chisel:1.11.3 server --keygen /out/server.key
+docker run --rm -v "$PWD:/out" jpillora/chisel:1.12.0 server --keygen /out/server.key
 kubectl create secret generic chisel-key --from-file=server.key
 ```
 
@@ -171,6 +171,7 @@ kubectl delete secret tunnel-chisel-key tunnel-chisel-auth
 - One replica, by design: reverse ports live on the pod the client is connected to. Updates use the `Recreate` strategy, so two pods never share the Service.
 - The pod runs as uid 100 (the grpcurl image's user) with a read-only root filesystem and no service account token.
 - `/health` backs both probes.
+- The server must be chisel 1.11.7 or later. Older servers do not enforce the per-user ACLs in `users.json`.
 
 ---
 
