@@ -1,0 +1,43 @@
+Chisel server is installed as release {{ .Release.Name }}.
+
+Clients dial:
+
+  http://{{ include "chisel.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:8080
+{{- if .Values.ingress.enabled }}
+
+Or from outside the cluster:
+
+  http{{ if .Values.ingress.tlsSecretName }}s{{ end }}://{{ .Values.ingress.host }}{{ if ne .Values.ingress.path "/" }}{{ .Values.ingress.path }}{{ end }}
+{{- end }}
+
+Server fingerprint, for the clients' --fingerprint flag:
+
+  kubectl logs -n {{ .Release.Namespace }} deploy/{{ include "chisel.fullname" . }} -c chisel | grep Fingerprint
+{{- if .Values.feed.enabled }}
+
+Users come from {{ .Values.feed.method }} at {{ .Values.feed.address }}.
+Follow the sync:
+
+  kubectl logs -n {{ .Release.Namespace }} deploy/{{ include "chisel.fullname" . }} -c auth-feed
+{{- else if not .Values.auth.existingSecret }}
+
+The generated user and password:
+
+  kubectl get secret -n {{ .Release.Namespace }} {{ include "chisel.authSecretName" . }} \
+    -o jsonpath='{.data.users\.json}' | base64 -d
+{{- end }}
+{{- if or (not .Values.key.existingSecret) (and (not .Values.feed.enabled) (not .Values.auth.existingSecret)) }}
+
+The generated Secrets are kept on `helm uninstall`, so a reinstall with the
+same release name keeps the fingerprint and the password.
+{{- end }}
+{{- if include "chisel.reversePortsEnabled" . }}
+
+Reverse ports {{ .Values.reversePorts.start }}-{{ .Values.reversePorts.end }} are on Service {{ include "chisel.reverseServiceName" . }} (ClusterIP),
+in-cluster at {{ include "chisel.reverseServiceName" . }}.{{ .Release.Namespace }}.svc.cluster.local.
+Clients must bind them on all interfaces: R:0.0.0.0:<port>:socks.
+{{- if not .Values.networkPolicy.enabled }}
+They have no login of their own. Set networkPolicy.enabled and
+networkPolicy.reversePortsFrom to limit who reaches them.
+{{- end }}
+{{- end }}

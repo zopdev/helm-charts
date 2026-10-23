@@ -1,0 +1,109 @@
+# Chisel server: clients dial it over a websocket and open tunnels through it.
+# A client can open a reverse listener (for example a SOCKS proxy into its own
+# network) on the server pod; list those ports under `reversePorts`.
+
+image:
+  repository: jpillora/chisel
+  # Must be 1.11.7 or later: older servers do not enforce per-user ACLs.
+  tag: "1.12.1"
+
+# Websocket keepalive. Keep it below the idle timeout of every proxy on the
+# path; "0s" turns it off.
+keepalive: "25s"
+
+# Server key. Clients pin its fingerprint, so a new key breaks every client.
+key:
+  # Secret with a `server.key` entry. Make one with:
+  #   docker run --rm -v "$PWD:/out" jpillora/chisel:1.12.1 \
+  #     server --keygen /out/server.key
+  #   kubectl create secret generic chisel-key --from-file=server.key
+  # Empty generates a key on install, kept across upgrades and on uninstall.
+  # Tools that render with `helm template` (e.g. Argo CD) cannot read it back
+  # and make a new key on every sync: use existingSecret with them.
+  existingSecret: ""
+
+# Who may connect. chisel lets everyone in when the users file is empty, so
+# the chart always gives it at least one user.
+auth:
+  # Secret with a `users.json` entry: {"user:pass": ["<remote-regex>", ...]}.
+  # It must hold at least one user. chisel reloads it when the kubelet updates
+  # the mounted Secret; no restart is needed.
+  # Empty (and feed off) generates one user `chisel` that may open only
+  # reverse remotes on 0.0.0.0 (R:0.0.0.0:<port>), with a random password,
+  # kept across upgrades and on uninstall.
+  existingSecret: ""
+
+# Sidecar that polls a gRPC method for the users file and writes it on
+# change. Use it when the users change at runtime. Replaces `auth`.
+feed:
+  enabled: false
+  # host:port of the gRPC server. Called without TLS.
+  address: ""
+  # Full method name, e.g. pkg.Service/GetAuthFile. It is called with an
+  # empty request.
+  method: ""
+  # The .proto that defines `method`, as text. A subset with just the service
+  # and its two messages is enough.
+  proto: ""
+  # Response field that holds the users file as a JSON string, as grpcurl
+  # prints it (lowerCamelCase, e.g. authFileJson).
+  responseField: ""
+  # Seconds between polls.
+  interval: 5
+
+# Ports clients open on the server with reverse remotes (R:0.0.0.0:<port>:...).
+# They go on their own Service, <release>-chisel-reverse, which is always
+# ClusterIP. It lists each port, so the range holds at most 101 ports.
+# 0 and 0 means none. Ports start at 1024: chisel runs without root.
+reversePorts:
+  start: 0
+  end: 0
+
+# The websocket Service. The reverse ports never ride on it.
+service:
+  type: ClusterIP
+
+ingress:
+  enabled: false
+  className: ""
+  host: ""
+  # Clients do not follow redirects. With a path other than /, use Exact:
+  # nginx answers "/tunnel" with a redirect for a Prefix of "/tunnel/".
+  # chisel ignores the path, so no rewrite is needed.
+  path: "/"
+  pathType: Prefix
+  # Long-lived websockets: no buffering, timeouts in seconds.
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-buffering: "off"
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+  tlsSecretName: ""
+
+# A reverse port has no login of its own: whoever reaches it uses the tunnel.
+# The policy keeps the websocket port open, lets only `reversePortsFrom`
+# reach the reverse ports, and allows egress only for DNS and the feed.
+networkPolicy:
+  enabled: false
+  # NetworkPolicy peers that may reach the reverse ports. Empty: nobody.
+  reversePortsFrom: []
+  #  - podSelector:
+  #      matchLabels:
+  #        app: api
+
+# PrometheusRule on kube-state-metrics. Needs the Prometheus Operator CRDs.
+alerts:
+  enabled: false
+
+resources:
+  requests:
+    cpu: "50m"
+    memory: "64Mi"
+  limits:
+    memory: "512Mi"
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

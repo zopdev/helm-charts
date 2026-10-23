@@ -1,0 +1,194 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "chisel.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "chisel.labels" . | nindent 4 }}
+spec:
+  # One pod only: reverse ports live on the pod the client is connected to.
+  # Recreate stops two pods from sharing the Service during a rollout.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "chisel.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        # Not the Secrets: a generated one renders new values under
+        # `helm template`, which would restart the pod on every upgrade.
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+      labels:
+        {{- include "chisel.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      # chisel never talks to the Kubernetes API.
+      automountServiceAccountToken: false
+      securityContext:
+        # The grpcurl image's user. The chisel image is a static binary with
+        # no user of its own. fsGroup lets it read the 0440 Secret files.
+        runAsNonRoot: true
+        runAsUser: 100
+        runAsGroup: 101
+        fsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault
+      {{- if .Values.feed.enabled }}
+      initContainers:
+        # chisel lets anyone in when the users file is empty, so it starts
+        # with one placeholder user that can open nothing ("^$").
+        - name: auth-placeholder
+          image: "fullstorydev/grpcurl:v1.9.3-alpine"
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+              pw=$(head -c 24 /dev/urandom | base64 | tr '+/' '-_' | tr -d '=\n')
+              printf '{"placeholder:%s": ["^$"]}\n' "$pw" > /auth/users.json
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: auth
+              mountPath: /auth
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "16Mi"
+            limits:
+              cpu: "100m"
+              memory: "64Mi"
+      {{- end }}
+      containers:
+        - name: chisel
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          args:
+            - server
+            - --port
+            - "8080"
+            - --reverse
+            - --keepalive
+            - {{ .Values.keepalive | quote }}
+            - --authfile
+            - /auth/users.json
+            - --keyfile
+            - /key/server.key
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 30
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: auth
+              mountPath: /auth
+              readOnly: true
+            - name: key
+              mountPath: /key
+              readOnly: true
+        {{- if .Values.feed.enabled }}
+        - name: auth-feed
+          image: "fullstorydev/grpcurl:v1.9.3-alpine"
+          command: ["/bin/sh", "/feed/feed.sh"]
+          env:
+            - name: GRPC_ADDR
+              value: {{ .Values.feed.address | quote }}
+            - name: GRPC_METHOD
+              value: {{ .Values.feed.method | quote }}
+            - name: RESPONSE_FIELD
+              value: {{ .Values.feed.responseField | quote }}
+            - name: AUTH_FILE
+              value: /auth/users.json
+            - name: PROTO_DIR
+              value: /feed
+            - name: PROTO_FILE
+              value: feed.proto
+            - name: INTERVAL_SECONDS
+              value: {{ .Values.feed.interval | quote }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "16Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
+          volumeMounts:
+            - name: auth
+              mountPath: /auth
+            - name: feed
+              mountPath: /feed
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+        {{- end }}
+      volumes:
+        {{- if .Values.feed.enabled }}
+        # The feed rewrites the users file in place, which chisel reloads.
+        # Secret and ConfigMap volumes are read-only, so the file lives here.
+        - name: auth
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Mi
+        - name: tmp
+          emptyDir:
+            sizeLimit: 8Mi
+        - name: feed
+          configMap:
+            name: {{ include "chisel.fullname" . }}-feed
+        {{- else }}
+        - name: auth
+          secret:
+            secretName: {{ include "chisel.authSecretName" . }}
+            defaultMode: 0440
+            items:
+              - key: users.json
+                path: users.json
+        {{- end }}
+        - name: key
+          secret:
+            secretName: {{ include "chisel.keySecretName" . }}
+            defaultMode: 0440
+            items:
+              - key: server.key
+                path: server.key
