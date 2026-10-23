@@ -3,6 +3,56 @@
   "type": "object",
   "title": "Chisel",
   "properties": {
+    "image": {
+      "type": "object",
+      "category": "runtime",
+      "description": "Chisel server image.",
+      "properties": {
+        "repository": {
+          "type": "string",
+          "description": "Image repository.",
+          "default": "jpillora/chisel",
+          "editDisabled": true
+        },
+        "tag": {
+          "type": "string",
+          "description": "Image tag. Empty uses the chart's appVersion. Must be 1.11.7 or later for per-user ACLs.",
+          "default": "1.12.1"
+        }
+      }
+    },
+    "keepalive": {
+      "type": "string",
+      "category": "runtime",
+      "description": "Websocket keepalive, e.g. 25s. Keep it below the idle timeout of every proxy on the path. 0s turns it off.",
+      "pattern": "^[0-9]+(ms|s|m|h)$",
+      "default": "25s"
+    },
+    "key": {
+      "type": "object",
+      "category": "runtime",
+      "description": "Server key. Clients pin its fingerprint, so a new key breaks every client.",
+      "properties": {
+        "existingSecret": {
+          "type": "string",
+          "description": "Secret with a server.key entry (chisel server --keygen). Empty generates one on install. Cannot be changed after install.",
+          "default": "",
+          "editDisabled": true
+        }
+      }
+    },
+    "auth": {
+      "type": "object",
+      "category": "runtime",
+      "description": "Static users file. Not used when feed is enabled.",
+      "properties": {
+        "existingSecret": {
+          "type": "string",
+          "description": "Secret with a users.json entry holding at least one user. Empty generates one user that may open only reverse remotes on 0.0.0.0.",
+          "default": ""
+        }
+      }
+    },
     "feed": {
       "type": "object",
       "category": "runtime",
@@ -37,6 +87,12 @@
           "description": "Response field holding the users file as a JSON string, in lowerCamelCase.",
           "default": "",
           "mutable": true
+        },
+        "interval": {
+          "type": "integer",
+          "description": "Seconds between polls.",
+          "minimum": 1,
+          "default": 5
         }
       }
     },
@@ -60,6 +116,23 @@
           "maximum": 65535,
           "default": 0,
           "mutable": true
+        }
+      }
+    },
+    "service": {
+      "type": "object",
+      "category": "advanced",
+      "description": "Service in front of the server.",
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Kubernetes Service type of the websocket Service. The reverse ports Service is always ClusterIP.",
+          "enum": [
+            "ClusterIP",
+            "NodePort",
+            "LoadBalancer"
+          ],
+          "default": "ClusterIP"
         }
       }
     },
@@ -104,6 +177,16 @@
           "default": "Prefix",
           "mutable": true
         },
+        "annotations": {
+          "type": "object",
+          "description": "Ingress annotations. The defaults suit ingress-nginx with long-lived websockets.",
+          "default": {
+            "nginx.ingress.kubernetes.io/proxy-read-timeout": "3600",
+            "nginx.ingress.kubernetes.io/proxy-send-timeout": "3600",
+            "nginx.ingress.kubernetes.io/proxy-buffering": "off",
+            "nginx.ingress.kubernetes.io/proxy-body-size": "0"
+          }
+        },
         "tlsSecretName": {
           "type": "string",
           "description": "Existing TLS Secret for the host.",
@@ -134,6 +217,18 @@
         }
       }
     },
+    "alerts": {
+      "type": "object",
+      "category": "advanced",
+      "description": "PrometheusRule alerts. Needs the Prometheus Operator CRDs, so off by default.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Create the PrometheusRule.",
+          "default": false
+        }
+      }
+    },
     "resources": {
       "type": "object",
       "category": "compute",
@@ -145,6 +240,7 @@
             "cpu": {
               "type": "string",
               "description": "CPU request.",
+              "pattern": "^[0-9]+(\\.[0-9]+)?m?$",
               "default": "50m",
               "mutable": true
             },
@@ -163,7 +259,7 @@
             "cpu": {
               "type": "string",
               "description": "CPU limit.",
-              "pattern": "^[0-9]+m$",
+              "pattern": "^[0-9]+(\\.[0-9]+)?m?$",
               "default": "500m",
               "mutable": true
             },
@@ -177,6 +273,24 @@
           }
         }
       }
+    },
+    "nodeSelector": {
+      "type": "object",
+      "category": "advanced",
+      "description": "Node labels the pod must match.",
+      "default": {}
+    },
+    "tolerations": {
+      "type": "array",
+      "category": "advanced",
+      "description": "Tolerations for tainted nodes.",
+      "default": []
+    },
+    "affinity": {
+      "type": "object",
+      "category": "advanced",
+      "description": "Pod affinity rules.",
+      "default": {}
     }
   }
 }
