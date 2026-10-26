@@ -11,20 +11,45 @@
 #   zopday-agent-cli     $ZOPDAY_AGENT_CLI — Claude Code shaped to the contract
 #   zopday-agent-record  the transcript/session-id half of that wrapper
 #
-# WHAT THE HARNESS SHELLS OUT TO, and therefore what has to be installed:
-# sh, git, curl, python3 (it opens the pull request with curl and parses the
-# answer with python3), sed, tail and cp from coreutils, and
-# update-ca-certificates to trust the sandbox's egress filter. It does NOT use
-# `gh` - the two pull-request calls are plain curl against the REST API - so gh
-# is deliberately absent.
+# WHAT THE THREE PROGRAMS SHELL OUT TO, and therefore what has to be
+# installed: sh, git, sed, tail and cp from coreutils, update-ca-certificates
+# to trust the sandbox's egress filter, and python3 - zopday-agent-record is
+# a python3 program, and zopday-agent-cli pipes the agent's event stream
+# through it.
+#
+# NOT curl and NOT `gh`. zopday-harness stops at the push; the host opens the
+# draft pull request from OUTSIDE the sandbox, and api.github.com is not in
+# this sandbox's egress policy at all (the note at the end of zopday-harness
+# says why). curl is installed anyway, but for the AGENT - it is a tool a
+# coding agent reaches for, and it is one of the clients the trust block
+# inside the harness exists to serve.
 #
 #   docker build -f images/agent-harness/Dockerfile -t agent-harness:latest images/
+#
+# LINUX/AMD64 ONLY. The Image Deployment workflow builds this on an amd64
+# runner with no QEMU and no platforms:, so the published manifest carries one
+# architecture. zopnight's agent-harness VM component refuses to install on a
+# non-x86_64 host for that reason - a single-platform image pulls and inspects
+# happily on arm64, so without that refusal the first `docker run` of a real
+# task would be what discovers it.
 #
 # NO SECRETS ARE BAKED IN. The model key and the git token reach the agent as
 # environment on one exec, from the runner host, and the runner host gives it
 # placeholders that the sandbox's egress filter substitutes outside the
 # sandbox. There is nothing credential-shaped in this image.
 FROM node:22-bookworm-slim
+
+# node:22-bookworm-slim ships ENTRYPOINT docker-entrypoint.sh / CMD node, which
+# this image has no use for and which the comment at the bottom claims it does
+# not carry. Cleared so that claim is true of the IMAGE and not only of our
+# intent. Setting ENTRYPOINT resets the inherited CMD too, so both read null.
+#
+# `docker run <image>` with no command therefore fails with "no command
+# specified" instead of dropping into a node REPL. That is the correct shape
+# here and nothing regresses on it: the sandbox is created with its own
+# entrypoint, the task arrives as an exec, and the agent-harness VM component
+# only ever runs `docker pull` and `docker image inspect`.
+ENTRYPOINT []
 
 # PINNED, not `latest`: a profile pins the image by digest precisely so that the
 # toolchain a task starts with is the toolchain it finishes with, and a floating
@@ -95,7 +120,7 @@ USER node
 ENV HOME=/home/node
 WORKDIR /workspace
 
-# No ENTRYPOINT and no CMD on purpose. The sandbox is created with
-# entrypoint ["sleep","infinity"] and everything that matters arrives as an
-# exec, so an entrypoint here would only be a second answer to a question the
-# create already answers.
+# No ENTRYPOINT and no CMD on purpose - the base image's are cleared near the
+# top. The sandbox is created with entrypoint ["sleep","infinity"] and
+# everything that matters arrives as an exec, so an entrypoint here would only
+# be a second answer to a question the create already answers.
