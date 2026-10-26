@@ -3,15 +3,19 @@
 #
 # This is the entrypoint the runner host invokes (agentTaskRunScript's
 # agent-start step). It is the HARNESS, not the agent: it runs the agent, and
-# then it is the thing that pushes the branch and opens the pull request.
+# then it is the thing that decides whether anything changed and pushes the
+# branch.
 #
 # Why the harness and not the agent:
 #
-#   * the agent is assumed hostile, so "it opened a PR" must not be something it
-#     can decline, duplicate or redirect;
-#   * a crash must not be able to produce two pull requests, so the check for an
-#     existing one and the create live in the same place (plan: E5);
-#   * P1 is `propose_only`, so what gets opened is a DRAFT and nothing merges.
+#   * the agent is assumed hostile, so "the work was pushed" must not be
+#     something it can decline, duplicate or redirect;
+#   * one ref, written out in full, so a hostile agent cannot widen what this
+#     attempt is allowed to write;
+#   * P1 is `propose_only`, so nothing here merges anything.
+#
+# IT DOES NOT OPEN THE PULL REQUEST. It used to; the note at the END of this
+# file says why that moved out of the sandbox and what opens it now.
 #
 # The contract with the runner host, in one place. Every path is under the
 # workspace, so the host reads them back out of the sandbox by path alone:
@@ -31,7 +35,7 @@
 #
 # Exit codes, which the host maps to a task outcome:
 #
-#   0   done. Either a pull request exists, or the agent changed nothing (D1)
+#   0   done. Either the branch was pushed, or the agent changed nothing (D1)
 #   65  the agent needs input, and P1 cannot hold a task mid-run (D5)
 #   1   the harness itself failed — the branch survives, the task is FAILED
 #       with the work preserved (D2)
@@ -68,8 +72,8 @@ git rev-parse --git-dir >/dev/null 2>&1 || fail "this is not a git clone, so the
 # root set and naming one certificate in either would leave every call to an
 # unbound host unable to verify anything at all. It leaves the merge to the
 # caller and says so in its own source; THIS IS THAT CALLER. Without this block
-# git clone, git push, curl, pip and the two pull-request calls at the bottom of
-# this file all fail certificate verification.
+# git clone, git push, and every https call the AGENT makes - curl, pip, the
+# model host - all fail certificate verification.
 #
 # Two things, because neither covers the other:
 #
