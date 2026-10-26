@@ -38,8 +38,8 @@ spec:
       # chisel never talks to the Kubernetes API.
       automountServiceAccountToken: false
       securityContext:
-        # The grpcurl image's user. The chisel image is a static binary with
-        # no user of its own. fsGroup lets it read the 0440 Secret files.
+        # The grpcurl image's user. The chisel image is a static binary that
+        # runs as any uid. fsGroup lets it read the 0440 Secret files.
         runAsNonRoot: true
         runAsUser: 100
         runAsGroup: 101
@@ -78,7 +78,7 @@ spec:
       {{- end }}
       containers:
         - name: chisel
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           args:
             - server
             - --port
