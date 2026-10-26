@@ -11,14 +11,13 @@
         "repository": {
           "type": "string",
           "description": "Image repository.",
-          "default": "zopdev/chisel",
+          "default": "jpillora/chisel",
           "editDisabled": true
         },
         "tag": {
           "type": "string",
-          "description": "Image tag. v0.0.1 holds chisel 1.12.1.",
-          "minLength": 1,
-          "default": "v0.0.1",
+          "description": "Image tag. Empty uses the chart's appVersion. Must be 1.11.7 or later for per-user ACLs.",
+          "default": "1.12.1",
           "mutable": true
         }
       }

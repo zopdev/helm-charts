@@ -2,13 +2,8 @@
 Fail the render on values that would install and then misbehave.
 */}}
 
-{{- if not .Values.image.tag }}
-{{- fail "image.tag is required." }}
-{{- end }}
-
-{{- /* Only upstream tags are chisel versions; zopdev/chisel tags are not. */}}
-{{- $tag := .Values.image.tag | toString }}
-{{- if and (eq .Values.image.repository "jpillora/chisel") (regexMatch "^v?[0-9]+\\.[0-9]+\\.[0-9]+$" $tag) (not (semverCompare ">=1.11.7" $tag)) }}
+{{- $tag := .Values.image.tag | default .Chart.AppVersion | toString }}
+{{- if and (regexMatch "^v?[0-9]+\\.[0-9]+\\.[0-9]+$" $tag) (not (semverCompare ">=1.11.7" $tag)) }}
 {{- fail "image.tag must be 1.11.7 or later: older chisel servers do not enforce per-user ACLs." }}
 {{- end }}
 

@@ -2,7 +2,7 @@
 # Chisel tunnel server
 # -------------------------------
 # WHY THIS IMAGE EXISTS:
-# The chisel chart (charts/chisel) runs this image. We build chisel from its
+# Built for the chisel chart (charts/chisel). We build chisel from its
 # pinned release with our own Go toolchain, so a Go security fix needs only
 # a rebuild here. We do not wait for an upstream release.
 #

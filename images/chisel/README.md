@@ -1,6 +1,6 @@
 # chisel Docker Image
 
-The chisel Docker image packages the [chisel](https://github.com/jpillora/chisel) tunnel server, built from a pinned release with our own Go toolchain. The [chisel chart](../../charts/chisel) runs it.
+The chisel Docker image packages the [chisel](https://github.com/jpillora/chisel) tunnel server, built from a pinned release with our own Go toolchain. It is built for the [chisel chart](../../charts/chisel).
 
 We build it ourselves so that a Go security fix needs only a rebuild here. We do not wait for an upstream release.
 
