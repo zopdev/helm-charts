@@ -11,6 +11,15 @@
 #   zopday-agent-cli     $ZOPDAY_AGENT_CLI — Claude Code shaped to the contract
 #   zopday-agent-record  the transcript/session-id half of that wrapper
 #
+# THIS IS THE ONLY DOCKERFILE FOR THIS IMAGE. zopnight used to carry a near-
+# copy beside those three programs; nothing built it, it had already drifted
+# (it still claimed the harness opens the pull request with curl), and it was
+# removed rather than left to drift further. THE PROGRAMS ARE COPIED, THE
+# BUILD IS NOT. zopnight's agentharness test
+# TestHarnessProgramsMatchThePublishedImage pins the three digests on that
+# side, so an edit there cannot be made without someone being told to re-copy
+# here and cut a new tag.
+#
 # WHAT THE THREE PROGRAMS SHELL OUT TO, and therefore what has to be
 # installed: sh, git, sed, tail and cp from coreutils, update-ca-certificates
 # to trust the sandbox's egress filter, and python3 - zopday-agent-record is
@@ -100,18 +109,24 @@ ENV ZOPDAY_AGENT_CLI=/usr/local/bin/zopday-agent-cli
 ENV DISABLE_AUTOUPDATER=1 \
 	CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
 
-# Claude Code refuses --dangerously-skip-permissions when it is running as
-# root, and nothing in this image chooses the user the runner's exec arrives
-# as: USER below is the image's default, and an execd that ran the turn as root
-# would make every attempt fail with "cannot be used with root/sudo
-# privileges" before the agent did anything. Measured, not guessed - as root
-# without this the wrapper exits 1 on that message, and with it the turn
-# proceeds.
+# IS_SANDBOX IS DELIBERATELY NOT SET HERE. It is what lets Claude Code accept
+# --dangerously-skip-permissions when the turn runs as root, and it used to be
+# an ENV on this line.
 #
-# IT IS A TRUE STATEMENT ABOUT THIS IMAGE and not a way round a safety check:
-# the only thing that ever runs it is an sbx sandbox, with deny-by-default
-# egress, a per-task credential and a throwaway clone.
-ENV IS_SANDBOX=1
+# This image is published PUBLICLY, and an ENV travels with it: anyone who
+# pulled it and ran it as root, outside any sandbox, would get that flag
+# accepted. The claim "this really is a sandbox" is true of an INVOCATION, not
+# of a layer, so the invocation is what makes it - zopnight's
+# agentTaskRunScript exports it in the same one-command list as the
+# placeholder credentials, and TestAgentTaskRunScript_ExportsIsSandboxFromThe-
+# Host pins it there.
+#
+# Nothing regresses. sbx's docker provider passes no --user, so the container
+# keeps the USER below, execd runs as that user, and an exec naming no uid
+# runs as it too - a non-root agent never needed the flag. It is the belt for
+# an execd that ever runs the turn as root, and the host is where that belt
+# belongs. (sbx's firecracker provider refuses a non-root USER outright, so it
+# never reaches this image at all.)
 
 # NON-ROOT, which is what it runs as unless something overrides it. `node` is
 # the base image's own uid 1000, reused rather than a second user invented
