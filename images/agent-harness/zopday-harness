@@ -28,7 +28,10 @@
 #   $CLAUDE_CONFIG_DIR/session-id      the session id a resume needs
 #   $ZOPDAY_AGENT_CLI          the agent binary: `claude`, `codex`, or the fake
 #   $ZOPDAY_AGENT_RESUME       a session id to continue, empty on a first attempt
-#   $ZOPDAY_TASK_ID            the task, for the commit trailer and the PR body
+#   $ZOPDAY_TASK_ID            the task id. NOTHING HERE READS IT: it is
+#                              required so the AGENT can rely on it being set,
+#                              because the agent is what writes the commits
+#                              and stamps them with it
 #   $ZOPDAY_TASK_BRANCH        the one ref this script pushes. NOT enforced
 #                              by anything outside this file - see the
 #                              note above the checkout
@@ -41,8 +44,10 @@
 #       with the work preserved (D2)
 #   *   the agent's own exit code, passed through (D3)
 #
-# A real harness image must honour exactly this contract; the fake one in this
-# directory is the reference it was developed against.
+# A real harness image must honour exactly this contract; the fake one in
+# zopnight's backend/deployer/internal/installer/testdata/agent-harness is the
+# reference it was developed against. That directory is this file's source of
+# truth - the published image carries a byte-for-byte copy and no fake.
 
 set -eu
 
@@ -247,7 +252,15 @@ echo "zopday-harness: pushed $AFTER to refs/heads/$ZOPDAY_TASK_BRANCH"
 # all. An agent that calls the pull request API from in here is denied by the
 # filter rather than trusted not to.
 #
-# What this script still owns is everything up to the push: the branch, the
-# refspec, the "did the agent actually change anything" decision, and the
-# commits themselves.
+# What this script still owns is everything up to and including the push: the
+# branch, the refspec, and the "did the agent actually change anything"
+# decision.
+#
+# IT DOES NOT WRITE THE COMMITS. The agent does, and this script refuses to
+# push work the agent left uncommitted, because an uncommitted tree is not
+# something the agent has said it means. So the boundary is narrower than
+# "the agent cannot decline": an agent that commits nothing gets the D1
+# "changed nothing" exit, and an agent that leaves a dirty tree gets D2. What
+# it cannot do is choose WHERE its work goes, push a second ref, or claim a
+# push it did not earn.
 # ---------------------------------------------------------------------------
