@@ -1,9 +1,10 @@
 apiVersion: v2
-# Keep in step with values.yaml `image.tag`.
+# chisel version in the default image. Keep in step with CHISEL_VERSION in
+# images/chisel/Dockerfile.
 appVersion: "1.12.1"
 description: Tunnel server for TCP and reverse SOCKS tunnels over a websocket
 name: chisel
-version: 0.0.1
+version: 0.0.2
 type: application
 home: https://github.com/jpillora/chisel
 sources:
