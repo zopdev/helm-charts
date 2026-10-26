@@ -2,7 +2,9 @@
 
 The agent-harness image is the container a ZopDay agent task runs inside: the [Claude Code](https://docs.claude.com/en/docs/claude-code) CLI, plus the three programs that make it satisfy the runner host's harness contract.
 
-> **What this image is — and is not.** It is the *harness*, not the agent. The harness runs the agent and is then the thing that decides whether anything changed, commits it and **pushes the branch**. That separation is deliberate: the agent is assumed hostile, so "the work was pushed" must not be something it can decline, duplicate or redirect.
+> **What this image is — and is not.** It is the *harness*, not the agent. The harness runs the agent, then checks whether the agent committed anything and **pushes the branch**. **The agent writes the commits**, and the harness refuses to push a tree the agent left dirty — uncommitted work is not work the agent has said it means.
+>
+> That separation is deliberate, and it is narrower than "the agent cannot decline". An agent that commits nothing completes as *changed nothing*, and one that leaves a dirty tree fails; both are outcomes it can choose. What it cannot choose is **where** the work goes — it cannot widen the one ref this attempt may write, push a second ref, or claim a push it did not earn.
 >
 > **The pull request is not opened in here.** It used to be, and an agent told to open one opened its own instead — not a draft, worded by the agent, in a customer's repository. So the runner host opens the draft from *outside* the sandbox, after this image's push, and `api.github.com` is no longer in the sandbox's egress policy or its credential vault at all. `zopday-harness` says so at its own end; this image carries nothing that could call that API.
 
@@ -22,7 +24,9 @@ The image exists for the reason `scale-to-zero` does — upstream ships nothing 
 
 > **Pinned, not `latest` (critical).** A placement profile pins this image **by digest**, precisely so the toolchain a task starts with is the toolchain it finishes with. A floating npm tag inside a pinned digest would make that pin a half-truth, so `CLAUDE_CODE_VERSION` is an explicit build arg and the CLI's auto-updater is switched off in the image.
 
-> **The three programs are copies.** Their source of truth is zopnight's `backend/deployer/internal/installer/testdata/agent-harness/`. They are copied here unedited so the harness in the image is byte-for-byte the contract the runner host expects. Change them there, then re-copy and cut a new tag.
+> **The three programs are copies — the build is not.** Their source of truth is zopnight's `backend/deployer/internal/installer/testdata/agent-harness/`. They are copied here unedited so the harness in the image is byte-for-byte the contract the runner host expects. Change them there, then re-copy and cut a new tag.
+>
+> **The Dockerfile lives only here.** zopnight used to carry a near-copy of it beside those three programs; nothing built it and it had already drifted, so it was removed rather than left to drift further. zopnight's `agentharness` test `TestHarnessProgramsMatchThePublishedImage` pins the three digests on that side, so an edit there fails that suite with instructions to re-copy here and cut a new tag — which is what keeps "byte-for-byte" true between two repositories that are otherwise kept in step by hand.
 
 ---
 
@@ -90,7 +94,11 @@ Neither `curl` nor `gh` is called by any of them — the harness stops at the pu
 
 **Running non-root means the sandbox CA lands in environment variables, not the system trust store.** `zopday-harness` does two things with the credential vault's authority: it tries to add it to the image's own trust store, and it writes a merged bundle (the image's roots *plus* that authority) and points `GIT_SSL_CAINFO`, `SSL_CERT_FILE` and `REQUESTS_CA_BUNDLE` at it. As `node`, only the second half succeeds — the harness says so on its own line (`image store: no, merged bundle: …`). That still covers the agent's normal toolchain: git, curl and python read those three, and node reads `NODE_EXTRA_CA_CERTS`, which sbx sets itself. A tool that honours none of them fails TLS against the egress filter. That is the cost of not running as root, and it is the right trade.
 
-**`IS_SANDBOX=1` is set**, which is what lets Claude Code accept `--dangerously-skip-permissions`. It is a true statement about this image rather than a way round a safety check: the only thing that ever runs it is an [sbx](https://github.com/aryanmehrotra/sbx) sandbox, with deny-by-default egress, a per-task credential and a throwaway clone.
+> **Which user the turn actually runs as.** The `node` half of that paragraph depends on sbx, not on this image, so it is worth saying where it comes from. ZopDay runs sbx with `--provider.name=docker`. That provider builds its `docker run` argument list with no `--user`, so the container keeps this image's `USER node`; `execd` is the container's PID 1 and therefore runs as `node`; and an exec that names no uid gets a nil credential and runs as whoever execd already is. So the real path is `node`, and the trust-store half genuinely does fail. sbx's *firecracker* provider never reaches this image: it refuses a non-root `USER` outright, because every process in that VM runs as root and it will not silently drop the boundary the image asked for.
+
+**`IS_SANDBOX` is *not* set in this image — the runner host exports it per task.** It is what lets Claude Code accept `--dangerously-skip-permissions`, and it used to be an `ENV` here. An `ENV` travels with a **public** image, so anyone pulling this one and running it as root outside any sandbox would have that flag accepted. The claim "this really is a sandbox" is true of an *invocation*, not of a layer, so the invocation makes it: zopnight's `agentTaskRunScript` exports it in the same one-command list as the placeholder credentials, where an [sbx](https://github.com/aryanmehrotra/sbx) sandbox with deny-by-default egress, a per-task credential and a throwaway clone is the thing it is describing.
+
+Nothing regresses by moving it: as shown above the turn runs as `node`, and a non-root agent never needed the flag. It is the belt for an execd that ever runs the turn as root.
 
 ---
 
@@ -113,6 +121,7 @@ images/agent-harness/
 - The harness contract copied byte-for-byte from zopnight
 - No credentials in any layer — they arrive per task, as placeholders
 - Non-root by default, with the two workspace paths pre-owned
+- No `IS_SANDBOX` baked in — the permission-skip claim is the invocation's to make, not a public image's
 - No `ENTRYPOINT` and no `CMD` — the base image's are cleared: the sandbox is created with `sleep infinity` and everything that matters arrives as an `exec`
 - `linux/amd64` only — see Platform above
 
@@ -145,3 +154,27 @@ This produces:
 - `zopdev/agent-harness:latest`
 
 Take the digest the push prints and paste it into `HARNESS_IMAGE` in zopnight's `vm-components.yaml`, so the component installs exactly the build that was tagged.
+
+---
+
+## Contributing
+
+We welcome contributions to improve this Docker image. Please refer to the [CONTRIBUTING.md](../../CONTRIBUTING.md) for contribution guidelines.
+
+---
+
+## Code of Conduct
+
+To maintain a healthy and collaborative community, please adhere to our [Code of Conduct](../../CODE_OF_CONDUCT.md).
+
+---
+
+## License
+
+**The build files in this directory are covered by the repository [LICENSE](../../LICENSE). The image published from them is not wholly covered by it, and is not open source.**
+
+The image installs [`@anthropic-ai/claude-code`](https://www.npmjs.com/package/@anthropic-ai/claude-code), whose own `LICENSE.md` reads "© Anthropic PBC. All rights reserved. Use is subject to the Legal Agreements outlined here: https://code.claude.com/docs/en/legal-and-compliance". `npm view @anthropic-ai/claude-code license` reports `SEE LICENSE IN README.md` rather than an SPDX identifier. Anyone pulling `zopdev/agent-harness` receives that CLI and uses it under Anthropic's terms, not under this repository's.
+
+This is the same shape as `scale-to-zero`, whose published image is AGPL-3.0 rather than the repository's licence — the difference is that AGPL-3.0 grants redistribution and these terms are not an open-source grant.
+
+> **Open before the first tag is pushed.** Whether those terms permit redistributing the CLI inside a **public** image on Docker Hub has not been confirmed with Anthropic. Until it is, treat the publication decision as unmade. The alternative, if redistribution is not permitted, is a private Docker Hub repository — which costs pull credentials on every runner VM, the thing a public image was chosen to avoid.
