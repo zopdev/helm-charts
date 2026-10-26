@@ -4,6 +4,8 @@ The chisel Docker image packages the [chisel](https://github.com/jpillora/chisel
 
 We build it ourselves so that a Go security fix needs only a rebuild here. We do not wait for an upstream release.
 
+> **amd64 only.** The `Image Deployment` workflow builds for the runner's architecture only. On arm64 clusters, use `jpillora/chisel`, which is multi-arch, with a chisel version tag (`1.11.7` or later).
+
 ---
 
 ## Components & Versions
