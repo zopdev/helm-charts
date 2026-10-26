@@ -53,7 +53,8 @@ chisel 1.12 clients reject a shortened fingerprint.
 
 | Key | Default | Description |
 |---|---|---|
-| `image.tag` | `1.12.1` | Tag of `jpillora/chisel`. Must be `1.11.7` or later for per-user ACLs. |
+| `image.repository` | `zopdev/chisel` | Built from [`images/chisel`](../../images/chisel). `jpillora/chisel` also works. |
+| `image.tag` | `v0.0.1` | `v0.0.1` holds chisel 1.12.1. With `jpillora/chisel`, the tag is the chisel version and must be `1.11.7` or later for per-user ACLs. |
 | `keepalive` | `25s` | Websocket keepalive. `0s` turns it off. |
 | `key.existingSecret` | `""` | Secret with `server.key`. Empty generates one. Fixed after install. |
 | `auth.existingSecret` | `""` | Secret with `users.json`. Empty (and feed off) generates one user. |
@@ -87,7 +88,7 @@ Tools that render with `helm template`, such as Argo CD, cannot read it back and
 With them, make the key once and set `key.existingSecret`:
 
 ```bash
-docker run --rm -v "$PWD:/out" jpillora/chisel:1.12.1 server --keygen /out/server.key
+docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/out" zopdev/chisel:v0.0.1 server --keygen /out/server.key
 kubectl create secret generic chisel-key --from-file=server.key
 ```
 
