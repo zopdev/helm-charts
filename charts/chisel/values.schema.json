@@ -28,8 +28,7 @@
       "category": "runtime",
       "description": "Websocket keepalive, e.g. 25s. Keep it below the idle timeout of every proxy on the path. 0s turns it off.",
       "pattern": "^[0-9]+(ms|s|m|h)$",
-      "default": "25s",
-      "mutable": true
+      "default": "25s"
     },
     "key": {
       "type": "object",
@@ -40,7 +39,6 @@
           "type": "string",
           "description": "Secret with a server.key entry (chisel server --keygen). Empty generates one on install. Cannot be changed after install.",
           "default": "",
-          "mutable": true,
           "editDisabled": true
         }
       }
@@ -53,8 +51,7 @@
         "existingSecret": {
           "type": "string",
           "description": "Secret with a users.json entry holding at least one user. Empty generates one user that may open only reverse remotes on 0.0.0.0.",
-          "default": "",
-          "mutable": true
+          "default": ""
         }
       }
     },
@@ -97,8 +94,7 @@
           "type": "integer",
           "description": "Seconds between polls.",
           "minimum": 1,
-          "default": 5,
-          "mutable": true
+          "default": 5
         }
       }
     },
@@ -138,8 +134,7 @@
             "NodePort",
             "LoadBalancer"
           ],
-          "default": "ClusterIP",
-          "mutable": true
+          "default": "ClusterIP"
         }
       }
     },
@@ -192,8 +187,7 @@
             "nginx.ingress.kubernetes.io/proxy-send-timeout": "3600",
             "nginx.ingress.kubernetes.io/proxy-buffering": "off",
             "nginx.ingress.kubernetes.io/proxy-body-size": "0"
-          },
-          "mutable": true
+          }
         },
         "tlsSecretName": {
           "type": "string",
@@ -233,8 +227,7 @@
         "enabled": {
           "type": "boolean",
           "description": "Create the PrometheusRule.",
-          "default": false,
-          "mutable": true
+          "default": false
         }
       }
     },
@@ -249,6 +242,7 @@
             "cpu": {
               "type": "string",
               "description": "CPU request.",
+              "pattern": "^[0-9]+(\\.[0-9]+)?m?$",
               "default": "50m",
               "mutable": true
             },
@@ -264,6 +258,13 @@
         "limits": {
           "type": "object",
           "properties": {
+            "cpu": {
+              "type": "string",
+              "description": "CPU limit.",
+              "pattern": "^[0-9]+(\\.[0-9]+)?m?$",
+              "default": "500m",
+              "mutable": true
+            },
             "memory": {
               "type": "string",
               "description": "Memory limit.",
@@ -279,22 +280,19 @@
       "type": "object",
       "category": "advanced",
       "description": "Node labels the pod must match.",
-      "default": {},
-      "mutable": true
+      "default": {}
     },
     "tolerations": {
       "type": "array",
       "category": "advanced",
       "description": "Tolerations for tainted nodes.",
-      "default": [],
-      "mutable": true
+      "default": []
     },
     "affinity": {
       "type": "object",
       "category": "advanced",
       "description": "Pod affinity rules.",
-      "default": {},
-      "mutable": true
+      "default": {}
     }
   }
 }

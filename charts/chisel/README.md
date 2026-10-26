@@ -75,7 +75,7 @@ chisel 1.12 clients reject a shortened fingerprint.
 | `networkPolicy.enabled` | `false` | Create a NetworkPolicy. |
 | `networkPolicy.reversePortsFrom` | `[]` | Peers that may reach the reverse ports. |
 | `alerts.enabled` | `false` | PrometheusRule on kube-state-metrics. |
-| `resources` | 50m / 64Mi, limit 512Mi | chisel container resources. |
+| `resources` | requests 50m / 64Mi, limits 500m / 512Mi | chisel container resources. |
 | `nodeSelector`, `tolerations`, `affinity` | empty | Pod scheduling. |
 
 The websocket port is always `8080`, on the pod and on the Service `<release>-chisel`.
