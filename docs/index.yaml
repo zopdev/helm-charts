@@ -2293,6 +2293,20 @@ entries:
   service:
   - apiVersion: v1
     appVersion: "1.0"
+    created: "2026-10-30T16:40:31.00923+05:30"
+    description: Helm chart creates a deployment, service, hpa for a service along
+      with serviceMonitor etc
+    digest: 78ac1ef1c67fdd3dd886af3ea6b2683cb04fc0ee695c18bd1a80a5fedd911564
+    icon: https://zop.dev/logo.png
+    maintainers:
+    - name: ZopDev
+      url: zop.dev
+    name: service
+    urls:
+    - https://helm.zop.dev/service-v0.0.35.tgz
+    version: v0.0.35
+  - apiVersion: v1
+    appVersion: "1.0"
     created: "2026-10-26T17:00:02.366765+05:30"
     description: Helm chart creates a deployment, service, hpa for a service along
       with serviceMonitor etc
@@ -3484,4 +3498,4 @@ entries:
     urls:
     - https://helm.zop.dev/zookeeper-operator-v0.0.1.tgz
     version: v0.0.1
-generated: "2026-10-26T17:00:02.306755+05:30"
+generated: "2026-10-30T16:40:31.008258+05:30"

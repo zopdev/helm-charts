@@ -28,6 +28,9 @@ spec:
       labels:
         app: {{ .Values.name }}
     spec:
+      {{- with .Values.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ . }}
+      {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -144,6 +147,10 @@ spec:
       containers:
         - name: {{ .Values.name }}
           image: {{ .Values.image }}
+          {{- with .Values.lifecycle }}
+          lifecycle:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
 
           {{- if .Values.command }}
           command: {{  tpl (toJson .Values.command) . }}
