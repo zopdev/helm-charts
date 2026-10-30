@@ -380,7 +380,7 @@ lifecycle:
       seconds: 10
 ```
 
-The sleep counts against the grace period, so raise the grace period by at least the same amount. The `sleep` action needs Kubernetes 1.30+. Both values are empty by default and render nothing, so leaving them unset changes nothing for an existing release.
+The sleep counts against the grace period, so the grace period must exceed the sleep plus your longest in-flight request. The `sleep` action needs Kubernetes 1.30+. Both values are empty by default and render nothing, so leaving them unset changes nothing for an existing release.
 
 ---
 

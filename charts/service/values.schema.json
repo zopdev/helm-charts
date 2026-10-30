@@ -12,16 +12,17 @@
     },
     "terminationGracePeriodSeconds": {
       "type": "integer",
-      "minimum": 0,
+      "minimum": 1,
       "category": "advanced",
-      "description": "Seconds a stopping pod gets before it is killed. Must cover any preStop sleep plus the time in-flight requests need. 0 keeps the Kubernetes default (30)",
-      "default": 0
+      "description": "Seconds a stopping pod gets before it is killed. Must cover any preStop sleep plus the time in-flight requests need. Unset keeps the Kubernetes default (30)",
+      "mutable": true
     },
     "lifecycle": {
       "type": "object",
       "category": "advanced",
       "description": "Container lifecycle hooks, rendered verbatim, e.g. {\"preStop\": {\"sleep\": {\"seconds\": 10}}}. Empty renders nothing",
-      "default": {}
+      "default": {},
+      "mutable": true
     },
     "name": {
       "type": "string",

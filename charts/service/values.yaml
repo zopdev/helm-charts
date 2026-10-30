@@ -214,9 +214,8 @@ strategy: {}
 # "connection refused" on every rollout. A preStop sleep keeps the pod serving
 # until routing has caught up. It counts against the grace period, so raise the
 # grace period by the same amount or long requests are killed mid-flight.
-# 0 keeps the Kubernetes default (30 s).
-terminationGracePeriodSeconds: 0
-#  45
+# Unset keeps the Kubernetes default (30 s).
+# terminationGracePeriodSeconds: 45
 
 # Container lifecycle hooks, rendered verbatim. The sleep action needs
 # Kubernetes 1.30+ and no shell in the image.
