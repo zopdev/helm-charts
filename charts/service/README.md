@@ -367,6 +367,21 @@ tolerations:
 
 `affinity` takes a full [Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) object and is rendered verbatim.
 
+## Graceful Shutdown
+
+On SIGTERM most apps close their port at once, but kube-proxy keeps routing to the pod for a few more seconds. Callers then see `connection refused` or a hang on every rollout. A `preStop` sleep keeps the pod serving until routing has caught up:
+
+```yaml
+terminationGracePeriodSeconds: 45
+
+lifecycle:
+  preStop:
+    sleep:
+      seconds: 10
+```
+
+The sleep counts against the grace period, so raise the grace period by at least the same amount. The `sleep` action needs Kubernetes 1.30+. Both values are empty by default and render nothing, so leaving them unset changes nothing for an existing release.
+
 ---
 
 ## Contributing
