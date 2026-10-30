@@ -238,3 +238,13 @@ tolerations: []
 #    effect: NoSchedule
 
 affinity: {}
+
+# Pod shutdown. On deletion the pod is marked Terminating and removed from the
+# Service endpoints, but kube-proxy and clients take 1-6 s to stop sending it
+# traffic. preStopSleepSeconds keeps the app serving for that long before it
+# receives SIGTERM and closes its listener. 0 disables it. It needs Kubernetes
+# 1.30+ (sleep action) and is skipped for strategy.type Recreate.
+# terminationGracePeriodSeconds must cover preStopSleepSeconds plus the app's
+# shutdown time (GoFr SHUTDOWN_GRACE_PERIOD, default 30s, plus 1s).
+terminationGracePeriodSeconds: 45
+preStopSleepSeconds: 10

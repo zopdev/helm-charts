@@ -14,6 +14,22 @@
       "type": "string",
       "description": "Name of the service"
     },
+    "terminationGracePeriodSeconds": {
+      "type": "integer",
+      "category": "advanced",
+      "description": "Seconds Kubernetes waits after marking the pod Terminating before SIGKILL. Must exceed preStopSleepSeconds plus the app shutdown time (GoFr SHUTDOWN_GRACE_PERIOD, default 30s).",
+      "default": 45,
+      "minimum": 1,
+      "mutable": true
+    },
+    "preStopSleepSeconds": {
+      "type": "integer",
+      "category": "advanced",
+      "description": "Seconds the pod keeps serving after it is marked Terminating, before SIGTERM, so Service endpoints and clients stop sending it traffic. 0 disables. Needs Kubernetes 1.30+; skipped for strategy.type Recreate.",
+      "default": 10,
+      "minimum": 0,
+      "mutable": true
+    },
     "image": {
       "type": "string",
       "description": "Docker container image with tag",
