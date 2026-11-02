@@ -217,12 +217,10 @@ strategy: {}
 # Unset keeps the Kubernetes default (30 s).
 # terminationGracePeriodSeconds: 45
 
-# Container lifecycle hooks, rendered verbatim. The sleep action needs
-# Kubernetes 1.30+ and no shell in the image.
-lifecycle: {}
-#  preStop:
-#    sleep:
-#      seconds: 10
+# Seconds a stopping pod keeps serving before SIGTERM. A plain number so the
+# zop.dev form can set it. Needs Kubernetes 1.30+ and no shell in the image.
+# Unset renders no hook.
+# preStopSleepSeconds: 10
 
 datastores:
   mysql:
