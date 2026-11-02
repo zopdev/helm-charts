@@ -47,7 +47,7 @@ kubectl get secret studio-libredb-studio -o jsonpath='{.data.ADMIN_PASSWORD}' | 
 
 | Key | Default | Description |
 |---|---|---|
-| `version` | `0.17.0` | LibreDB Studio release, the tag of `ghcr.io/libredb/libredb-studio`. |
+| `version` | `""` | LibreDB Studio release, the tag of `ghcr.io/libredb/libredb-studio`. Empty uses the chart's `appVersion`. |
 | `service.type` | `ClusterIP` | Kubernetes Service type: `ClusterIP`, `NodePort` or `LoadBalancer`. |
 | `service.port` | `80` | Service port. |
 | `auth.adminEmail` | `admin@libredb.org` | Email the admin signs in with. |

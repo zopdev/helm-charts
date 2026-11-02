@@ -3,7 +3,7 @@
 # volume. The databases you connect to are not part of this chart.
 
 # LibreDB Studio release. Defaults to the chart's appVersion.
-version: "0.17.0"
+version: ""
 
 service:
   type: ClusterIP
