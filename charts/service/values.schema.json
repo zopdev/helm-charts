@@ -17,11 +17,11 @@
       "description": "Seconds a stopping pod gets before it is killed. Must cover any preStop sleep plus the time in-flight requests need. Unset keeps the Kubernetes default (30)",
       "mutable": true
     },
-    "lifecycle": {
-      "type": "object",
+    "preStopSleepSeconds": {
+      "type": "integer",
+      "minimum": 1,
       "category": "advanced",
-      "description": "Container lifecycle hooks, rendered verbatim, e.g. {\"preStop\": {\"sleep\": {\"seconds\": 10}}}. Empty renders nothing",
-      "default": {},
+      "description": "Seconds a stopping pod keeps serving before SIGTERM, so routing can catch up. Counts against terminationGracePeriodSeconds. Needs Kubernetes 1.30+. Unset renders no hook",
       "mutable": true
     },
     "name": {

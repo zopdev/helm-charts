@@ -373,14 +373,10 @@ On SIGTERM most apps close their port at once, but kube-proxy keeps routing to t
 
 ```yaml
 terminationGracePeriodSeconds: 45
-
-lifecycle:
-  preStop:
-    sleep:
-      seconds: 10
+preStopSleepSeconds: 10
 ```
 
-The sleep counts against the grace period, so the grace period must exceed the sleep plus your longest in-flight request. The `sleep` action needs Kubernetes 1.30+. Both values are empty by default and render nothing, so leaving them unset changes nothing for an existing release.
+The sleep counts against the grace period, so the grace period must exceed the sleep plus your longest in-flight request. The sleep needs Kubernetes 1.30+. Both values are empty by default and render nothing, so leaving them unset changes nothing for an existing release.
 
 ---
 

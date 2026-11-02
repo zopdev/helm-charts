@@ -147,9 +147,11 @@ spec:
       containers:
         - name: {{ .Values.name }}
           image: {{ .Values.image }}
-          {{- with .Values.lifecycle }}
+          {{- with .Values.preStopSleepSeconds }}
           lifecycle:
-            {{- toYaml . | nindent 12 }}
+            preStop:
+              sleep:
+                seconds: {{ . }}
           {{- end }}
 
           {{- if .Values.command }}
