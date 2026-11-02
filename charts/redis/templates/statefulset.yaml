@@ -82,9 +82,9 @@ spec:
               value: ":2121"
             - name: REDIS_EXPORTER_EXCLUDE_LATENCY_HISTOGRAM_METRICS
               value: "true"
-            {{- with .Values.checkStreams }}
+            {{- if .Values.checkStreams }}
             - name: REDIS_EXPORTER_CHECK_STREAMS
-              value: {{ . | quote }}
+              value: "db15=*"
             {{- end }}
           resources:
             requests:

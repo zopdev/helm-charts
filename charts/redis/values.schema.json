@@ -17,9 +17,10 @@
       },
     "checkStreams": {
       "category": "runtime",
-      "type": "string",
-      "description": "Streams the redis exporter reports, as comma-separated db<N>=<key pattern>. Empty switches the check off.",
-      "default": "db15=*"
+      "type": "boolean",
+      "description": "Export stream and consumer-group metrics (redis_stream_*) from the redis exporter. Scans DB 15, where the event-bus streams live.",
+      "default": true,
+      "mutable": true
     },
     "diskSize": {
       "category": "compute",
