@@ -22,6 +22,14 @@
       "default": true,
       "mutable": true
     },
+    "checkStreamsDbs": {
+      "category": "runtime",
+      "type": "array",
+      "items": { "type": "integer", "minimum": 0, "maximum": 15 },
+      "description": "DBs scanned for streams. Use the dedicated event-stream DB only: every key found costs one XINFO per scrape.",
+      "default": [15],
+      "mutable": true
+    },
     "diskSize": {
       "category": "compute",
       "type": "string",

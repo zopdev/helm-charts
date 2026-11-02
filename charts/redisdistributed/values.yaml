@@ -4,6 +4,10 @@ version: "6.2.13"
 # exporter. Event-bus streams live in DB 15 (GoFr REDIS_PUBSUB_DB default), so
 # the exporter scans db15. Set false to switch it off.
 checkStreams: true
+# DBs the exporter scans for streams. Keep this to the dedicated event-stream DB:
+# the exporter runs XINFO on every key it finds, so listing a data DB costs one
+# command per key. Beta DB 15 holds ~40 keys; its data DBs hold ~15,000.
+checkStreamsDbs: [15]
 
 master:
   resources:
