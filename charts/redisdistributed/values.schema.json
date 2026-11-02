@@ -7,6 +7,12 @@
       "type": "string",
       "default": "6.2.13"
     },
+    "checkStreams": {
+      "category": "runtime",
+      "type": "string",
+      "description": "Streams the redis exporter reports, as comma-separated db<N>=<key pattern>. Empty switches the check off.",
+      "default": "db15=*"
+    },
     "services": {
       "category": "runtime",
       "type": "array",

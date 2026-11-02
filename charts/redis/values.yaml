@@ -2,6 +2,11 @@ diskSize: "10Gi"
 
 version: "6.2.13"
 
+# Streams the redis exporter reports (redis_stream_*, redis_stream_group_*).
+# Format: comma-separated `db<N>=<key pattern>`. Event-bus streams live in DB 15
+# (GoFr REDIS_PUBSUB_DB default). Set to "" to switch the stream check off.
+checkStreams: "db15=*"
+
 # Resource configuration
 resources:
   requests:

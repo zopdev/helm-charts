@@ -15,6 +15,12 @@
           "required": ["name"]
         }
       },
+    "checkStreams": {
+      "category": "runtime",
+      "type": "string",
+      "description": "Streams the redis exporter reports, as comma-separated db<N>=<key pattern>. Empty switches the check off.",
+      "default": "db15=*"
+    },
     "diskSize": {
       "category": "compute",
       "type": "string",

@@ -99,6 +99,10 @@ spec:
               value: ":2121"
             - name: REDIS_EXPORTER_EXCLUDE_LATENCY_HISTOGRAM_METRICS
               value: "true"
+            {{- with .Values.checkStreams }}
+            - name: REDIS_EXPORTER_CHECK_STREAMS
+              value: {{ . | quote }}
+            {{- end }}
           resources:
             requests:
               memory: "50Mi"
