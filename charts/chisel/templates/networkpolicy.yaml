@@ -1,0 +1,52 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "chisel.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "chisel.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "chisel.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # The websocket port has its own login, so anyone may reach it.
+    - ports:
+        - protocol: TCP
+          port: 8080
+    {{- if and (include "chisel.reversePortsEnabled" .) .Values.networkPolicy.reversePortsFrom }}
+    # A reverse port has no login: only these peers may reach it.
+    - from:
+        {{- toYaml .Values.networkPolicy.reversePortsFrom | nindent 8 }}
+      ports:
+        - protocol: TCP
+          port: {{ .Values.reversePorts.start }}
+          {{- if ne (int .Values.reversePorts.start) (int .Values.reversePorts.end) }}
+          endPort: {{ .Values.reversePorts.end }}
+          {{- end }}
+    {{- end }}
+  # Reverse traffic flows back over the client's websocket, so chisel needs
+  # no egress of its own. Only the feed calls out: DNS (53, or 5353 on
+  # OpenShift) and the port of feed.address.
+  {{- if .Values.feed.enabled }}
+  egress:
+    - ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+        - protocol: UDP
+          port: 5353
+        - protocol: TCP
+          port: 5353
+    - ports:
+        - protocol: TCP
+          port: {{ include "chisel.feedPort" . }}
+  {{- else }}
+  egress: []
+  {{- end }}
+{{- end }}

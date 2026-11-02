@@ -10,6 +10,20 @@
       "description": "Deployment update strategy, rendered verbatim into spec.strategy, e.g. {\"type\": \"Recreate\"}. Empty keeps the Kubernetes default (RollingUpdate)",
       "default": {}
     },
+    "terminationGracePeriodSeconds": {
+      "type": "integer",
+      "minimum": 1,
+      "category": "advanced",
+      "description": "Seconds a stopping pod gets before it is killed. Must cover any preStop sleep plus the time in-flight requests need. Unset keeps the Kubernetes default (30)",
+      "mutable": true
+    },
+    "preStopSleepSeconds": {
+      "type": "integer",
+      "minimum": 1,
+      "category": "advanced",
+      "description": "Seconds a stopping pod keeps serving before SIGTERM, so routing can catch up. Counts against terminationGracePeriodSeconds. Needs Kubernetes 1.30+. Unset renders no hook",
+      "mutable": true
+    },
     "name": {
       "type": "string",
       "description": "Name of the service"

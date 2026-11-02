@@ -242,7 +242,7 @@
             "memory": {
               "type": "string",
               "description": "Memory request",
-              "default": "512Mi",
+              "default": "1Gi",
               "mutable": true
             }
           },
@@ -260,7 +260,7 @@
             "memory": {
               "type": "string",
               "description": "Memory limit",
-              "default": "1Gi",
+              "default": "4Gi",
               "mutable": true
             }
           },
