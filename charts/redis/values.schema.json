@@ -15,6 +15,21 @@
           "required": ["name"]
         }
       },
+    "checkStreams": {
+      "category": "runtime",
+      "type": "boolean",
+      "description": "Export stream and consumer-group metrics (redis_stream_*) from the redis exporter. Scans DB 15, where the event-bus streams live.",
+      "default": true,
+      "mutable": true
+    },
+    "checkStreamsDbs": {
+      "category": "runtime",
+      "type": "array",
+      "items": { "type": "integer", "minimum": 0, "maximum": 15 },
+      "description": "DBs scanned for streams. Each scrape walks the keyspace of the listed DBs; on a very large instance list only the DBs that hold streams.",
+      "default": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+      "mutable": true
+    },
     "diskSize": {
       "category": "compute",
       "type": "string",

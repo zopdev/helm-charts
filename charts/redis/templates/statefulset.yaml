@@ -69,7 +69,7 @@ spec:
               mountPath: /var/lib/redis
 
         - name: redis-exporter
-          image: oliver006/redis_exporter:v1.74.0
+          image: oliver006/redis_exporter:v1.96.0
           ports:
             - containerPort: 2121
               name: metrics
@@ -82,6 +82,10 @@ spec:
               value: ":2121"
             - name: REDIS_EXPORTER_EXCLUDE_LATENCY_HISTOGRAM_METRICS
               value: "true"
+            {{- if and .Values.checkStreams .Values.checkStreamsDbs }}
+            - name: REDIS_EXPORTER_CHECK_STREAMS
+              value: {{ range $i, $db := .Values.checkStreamsDbs }}{{ if $i }},{{ end }}db{{ $db }}=*{{ end }}
+            {{- end }}
           resources:
             requests:
               memory: "50Mi"

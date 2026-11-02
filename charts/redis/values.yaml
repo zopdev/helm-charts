@@ -2,6 +2,15 @@ diskSize: "10Gi"
 
 version: "6.2.13"
 
+# Export stream and consumer-group metrics (redis_stream_*) from the redis
+# exporter. It finds streams in every DB listed in checkStreamsDbs, whatever
+# their name. The exporter (v1.92.1+) sends SCAN ... TYPE stream, so Redis
+# skips non-stream keys: no XINFO call and no error log per data key. Each
+# scrape still walks the keyspace of the listed DBs; on a very large instance
+# list only the DBs that hold streams. Set checkStreams false to switch it off.
+checkStreams: true
+checkStreamsDbs: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+
 # Resource configuration
 resources:
   requests:
