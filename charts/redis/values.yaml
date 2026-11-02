@@ -3,13 +3,13 @@ diskSize: "10Gi"
 version: "6.2.13"
 
 # Export stream and consumer-group metrics (redis_stream_*) from the redis
-# exporter. Event-bus streams live in DB 15 (GoFr REDIS_PUBSUB_DB default), so
-# the exporter scans db15. Set false to switch it off.
+# exporter. It finds streams in every DB listed in checkStreamsDbs, whatever
+# their name. The exporter (v1.92.1+) sends SCAN ... TYPE stream, so Redis
+# skips non-stream keys: no XINFO call and no error log per data key. Each
+# scrape still walks the keyspace of the listed DBs; on a very large instance
+# list only the DBs that hold streams. Set checkStreams false to switch it off.
 checkStreams: true
-# DBs the exporter scans for streams. Keep this to the dedicated event-stream DB:
-# the exporter runs XINFO on every key it finds, so listing a data DB costs one
-# command per key. Beta DB 15 holds ~40 keys; its data DBs hold ~15,000.
-checkStreamsDbs: [15]
+checkStreamsDbs: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
 
 # Resource configuration
 resources:
