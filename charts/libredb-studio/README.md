@@ -101,6 +101,19 @@ Serve TLS, or on a trusted network set `auth.insecureCookie=true`.
 
 ---
 
+## Upgrade
+
+An install that crosses 0.18.0 should expect three things on the first start after the upgrade:
+
+- Local users are signed out once.
+- MCP tokens created before the upgrade stop working and have to be created again.
+- `ADMIN_PASSWORD` only seeds the account on first start. Changing it afterwards, in the
+  generated Secret or in `auth.existingSecret`, does not change the stored password. To change
+  it, set the new value and add `ADMIN_PASSWORD_RESET: "true"` to `env` for one start, then
+  remove that variable again, because every start applies it while it is set.
+
+---
+
 ## Uninstall
 
 ```bash
