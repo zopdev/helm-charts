@@ -47,7 +47,7 @@ kubectl get secret studio-libredb-studio -o jsonpath='{.data.ADMIN_PASSWORD}' | 
 
 | Key | Default | Description |
 |---|---|---|
-| `version` | `0.17.0` | LibreDB Studio release, the tag of `ghcr.io/libredb/libredb-studio`. |
+| `version` | `""` | LibreDB Studio release, the tag of `ghcr.io/libredb/libredb-studio`. Empty uses the chart's `appVersion`. |
 | `service.type` | `ClusterIP` | Kubernetes Service type: `ClusterIP`, `NodePort` or `LoadBalancer`. |
 | `service.port` | `80` | Service port. |
 | `auth.adminEmail` | `admin@libredb.org` | Email the admin signs in with. |
@@ -70,7 +70,7 @@ Variables the chart sets itself (storage, auth, port, bind address) are refused 
 ### Secrets
 
 The generated Secret holds `JWT_SECRET` and `ADMIN_PASSWORD`.
-`JWT_SECRET` also seals the passwords of saved connections, so it never changes on upgrade.
+`JWT_SECRET` also seals the passwords of saved connections, so it is read back on every upgrade.
 To choose your own values, create a Secret with those two keys and set `auth.existingSecret`.
 
 ### AI assistant
@@ -98,6 +98,22 @@ The session cookie is marked Secure.
 Over https, including TLS terminated at a load balancer, nothing needs changing.
 If the browser reaches Studio over plain http on a host other than localhost, the browser drops that cookie and login loops back to `/login`.
 Serve TLS, or on a trusted network set `auth.insecureCookie=true`.
+
+---
+
+## Upgrade
+
+Chart v0.0.1 ran LibreDB Studio 0.17.0 and v0.0.2 runs 1.2.0, so one `helm upgrade` crosses several releases. What a default install sees:
+
+- Everyone signs in again, and for two separate reasons. 0.18.0 moves local accounts into the server-side store, and 1.2.0 renames the session cookie to `__Host-auth-token` on HTTPS, so a script that sends a saved session cookie over HTTPS has to use the new name.
+- Editor tabs left open before the upgrade are not kept, because from 0.18.1 the first sign-in starts from the account's server data.
+- `ADMIN_PASSWORD` only seeds the account on first start, from 0.18.0 on, so changing it afterwards in the generated Secret or in `auth.existingSecret` does not change the stored password. To change it, set the new value, add `ADMIN_PASSWORD_RESET: "true"` to `env` for one start, then remove that variable again, because every start applies it while it is set. The reset also ends that account's sessions and removes its passkeys.
+- An install that enabled MCP through `env` loses the tokens issued before the upgrade, and they have to be created again.
+
+Two notes about the chart rather than the release:
+
+- `version` now defaults to empty, so the image tag follows the chart's `appVersion` and a later chart upgrade moves LibreDB Studio with it. Set `version` to a tag to pin it instead.
+- The generated Secret is read back from the cluster on upgrade, so a hand-edited password survives. Under `helm template`, a client `--dry-run`, or a renderer with no cluster access it cannot be read back and both `JWT_SECRET` and `ADMIN_PASSWORD` render fresh, taking the saved connection passwords with them. Use `auth.existingSecret` in those workflows.
 
 ---
 
