@@ -978,7 +978,7 @@ entries:
     created: "2026-11-02T21:59:06.220709+03:00"
     description: Web-based SQL IDE for PostgreSQL, MySQL, MongoDB, Redis and other
       databases, with an AI query assistant
-    digest: 6995ebed50182417fb485f5521d8689e3600e58178235388dcfb6db5d7adcf2d
+    digest: b4e2990cf76a57ca28b280d186657298cb22731cc08cfb92ac0bc8bef35d72c2
     home: https://github.com/libredb/libredb-studio
     icon: https://raw.githubusercontent.com/libredb/libredb-studio/main/public/web-app-icon-192x192.png
     maintainers:

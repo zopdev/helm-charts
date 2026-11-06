@@ -70,7 +70,7 @@ Variables the chart sets itself (storage, auth, port, bind address) are refused 
 ### Secrets
 
 The generated Secret holds `JWT_SECRET` and `ADMIN_PASSWORD`.
-`JWT_SECRET` also seals the passwords of saved connections, so it never changes on upgrade.
+`JWT_SECRET` also seals the passwords of saved connections, so it is read back on every upgrade.
 To choose your own values, create a Secret with those two keys and set `auth.existingSecret`.
 
 ### AI assistant
@@ -103,14 +103,17 @@ Serve TLS, or on a trusted network set `auth.insecureCookie=true`.
 
 ## Upgrade
 
-An install that crosses 0.18.0 should expect three things on the first start after the upgrade:
+Chart v0.0.1 ran LibreDB Studio 0.17.0 and v0.0.2 runs 1.2.0, so one `helm upgrade` crosses several releases. What a default install sees:
 
-- Local users are signed out once.
-- MCP tokens created before the upgrade stop working and have to be created again.
-- `ADMIN_PASSWORD` only seeds the account on first start. Changing it afterwards, in the
-  generated Secret or in `auth.existingSecret`, does not change the stored password. To change
-  it, set the new value and add `ADMIN_PASSWORD_RESET: "true"` to `env` for one start, then
-  remove that variable again, because every start applies it while it is set.
+- Everyone signs in again, and for two separate reasons. 0.18.0 moves local accounts into the server-side store, and 1.2.0 renames the session cookie to `__Host-auth-token` on HTTPS, so a script that sends a saved session cookie over HTTPS has to use the new name.
+- Editor tabs left open before the upgrade are not kept, because from 0.18.1 the first sign-in starts from the account's server data.
+- `ADMIN_PASSWORD` only seeds the account on first start, from 0.18.0 on, so changing it afterwards in the generated Secret or in `auth.existingSecret` does not change the stored password. To change it, set the new value, add `ADMIN_PASSWORD_RESET: "true"` to `env` for one start, then remove that variable again, because every start applies it while it is set. The reset also ends that account's sessions and removes its passkeys.
+- An install that enabled MCP through `env` loses the tokens issued before the upgrade, and they have to be created again.
+
+Two notes about the chart rather than the release:
+
+- `version` now defaults to empty, so the image tag follows the chart's `appVersion` and a later chart upgrade moves LibreDB Studio with it. Set `version` to a tag to pin it instead.
+- The generated Secret is read back from the cluster on upgrade, so a hand-edited password survives. Under `helm template`, a client `--dry-run`, or a renderer with no cluster access it cannot be read back and both `JWT_SECRET` and `ADMIN_PASSWORD` render fresh, taking the saved connection passwords with them. Use `auth.existingSecret` in those workflows.
 
 ---
 
