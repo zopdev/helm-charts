@@ -28,6 +28,23 @@ spec:
       labels:
         app: {{ .Values.name }}
     spec:
+      {{- /*
+        Drain: the pod keeps serving for preStopSleepSeconds after it is marked
+        Terminating, so Service endpoints and clients stop sending traffic before
+        the app closes its listener. Keys are read with hasKey so a release that
+        runs with reuse_values (no new keys in its stored values) still gets the
+        defaults.
+      */}}
+      {{- $preStop := 10 }}
+      {{- if hasKey .Values "preStopSleepSeconds" }}{{ $preStop = int .Values.preStopSleepSeconds }}{{ end }}
+      {{- $grace := 45 }}
+      {{- if hasKey .Values "terminationGracePeriodSeconds" }}{{ $grace = int .Values.terminationGracePeriodSeconds }}{{ end }}
+      {{- $recreate := eq (toString (default dict .Values.strategy).type) "Recreate" }}
+      {{- $sleep := and (gt $preStop 0) (not $recreate) (semverCompare ">=1.30.0-0" .Capabilities.KubeVersion.Version) }}
+      {{- if and $sleep (le $grace $preStop) }}
+      {{- fail "terminationGracePeriodSeconds must be greater than preStopSleepSeconds" }}
+      {{- end }}
+      terminationGracePeriodSeconds: {{ $grace }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -381,6 +398,12 @@ spec:
             timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds | default 3 }}
             periodSeconds: {{ .Values.readinessProbe.periodSeconds |default 10 }}
             failureThreshold: {{ .Values.readinessProbe.failureThreshold | default 3 }}
+          {{- end }}
+          {{- if $sleep }}
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: {{ $preStop }}
           {{- end }}
           {{- if .Values.livenessProbe.enable }}
           livenessProbe:
