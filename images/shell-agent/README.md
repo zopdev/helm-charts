@@ -1,177 +1,102 @@
-# shell-agent Docker Image
+# shell-agent
 
-The shell-agent Docker image packages the ZopDay **VM shell agent** — the process that gives a browser an interactive terminal on a deployment VM.
+The ZopDay VM shell agent — the process that makes an interactive terminal
+possible on a deployment VM.
 
-> **Why an agent at all.** A ZopDay VM lives in the customer's own cloud account, behind their security groups. There is no inbound path the platform can rely on, so a terminal cannot be served by connecting *to* the machine. The agent inverts it: it runs on the VM, dials *out* to the platform's relay, and holds a long poll. Keystrokes travel down that connection and output comes back up it. This is the same shape AWS SSM, Teleport and Coder use, and for the same reason.
+## What this image is
 
-> **This image is a RUNTIME, not a carrier.** Unlike [`scale-to-zero`](../scale-to-zero/README.md), which exists only so a binary can be copied out of it, this container actually runs for the life of the VM — with the host PID namespace, `CAP_SYS_ADMIN` and the Docker socket, because a host shell has to escape the container and a container shell is `docker exec` against the host's daemon.
+A **carrier**, not a runtime. Nothing runs this container.
 
-Docker Hub is used rather than a private registry for the same reason `scale-to-zero` uses it: Docker is already a baseline component on every pool VM and those VMs already pull public images — no new registry auth or network path.
+It exists for one reason: the agent is a shell script, and the script still
+has to reach the VM. Every ZopDay pool VM already pulls public Docker Hub
+images, so an image is a delivery path that costs no new registry auth and no
+new network route — the same reasoning, and the same shape, as
+[`scale-to-zero`](../scale-to-zero), which carries an xcaddy-built `caddy`
+binary the same way.
 
----
-
-## Components & Versions
-
-| Component   | Version | Description                                                      |
-|-------------|---------|------------------------------------------------------------------|
-| Go          | 1.26.0  | Build toolchain. Must satisfy the `go` directive in `go.mod`     |
-| Alpine      | 3.22    | Final base image                                                  |
-| docker-cli  | alpine  | A container shell is `docker exec` against the host's socket      |
-| tmux        | alpine  | Makes a dropped connection reattach instead of losing the work    |
-| util-linux  | alpine  | `nsenter` — how a host shell gets out of the container            |
-| bash        | alpine  | The login shell both scopes run                                   |
-
-> **Source lockstep (critical).** The Go sources under `shell-agent/` are a verbatim copy of `backend/shell-agent/` in the ZopDay deployer repo. They are the same program, and the relay protocol — `shell-v1` tokens, the poll and events paths, the command shapes — is implemented **independently** on the platform side. A change to either half that is not mirrored here ships an agent that cannot talk to the relay, which from the UI looks exactly like a VM with no agent installed. Re-copy the whole directory rather than hand-patching it, so a drift shows up as a diff.
-
----
-
-## Prerequisites
-
-- Docker 20.10+
-
----
-
-## Build Image
-
-From the repository root:
+The VM's shell-access component copies the script out and throws the container
+away:
 
 ```bash
-docker build -f images/shell-agent/Dockerfile -t shell-agent:latest images/
+CID=$(docker create zopdev/shell-agent:v0.0.1)
+docker cp "$CID:/usr/local/bin/zop-shell-agent" /tmp/agent && docker rm "$CID"
 ```
 
-Override the pinned versions at build time if needed:
+It then runs as a **host systemd service**.
 
-```bash
-docker build -f images/shell-agent/Dockerfile \
-  --build-arg GO_VERSION=1.26.0 \
-  --build-arg ALPINE_VERSION=3.22 \
-  -t shell-agent:latest images/
-```
+## Why a host process, not a container
 
-The build fails fast if the binary it produced cannot start, and again on the published image if a required tool is missing.
+Because the terminal has to be on the host, and the shortest way to be on the
+host is to be on the host.
 
----
+An earlier version ran the agent as a container and climbed back out with
+`nsenter`. Doing that needs `--pid=host`, `CAP_SYS_ADMIN`, `CAP_SYS_PTRACE`,
+`--security-opt apparmor=unconfined` and the Docker socket — every one of them
+measured as necessary, on a customer's machine, to undo a containerisation
+that bought nothing. Running on the host needs none of them.
 
-## Verify
+A container shell is still `docker exec`, which needs no socket mount either:
+it is the host's own Docker.
 
-```bash
-docker run --rm shell-agent:latest
-# shell-agent: required configuration is missing: ZOP_SHELL_AGENT_TOKEN, ZOP_SHELL_RELAY_URL, ZOP_SHELL_SPACE_ID
+## Why a script, not a binary
 
-docker run --rm --entrypoint sh shell-agent:latest -c 'command -v nsenter docker tmux bash'
-# /usr/bin/nsenter
-# /usr/bin/docker
-# /usr/bin/tmux
-# /bin/bash
-```
+`tmux` already owns the pseudo-terminal, survives a dropped connection, and
+`pipe-pane -O` yields the raw byte stream the browser's terminal emulator
+wants. `curl` does the long poll; `jq` parses the protocol. What remains is
+small enough to read in one sitting.
 
-Refusing an empty configuration **is** the smoke test: it proves the binary runs on this base image and that the error path names every variable an operator has to set, rather than the first one it happened to check.
+It also matters that **this repository is public**. The agent's own source can
+live here. A service's cannot — and an earlier revision of this directory
+vendored ~1,900 lines of the private `zopnight` repository, which is the
+reason the source here is now a script and nothing more.
 
----
+## Publishing
 
-## Usage
+Tag `shell-agent-image-v<N>`; `.github/workflows/image-deployment.yaml` builds
+`images/shell-agent/Dockerfile` with `images/` as the context and pushes
+`zopdev/shell-agent:v<N>`.
 
-The consumer is the ZopDay deployer's `shell-agent` VM component, which **runs** the container:
+Pin the resulting **digest** in the deployer's `configs/vm-components.yaml`,
+as every sibling component there does. A tag can be moved; this script runs as
+root on a customer's machine.
 
-```bash
-docker run -d --name zop-shell-agent \
-  --restart unless-stopped \
-  --pid=host \
-  --cap-add=SYS_ADMIN \
-  --cap-add=SYS_PTRACE \
-  --security-opt apparmor=unconfined \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  -e ZOP_SHELL_RELAY_URL \
-  -e ZOP_SHELL_AGENT_TOKEN \
-  -e ZOP_SHELL_SPACE_ID \
-  zopdev/shell-agent:v0.0.1
-```
+## What the build asserts
 
-**All four flags are required.** A host shell runs `nsenter -t 1 -m -u -i -n -p` to enter PID 1's namespaces:
+The Dockerfile fails the BUILD rather than a VM install six steps later:
 
-| Flag | Why |
+1. the script is at the exact path the copy-out step reads,
+2. it is valid bash — a typo here is an agent that exits instantly on every VM
+   it reaches, and
+3. it refuses to start with its three required variables empty, so a
+   half-configured install cannot look healthy.
+
+## Contract with the platform
+
+| | |
 |---|---|
-| `--pid=host` | makes PID 1 the host's init rather than this container's |
-| `--cap-add=SYS_ADMIN` | permits `setns()` at all |
-| `--cap-add=SYS_PTRACE` | permits reaching PID 1's namespace files |
-| `--security-opt apparmor=unconfined` | Docker's default profile denies the mount-namespace transition on Ubuntu |
+| `ZOP_SHELL_RELAY_URL` | the relay to dial — outbound only |
+| `ZOP_SHELL_AGENT_TOKEN` | the per-VM HMAC token the deployer minted at install |
+| `ZOP_SHELL_SPACE_ID` | the space this VM belongs to |
 
-Measured on a real Ubuntu 24.04 VM with every combination: dropping any one gives `reassociate to namespaces failed: Operation not permitted`. `SYS_ADMIN` alone is not enough, `SYS_PTRACE` alone is not either, seccomp is irrelevant, and `SYS_CHROOT` is not needed.
+The agent polls `GET /agent/shell/poll` and reports with
+`POST /agent/shell/events`. Both carry terminal bytes as **raw JSON strings**,
+not base64 — the browser writes what arrives straight into its emulator.
 
-The apparmor line is the one a Docker-Desktop-only test will miss. Desktop's VM ships no AppArmor, so three flags look sufficient there and then fail on every Ubuntu host. On a host without AppArmor the option is simply ignored, so it is safe to pass unconditionally.
+Session names are `zopday-<sessionId>`, matching the deployer's own
+`tmuxSessionName`, so `tmux ls` on the box shows the names the platform uses.
 
-Dropping any of the three does not silently give a container shell. The agent probes whether PID 1 lives in a different mount namespace and **refuses** the host scope when it does not, so a wrong run line surfaces as *"a shell on the VM itself is not available on this agent"* rather than a shell on the wrong machine.
+## Tests
 
-`--privileged` also works and is deliberately not used: it grants every capability on a customer's machine to buy one we can name.
-
-No port is published: the agent listens on nothing and only ever dials out.
-
-### Environment
-
-| Variable | Required | Description |
-|---|---|---|
-| `ZOP_SHELL_RELAY_URL`   | yes | Where the agent dials out to. **https only**, except a loopback host for local development — the token is a bearer credential sent on every poll |
-| `ZOP_SHELL_AGENT_TOKEN` | yes | This VM's `shell-v1` token, minted by the deployer at install time and selected on the VM from the per-space blob |
-| `ZOP_SHELL_SPACE_ID`    | yes | The VM child space this agent speaks for |
-
----
-
-## File Structure
-
-```
-images/shell-agent/
-├── Dockerfile                     # two-stage: Go build + assertions, then the runtime image
-├── README.md
-├── go.mod / go.sum
-├── cmd/shell-agent/main.go        # config, signals
-└── internal/
-    ├── relay/relay.go             # dial out, poll, report
-    └── session/session.go         # the PTY, tmux, nsenter
-```
-
----
-
-## Features
-
-- Outbound-only: no inbound port, no listener, nothing to expose on the VM
-- Host and container shells from one agent (`nsenter` and the Docker socket)
-- tmux-backed sessions, so a dropped connection reattaches instead of losing the work
-- Idle terminals reaped on the agent's own side, so a shell cannot outlive the platform
-- https-only relay URL, loopback excepted for development
-- Static CGO-free binary, stripped — ~19 MB image
-
----
-
-## Publish
-
-The image is published via the `Image Deployment` GitHub Actions workflow. Push a tag in the form `shell-agent-image-v<N>` to trigger the build:
+The agent is exercised against the real relay from the zopnight repository:
 
 ```bash
-git tag shell-agent-image-v0.0.1
-git push origin shell-agent-image-v0.0.1
+cd backend/deployer
+ZOP_SHELL_AGENT_SCRIPT=<path to zop-shell-agent.sh> \
+  go test -tags=integration ./internal/shellrelay/ -run BashAgent -v
 ```
 
-This produces:
-
-- `zopdev/shell-agent:v0.0.1`
-- `zopdev/shell-agent:latest`
-
-The image tag is an **independent, incrementing version** — deliberately *not* the Go version or the deployer's release. Decoupling them means a dependency bump or a CVE rebuild of the same agent is just the next image tag.
-
-| Image tag | Go     | Alpine |
-|---|--------|---|
-| `v0.0.1`  | 1.26.0 | 3.22 |
-
-Consumers pin the **full tag and digest** (`zopdev/shell-agent:v0.0.1@sha256:…`), never `latest`. The digest is what makes an install reproducible: a tag can be moved, and this container runs as root with the Docker socket on a customer's machine.
-
-After publishing, update the pin in the deployer's `backend/deployer/configs/vm-components.yaml`:
-
-```bash
-docker buildx imagetools inspect zopdev/shell-agent:v0.0.1 --format '{{.Manifest.Digest}}'
-```
-
----
-
-## Contributing
-
-We welcome contributions to improve this Docker image. Please refer to the [CONTRIBUTING.md](../../CONTRIBUTING.md) for contribution guidelines.
+That test opens a host terminal, runs a command and asserts on its RESULT
+(never on the echo of the input — a pty echoes what is typed, so matching the
+typed string passes over a terminal that executed nothing), checks state
+carries across commands, resizes the pty and asserts the shell sees it, and
+confirms `tmux` is torn down on close.
