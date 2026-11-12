@@ -200,7 +200,8 @@ func innerProgram(spec Spec, hostNS bool) ([]string, error) {
 
 		return nil, ErrHostShellUnavailable{
 			Reason: "the agent is containerised without nsenter or the host namespaces " +
-				"(it needs --pid=host, --cap-add=SYS_ADMIN and --cap-add=SYS_PTRACE)",
+				"(it needs --pid=host, --cap-add=SYS_ADMIN, --cap-add=SYS_PTRACE " +
+				"and --security-opt apparmor=unconfined)",
 		}
 
 	case ScopeContainer:

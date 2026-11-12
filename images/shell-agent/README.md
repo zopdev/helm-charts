@@ -79,6 +79,7 @@ docker run -d --name zop-shell-agent \
   --pid=host \
   --cap-add=SYS_ADMIN \
   --cap-add=SYS_PTRACE \
+  --security-opt apparmor=unconfined \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -e ZOP_SHELL_RELAY_URL \
   -e ZOP_SHELL_AGENT_TOKEN \
@@ -86,15 +87,18 @@ docker run -d --name zop-shell-agent \
   zopdev/shell-agent:v0.0.1
 ```
 
-**All three of `--pid=host`, `SYS_ADMIN` and `SYS_PTRACE` are required.** A host shell runs `nsenter -t 1 -m -u -i -n -p` to enter PID 1's namespaces:
+**All four flags are required.** A host shell runs `nsenter -t 1 -m -u -i -n -p` to enter PID 1's namespaces:
 
 | Flag | Why |
 |---|---|
 | `--pid=host` | makes PID 1 the host's init rather than this container's |
 | `--cap-add=SYS_ADMIN` | permits `setns()` at all |
 | `--cap-add=SYS_PTRACE` | permits reaching PID 1's namespace files |
+| `--security-opt apparmor=unconfined` | Docker's default profile denies the mount-namespace transition on Ubuntu |
 
-`SYS_PTRACE` is the easy one to miss. `setns()` checks `ptrace_may_access()` against the target, so without it nsenter fails with `reassociate to namespaces failed: Operation not permitted`. Measured against this image with each combination: `SYS_ADMIN` alone is **not** enough, relaxing seccomp and apparmor does not help, and `SYS_CHROOT` is not needed.
+Measured on a real Ubuntu 24.04 VM with every combination: dropping any one gives `reassociate to namespaces failed: Operation not permitted`. `SYS_ADMIN` alone is not enough, `SYS_PTRACE` alone is not either, seccomp is irrelevant, and `SYS_CHROOT` is not needed.
+
+The apparmor line is the one a Docker-Desktop-only test will miss. Desktop's VM ships no AppArmor, so three flags look sufficient there and then fail on every Ubuntu host. On a host without AppArmor the option is simply ignored, so it is safe to pass unconditionally.
 
 Dropping any of the three does not silently give a container shell. The agent probes whether PID 1 lives in a different mount namespace and **refuses** the host scope when it does not, so a wrong run line surfaces as *"a shell on the VM itself is not available on this agent"* rather than a shell on the wrong machine.
 

@@ -15,6 +15,7 @@
 #
 #   docker run -d --name zop-shell-agent --restart unless-stopped \
 #     --pid=host --cap-add=SYS_ADMIN --cap-add=SYS_PTRACE \
+#     --security-opt apparmor=unconfined \
 #     -v /var/run/docker.sock:/var/run/docker.sock ...
 #
 # Docker Hub for the same reason scale-to-zero uses it: Docker is already a
@@ -96,10 +97,10 @@ FROM alpine:${ALPINE_VERSION}
 #   This is the copy that runs, for BOTH shell kinds — the agent always execs
 #   the binary on its own PATH.
 # util-linux: nsenter, which is how a host shell gets out of this container
-#   and onto the VM. Needs --pid=host plus CAP_SYS_ADMIN *and* CAP_SYS_PTRACE
-#   at run time — setns() checks ptrace_may_access() on PID 1, so SYS_ADMIN
-#   alone fails. Without them scope=host is refused rather than silently
-#   landing in this filesystem.
+#   and onto the VM. At run time this needs --pid=host, CAP_SYS_ADMIN,
+#   CAP_SYS_PTRACE and apparmor=unconfined — measured on a real Ubuntu host;
+#   dropping any one gives "reassociate to namespaces failed". Without them
+#   scope=host is refused rather than silently landing in this filesystem.
 # bash: the login shell both scopes run. ca-certificates: the agent dials out
 #   over TLS.
 RUN apk --no-cache add ca-certificates docker-cli tmux bash util-linux
