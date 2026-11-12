@@ -78,6 +78,7 @@ docker run -d --name zop-shell-agent \
   --restart unless-stopped \
   --pid=host \
   --cap-add=SYS_ADMIN \
+  --cap-add=SYS_PTRACE \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -e ZOP_SHELL_RELAY_URL \
   -e ZOP_SHELL_AGENT_TOKEN \
@@ -85,7 +86,19 @@ docker run -d --name zop-shell-agent \
   zopdev/shell-agent:v0.0.1
 ```
 
-**`--pid=host` and `--cap-add=SYS_ADMIN` go together.** A host shell runs `nsenter -t 1 -m -u -i -n -p` to enter PID 1's namespaces; `--pid=host` alone only makes host PIDs visible, so without the capability the shell would stay on this container's filesystem — no host packages, no host `/etc`, no host `/home`. The agent refuses a host shell rather than silently delivering that, but dropping either flag turns the feature off.
+**All three of `--pid=host`, `SYS_ADMIN` and `SYS_PTRACE` are required.** A host shell runs `nsenter -t 1 -m -u -i -n -p` to enter PID 1's namespaces:
+
+| Flag | Why |
+|---|---|
+| `--pid=host` | makes PID 1 the host's init rather than this container's |
+| `--cap-add=SYS_ADMIN` | permits `setns()` at all |
+| `--cap-add=SYS_PTRACE` | permits reaching PID 1's namespace files |
+
+`SYS_PTRACE` is the easy one to miss. `setns()` checks `ptrace_may_access()` against the target, so without it nsenter fails with `reassociate to namespaces failed: Operation not permitted`. Measured against this image with each combination: `SYS_ADMIN` alone is **not** enough, relaxing seccomp and apparmor does not help, and `SYS_CHROOT` is not needed.
+
+Dropping any of the three does not silently give a container shell. The agent probes whether PID 1 lives in a different mount namespace and **refuses** the host scope when it does not, so a wrong run line surfaces as *"a shell on the VM itself is not available on this agent"* rather than a shell on the wrong machine.
+
+`--privileged` also works and is deliberately not used: it grants every capability on a customer's machine to buy one we can name.
 
 No port is published: the agent listens on nothing and only ever dials out.
 

@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -124,8 +125,11 @@ func (c Config) validate() error {
 // poll, so https is required — a parse-only check (what this used to do)
 // accepts "http://..." happily and leaks the credential forever.
 //
-// Loopback is the one exception, for running the agent against a local relay
-// during development, where there is no network to intercept.
+// A local development host is the one exception, where there is no network to
+// intercept. The set matches the deployer's isLocalDevIngestHost (the
+// alert-ingest URL has the same shape of problem — a plain-http URL carrying
+// a bearer token), deliberately rather than coincidentally: an operator who
+// learns one rule should not find the other narrower.
 func secureRelayURL(raw string) bool {
 	parsed, err := url.Parse(raw)
 	if err != nil || parsed.Host == "" {
@@ -140,9 +144,30 @@ func secureRelayURL(raw string) bool {
 		return false
 	}
 
-	host := parsed.Hostname()
+	return isLocalDevHost(parsed.Hostname())
+}
 
-	return host == "localhost" || host == "127.0.0.1" || host == "::1"
+// isLocalDevHost reports whether host is one a plain-http relay URL may name
+// without leaking the agent's token off a developer's machine: a loopback IP,
+// "localhost", the minikube / docker host aliases, or a name under the
+// reserved .localhost / .test TLDs (RFC 6761), which never resolve on the
+// public internet.
+//
+// Suffix matches require the leading dot, so "localhost.zop.dev" and
+// "evil-test.com" do not qualify.
+func isLocalDevHost(host string) bool {
+	host = strings.ToLower(strings.TrimSuffix(host, "."))
+
+	if ip := net.ParseIP(host); ip != nil {
+		return ip.IsLoopback()
+	}
+
+	switch host {
+	case "localhost", "host.minikube.internal", "host.docker.internal":
+		return true
+	}
+
+	return strings.HasSuffix(host, ".localhost") || strings.HasSuffix(host, ".test")
 }
 
 // ErrConfig names the field that cannot be used.
