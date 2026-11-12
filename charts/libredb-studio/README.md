@@ -47,7 +47,7 @@ kubectl get secret studio-libredb-studio -o jsonpath='{.data.ADMIN_PASSWORD}' | 
 
 | Key | Default | Description |
 |---|---|---|
-| `version` | `0.17.0` | LibreDB Studio release, the tag of `ghcr.io/libredb/libredb-studio`. |
+| `version` | `1.3.0` | LibreDB Studio release, the tag of `ghcr.io/libredb/libredb-studio`. |
 | `service.type` | `ClusterIP` | Kubernetes Service type: `ClusterIP`, `NodePort` or `LoadBalancer`. |
 | `service.port` | `80` | Service port. |
 | `auth.adminEmail` | `admin@libredb.org` | Email the admin signs in with. |
@@ -121,6 +121,20 @@ kubectl delete pvc,secret studio-libredb-studio
 - One replica, by design: SQLite on a ReadWriteOnce volume and the agent's on-disk run ledger both need a single pod. Updates use the `Recreate` strategy.
 - The pod runs as uid 1001 with a read-only root filesystem and no service account token.
 - `/api/db/health` backs all three probes. It answers without touching any database.
+
+### Upgrading an install that was on 0.17.0
+
+This chart's pinned version moves from 0.17.0 to 1.3.0, so the upgrade crosses
+0.18.0 and picks up its upgrade notes:
+
+- Every local user is signed out once.
+- MCP tokens issued before 0.18.0 stop working and have to be recreated.
+- `ADMIN_PASSWORD` seeds the account on first start only. Changing it in
+  `auth.existingSecret` afterwards does not change the password; set
+  `ADMIN_PASSWORD_RESET=true` for that.
+
+It also crosses 1.3.0's own note: an OPC UA seed connection must declare
+`agentReadRoots`, or agents and MCP stop reading it.
 
 ---
 
