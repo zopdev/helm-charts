@@ -42,6 +42,31 @@ OUTPUT_CHUNK_BYTES=65536
 # reading `tmux ls` on the box sees the same names the platform uses.
 SESSION_PREFIX="zopday-"
 
+# SPOOL_ROTATE_BYTES bounds what one terminal can hold in RUN_DIR. The spool
+# is append-only and RUN_DIR is a RAM-backed tmpfs that dockerd, containerd
+# and systemd also write to, so an unbounded spool is not just this agent's
+# problem: one `docker logs -f` left running overnight fills /run and takes
+# the host's container runtime down with it. Past this mark the pane is
+# re-pointed at a fresh file and the old one is drained and dropped.
+SPOOL_ROTATE_BYTES="${ZOP_SHELL_SPOOL_ROTATE_BYTES:-8388608}"
+
+# PUMP_INTERVAL is how often output is shipped. It is NOT tied to the poll:
+# the poll parks for as long as the relay holds it, and output must not wait
+# on that. See main().
+PUMP_INTERVAL="${ZOP_SHELL_PUMP_INTERVAL:-0.1}"
+
+# Backoff bounds for a relay that is refusing or unreachable. Without this a
+# rejected token means a request every fifth of a second, forever, from every
+# VM at once.
+POLL_BACKOFF_MIN=1
+POLL_BACKOFF_MAX=30
+
+# AUTH_FILE keeps the bearer token OFF every command line. /proc/<pid>/cmdline
+# is world-readable on a default /proc mount, and the token authorises reading
+# this VM's terminal output and draining the commands meant for it — which is
+# the user's keystrokes, passwords included.
+AUTH_FILE="$RUN_DIR/auth"
+
 log() { printf '%s zop-shell-agent: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" >&2; }
 
 # require_tools fails at START rather than on the first terminal somebody
@@ -57,30 +82,66 @@ require_tools() {
     log "missing required tools: ${missing[*]}"
     exit 1
   fi
+
+  # -H @file is how the token stays out of the process list. It landed in
+  # curl 7.55. Checked here rather than discovered as a 401 on the first
+  # terminal somebody opens.
+  local major minor
+  IFS=. read -r major minor _ <<<"$(curl --version | awk 'NR==1{print $2}')"
+  if [ "$((major * 1000 + minor))" -lt 7055 ]; then
+    log "curl $major.$minor is too old; -H @file needs 7.55 or newer"
+    exit 1
+  fi
+}
+
+# write_auth_file puts the Authorization header somewhere only root can read,
+# so no curl invocation has to carry it in argv.
+write_auth_file() {
+  local tmp
+  tmp="$(mktemp "$RUN_DIR/auth.XXXXXX")"
+  chmod 0600 "$tmp"
+  printf 'Authorization: Bearer %s\n' "$TOKEN" > "$tmp"
+  mv "$tmp" "$AUTH_FILE"
 }
 
 session_name() { printf '%s%s' "$SESSION_PREFIX" "$1"; }
 
-# post_event reports one thing back to the relay.
+# post_event_file reports one thing back to the relay, reading the payload
+# from a FILE at every step.
 #
-# --data-binary with a file, not an argument: terminal output contains NUL,
-# newlines and arbitrary bytes, and an argv-sized payload would both truncate
-# and leak into the process list.
-post_event() {
-  local session_id="$1" type="$2" data="$3" body
+# --rawfile, not --arg: terminal output contains NUL, newlines and arbitrary
+# bytes. An argv-sized payload would leak into the process list, and command
+# substitution strips trailing newlines — which did more than lose a newline,
+# it stalled the stream. pump_output advances its offset by the length of
+# what it shipped, so when the unread tail was newlines only the chunk came
+# back empty, nothing was sent, and the offset never moved. The last line of
+# every command sat in the spool until something else was printed.
+post_event_file() {
+  local session_id="$1" type="$2" datafile="$3" body
   body="$(mktemp "$RUN_DIR/event.XXXXXX")"
 
-  jq -nc --arg s "$session_id" --arg t "$type" --arg d "$data" \
+  jq -nc --arg s "$session_id" --arg t "$type" --rawfile d "$datafile" \
     '{sessionId:$s, type:$t, data:$d}' > "$body"
 
   curl -sS -m 30 -X POST \
-    -H "Authorization: Bearer $TOKEN" \
+    -H @"$AUTH_FILE" \
     -H "Content-Type: application/json" \
     --data-binary "@$body" \
     "$RELAY_URL/agent/shell/events" >/dev/null 2>&1 \
     || log "event $type for $session_id could not be delivered"
 
   rm -f "$body"
+}
+
+# post_event is the small-payload form: exits and errors, never output.
+post_event() {
+  local session_id="$1" type="$2" data="$3" f
+  f="$(mktemp "$RUN_DIR/data.XXXXXX")"
+
+  printf '%s' "$data" > "$f"
+  post_event_file "$session_id" "$type" "$f"
+
+  rm -f "$f"
 }
 
 # open_session starts a terminal.
@@ -130,7 +191,7 @@ open_session() {
 # swap — and on a terminal that is a line of someone's output vanishing with
 # nothing to indicate it. An offset can only ever lag, never lose.
 pump_output() {
-  local spool session_id offset size chunk
+  local spool session_id offset size chunk taken
   shopt -s nullglob
 
   for spool in "$RUN_DIR"/*.out; do
@@ -147,18 +208,83 @@ pump_output() {
 
     [ "$size" -gt "$offset" ] 2>/dev/null || continue
 
-    chunk="$(tail -c "+$((offset + 1))" "$spool" | head -c "$OUTPUT_CHUNK_BYTES")"
-    [ -n "$chunk" ] || continue
+    # Through a file, never a variable: $(...) would strip the trailing
+    # newlines, and the offset below is derived from the bytes on disk.
+    chunk="$(mktemp "$RUN_DIR/chunk.XXXXXX")"
+    tail -c "+$((offset + 1))" "$spool" | head -c "$OUTPUT_CHUNK_BYTES" > "$chunk"
 
-    post_event "$session_id" "output" "$chunk"
+    taken=$(wc -c < "$chunk" | tr -d ' ')
+    if [ "$taken" -le 0 ] 2>/dev/null; then
+      rm -f "$chunk"
+      continue
+    fi
+
+    post_event_file "$session_id" "output" "$chunk"
+    rm -f "$chunk"
 
     # Advanced by what was actually taken, so a chunk capped at the ceiling
     # resumes exactly where it stopped on the next pass.
-    printf '%s' "$((offset + $(printf '%s' "$chunk" | wc -c | tr -d ' ')))" \
-      > "$RUN_DIR/$session_id.off"
+    offset=$((offset + taken))
+    printf '%s' "$offset" > "$RUN_DIR/$session_id.off"
+
+    [ "$offset" -ge "$SPOOL_ROTATE_BYTES" ] 2>/dev/null && rotate_spool "$session_id"
   done
 
   shopt -u nullglob
+}
+
+# rotate_spool caps what one terminal can hold without losing a byte.
+#
+# The pane is re-pointed at a FRESH file first. Everything produced before
+# that command lands in the old inode, everything after in the new one, so
+# there is no window where a write can fall between the two — which is why
+# this is a rotation and not a truncate. The old file is then drained to its
+# end and dropped.
+rotate_spool() {
+  local session_id="$1" name spool old chunk taken guard
+  name="$(session_name "$session_id")"
+  spool="$RUN_DIR/$session_id.out"
+  old="$RUN_DIR/$session_id.rot"
+
+  # tmux is still appending through the fd it holds, which follows the inode.
+  mv "$spool" "$old" 2>/dev/null || return 0
+  : > "$spool"
+
+  if ! tmux pipe-pane -t "$name" -O "cat >> $spool" 2>/dev/null; then
+    # The session went away mid-rotation. reap_finished will notice; put the
+    # tail back where it will be read rather than dropping it.
+    cat "$old" >> "$spool" 2>/dev/null
+    rm -f "$old"
+
+    return 0
+  fi
+
+  # Whatever arrived between the last pump and the switch. Bounded so a
+  # rotation can never become an unbounded burst of its own.
+  guard=0
+  while [ "$guard" -lt 64 ]; do
+    chunk="$(mktemp "$RUN_DIR/chunk.XXXXXX")"
+    head -c "$OUTPUT_CHUNK_BYTES" "$old" > "$chunk"
+
+    taken=$(wc -c < "$chunk" | tr -d ' ')
+    if [ "$taken" -le 0 ] 2>/dev/null; then
+      rm -f "$chunk"
+      break
+    fi
+
+    post_event_file "$session_id" "output" "$chunk"
+    rm -f "$chunk"
+
+    # Drop what was just shipped so the next pass reads the next slice.
+    tail -c "+$((taken + 1))" "$old" > "$old.tmp" 2>/dev/null && mv "$old.tmp" "$old"
+
+    guard=$((guard + 1))
+  done
+
+  rm -f "$old" "$old.tmp"
+  printf '0' > "$RUN_DIR/$session_id.off"
+
+  log "rotated the output spool for $session_id"
 }
 
 # reap_finished tells the platform about terminals whose shell has exited, so
@@ -172,6 +298,11 @@ reap_finished() {
     name="$(session_name "$session_id")"
 
     if ! tmux has-session -t "$name" 2>/dev/null; then
+      # close_session may have removed the spool between the glob above and
+      # this check. That is a terminal the user closed deliberately, and the
+      # browser has already been told; a second "exit" would be noise.
+      [ -f "$spool" ] || continue
+
       post_event "$session_id" "exit" ""
       rm -f "$spool" "$RUN_DIR/$session_id.off"
       log "terminal $session_id ended"
@@ -230,14 +361,57 @@ apply_command() {
   esac
 }
 
+# poll_once asks the relay for work and parks until there is some.
+#
+# The status code is read explicitly. Without it a 401 looks exactly like an
+# empty batch: curl exits 0, the body parses to no commands, and the loop
+# asks again immediately — a refused token became several requests a second,
+# forever, with nothing in the log to say why.
 poll_once() {
-  local body
-  body="$(curl -sS -m "$POLL_MAX_SECONDS" \
-    -H "Authorization: Bearer $TOKEN" \
+  local response body code
+
+  response="$(curl -sS -m "$POLL_MAX_SECONDS" \
+    -H @"$AUTH_FILE" \
+    -w '\n%{http_code}' \
     "$RELAY_URL/agent/shell/poll" 2>/dev/null)" || return 1
+
+  code="${response##*$'\n'}"
+  body="${response%$'\n'*}"
+
+  case "$code" in
+    200) ;;
+    401|403)
+      log "the relay refused this agent's token (HTTP $code); check that the VM's token matches its identity"
+      return 1
+      ;;
+    *)
+      log "the relay answered HTTP $code"
+      return 1
+      ;;
+  esac
 
   jq -c '.commands // [] | .[]' <<<"$body" 2>/dev/null | while IFS= read -r cmd; do
     apply_command "$cmd"
+  done
+}
+
+# pump_loop ships output on its OWN schedule.
+#
+# This has to be independent of the poll. The poll parks for as long as the
+# relay holds it — 25 seconds with nothing queued — and when the two ran in
+# one loop nothing could be delivered while it was parked. Output printed
+# just after a pump waited for the park to end or for the user to press a
+# key, whichever came first. Every command slower than a pump interval was
+# affected, and `tail -f`, `top` and a build were unusable.
+#
+# It owns the .off files; the poll side never writes them. The only state
+# the two share is the spool, and the worst a collision there can do is skip
+# a pass.
+pump_loop() {
+  while true; do
+    pump_output
+    reap_finished
+    sleep "$PUMP_INTERVAL"
   done
 }
 
@@ -245,14 +419,38 @@ main() {
   require_tools
 
   install -d -m 0700 "$RUN_DIR"
+  write_auth_file
 
   log "starting for space $SPACE_ID against $RELAY_URL"
 
+  pump_loop &
+  pump_pid=$!
+
+  # The pump is this process's responsibility; systemd restarting the unit
+  # should not leave one behind.
+  trap 'kill "$pump_pid" 2>/dev/null; rm -f "$AUTH_FILE"' EXIT INT TERM
+
+  local backoff="$POLL_BACKOFF_MIN"
+
   while true; do
-    poll_once || log "poll failed; retrying"
-    pump_output
-    reap_finished
-    sleep 0.2
+    if poll_once; then
+      backoff="$POLL_BACKOFF_MIN"
+      sleep 0.2
+    else
+      # Doubling, not a fixed retry: a relay that is down or refusing this
+      # token must not be hammered by every VM in the fleet at once.
+      sleep "$backoff"
+      backoff=$((backoff * 2))
+      [ "$backoff" -gt "$POLL_BACKOFF_MAX" ] && backoff="$POLL_BACKOFF_MAX"
+    fi
+
+    # The pump dying silently would look exactly like a terminal that stopped
+    # printing, so it is not allowed to die silently.
+    if ! kill -0 "$pump_pid" 2>/dev/null; then
+      log "the output pump stopped; restarting it"
+      pump_loop &
+      pump_pid=$!
+    fi
   done
 }
 
