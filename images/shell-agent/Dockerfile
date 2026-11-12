@@ -34,8 +34,19 @@
 # Base
 # -------------------------------
 # alpine because the image is only ever a container to `docker cp` out of;
-# nothing in it executes. Pinned so a rebuild is reproducible.
-FROM alpine:3.22
+# nothing in it executes.
+#
+# Pinned by DIGEST, not by the 3.22 tag: that tag moves with every 3.22.x
+# point release, so the same build could have produced a different base from
+# one day to the next while the comment above claimed otherwise.
+#
+# What this does NOT pin is `apk add` below, which resolves against the
+# repository index at build time. That is deliberate — alpine drops old
+# package versions from the index, so pinning them makes the build fail
+# outright a few months later. It is also harmless here: only the script is
+# copied out to the VM, and the packages exist in this image to make the
+# BUILD fail if one disappears upstream. The VM uses its own copies.
+FROM alpine:3.22@sha256:49340b346798875b5592e5d420241f2f9cfba5f47e62ebb1446a1b34734e898f
 
 # The tools the agent calls. Installed here so the BUILD fails if a package
 # disappears upstream, rather than the agent failing its tool check on a VM
