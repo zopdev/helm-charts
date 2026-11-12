@@ -61,6 +61,17 @@ PUMP_INTERVAL="${ZOP_SHELL_PUMP_INTERVAL:-0.1}"
 POLL_BACKOFF_MIN=1
 POLL_BACKOFF_MAX=30
 
+# SESSION_MAX_AGE and SESSION_IDLE_MAX bound a terminal's life on the VM.
+#
+# These exist because the relay's registry is in memory. When the deployer
+# restarts, every session it knew about is forgotten and no close is ever
+# queued — but the shell on this VM is still running, still as root, and
+# nothing on the platform side will ever ask for it again. Without a limit
+# here those shells stay until the machine reboots. The agent is the only
+# party that can see them, so the agent is where the limit belongs.
+SESSION_MAX_AGE="${ZOP_SHELL_SESSION_MAX_AGE:-43200}"
+SESSION_IDLE_MAX="${ZOP_SHELL_SESSION_IDLE_MAX:-7200}"
+
 # AUTH_FILE keeps the bearer token OFF every command line. /proc/<pid>/cmdline
 # is world-readable on a default /proc mount, and the token authorises reading
 # this VM's terminal output and draining the commands meant for it — which is
@@ -68,6 +79,23 @@ POLL_BACKOFF_MAX=30
 AUTH_FILE="$RUN_DIR/auth"
 
 log() { printf '%s zop-shell-agent: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" >&2; }
+
+# require_secure_relay refuses to carry a bearer token over a link that is
+# not encrypted. Loopback is allowed because the integration tests stand a
+# relay up on 127.0.0.1, and there is no network there to intercept.
+require_secure_relay() {
+  case "$RELAY_URL" in
+    https://*) return 0 ;;
+    http://127.0.0.1[:/]* | http://127.0.0.1 | http://localhost[:/]* | http://localhost | http://\[::1\][:/]*)
+      log "relay is loopback; proceeding without TLS"
+
+      return 0
+      ;;
+  esac
+
+  log "refusing to send the agent token to $RELAY_URL: https is required"
+  exit 1
+}
 
 # require_tools fails at START rather than on the first terminal somebody
 # tries to open. An agent that is running but cannot work is worse than one
@@ -106,6 +134,35 @@ write_auth_file() {
 
 session_name() { printf '%s%s' "$SESSION_PREFIX" "$1"; }
 
+# valid_session_id gates everything the relay sends, because a session id is
+# not just a key here: it is interpolated into the `pipe-pane -O` command,
+# which tmux runs through `sh -c`, and into the spool paths. A hostile id
+# from a compromised or impersonated relay would be command injection and
+# path traversal. The platform mints UUIDs; nothing else is accepted.
+valid_session_id() {
+  case "$1" in
+    *[!0-9a-fA-F-]* | "") return 1 ;;
+  esac
+
+  [ "${#1}" -eq 36 ]
+}
+
+# valid_container_name holds docker's own charset. A name beginning with "-"
+# is read by docker as an option, so the leading character is constrained
+# separately and every call also uses `--`.
+valid_container_name() {
+  case "$1" in
+    [a-zA-Z0-9]*) ;;
+    *) return 1 ;;
+  esac
+
+  case "$1" in
+    *[!a-zA-Z0-9_.-]*) return 1 ;;
+  esac
+
+  [ "${#1}" -le 255 ]
+}
+
 # post_event_file reports one thing back to the relay, reading the payload
 # from a FILE at every step.
 #
@@ -123,25 +180,38 @@ post_event_file() {
   jq -nc --arg s "$session_id" --arg t "$type" --rawfile d "$datafile" \
     '{sessionId:$s, type:$t, data:$d}' > "$body"
 
-  curl -sS -m 30 -X POST \
+  # --fail so an HTTP error is an ERROR. Without it curl exits 0 on a 4xx or
+  # 5xx, the caller believed the chunk had landed, and pump_output advanced
+  # its offset past bytes the relay never received — the user's output,
+  # silently gone, under a comment promising that could not happen.
+  if ! curl -sS --fail -m 30 -X POST \
     -H @"$AUTH_FILE" \
     -H "Content-Type: application/json" \
     --data-binary "@$body" \
-    "$RELAY_URL/agent/shell/events" >/dev/null 2>&1 \
-    || log "event $type for $session_id could not be delivered"
+    "$RELAY_URL/agent/shell/events" >/dev/null 2>&1; then
+    log "event $type for $session_id could not be delivered"
+    rm -f "$body"
+
+    return 1
+  fi
 
   rm -f "$body"
+
+  return 0
 }
 
 # post_event is the small-payload form: exits and errors, never output.
 post_event() {
-  local session_id="$1" type="$2" data="$3" f
+  local session_id="$1" type="$2" data="$3" f rc
   f="$(mktemp "$RUN_DIR/data.XXXXXX")"
 
   printf '%s' "$data" > "$f"
   post_event_file "$session_id" "$type" "$f"
+  rc=$?
 
   rm -f "$f"
+
+  return $rc
 }
 
 # open_session starts a terminal.
@@ -159,18 +229,34 @@ open_session() {
   [ "$rows" -gt 0 ] 2>/dev/null || rows=24
 
   if [ "$scope" = "container" ]; then
-    # The name is validated against docker's charset by the platform before
-    # it reaches here, and again as an argv element — never through a shell.
-    if ! docker inspect --type container "$container" >/dev/null 2>&1; then
-      post_event "$session_id" "error" "container $container is not running on this VM"
+    # Checked HERE, not assumed to have been checked upstream. The comment
+    # this replaces claimed the name was validated "again as an argv
+    # element", which was not a thing the code did: a name starting with "-"
+    # is read by docker as an option, whatever the platform sent.
+    if ! valid_container_name "$container"; then
+      post_event "$session_id" "error" "that container name is not a valid one"
+
       return
     fi
-    program=(docker exec -it "$container" sh)
+
+    if ! docker inspect --type container -- "$container" >/dev/null 2>&1; then
+      post_event "$session_id" "error" "container $container is not running on this VM"
+
+      return
+    fi
+
+    program=(docker exec -it -- "$container" sh)
   else
     program=(bash -l)
   fi
 
-  if ! tmux new-session -d -s "$name" -x "$cols" -y "$rows" "${program[@]}" 2>/dev/null; then
+  # env -u, so the terminal the user gets does not inherit the agent's token.
+  # tmux's server takes its environment from whoever started it and every
+  # pane inherits that, which put a 30-day credential one `env` away from
+  # anyone holding a host shell. They are root and can read the env file
+  # anyway; that is not a reason to hand it to them.
+  if ! env -u ZOP_SHELL_AGENT_TOKEN \
+    tmux new-session -d -s "$name" -x "$cols" -y "$rows" "${program[@]}" 2>/dev/null; then
     post_event "$session_id" "error" "a terminal could not be started on this VM"
     return
   fi
@@ -180,7 +266,50 @@ open_session() {
   # pressure to the user's shell.
   tmux pipe-pane -t "$name" -O "cat >> $RUN_DIR/$session_id.out" 2>/dev/null
 
+  date +%s > "$RUN_DIR/$session_id.born"
+  touch_activity "$session_id"
+
   log "opened $scope terminal $session_id"
+}
+
+# touch_activity records that this terminal is still being used. Written by
+# us rather than read from a file's mtime so the behaviour does not depend on
+# which stat(1) the host ships.
+touch_activity() { date +%s > "$RUN_DIR/$1.seen"; }
+
+# enforce_limits closes terminals that have outlived their welcome: too old
+# whatever they are doing, or idle too long. Both are needed — a `tail -f`
+# left running is never idle and would otherwise live forever.
+enforce_limits() {
+  local born_file session_id born seen now age idle
+  now="$(date +%s)"
+  shopt -s nullglob
+
+  for born_file in "$RUN_DIR"/*.born; do
+    session_id="$(basename "$born_file" .born)"
+
+    born="$(cat "$born_file" 2>/dev/null)" || continue
+    [ -n "$born" ] || continue
+
+    seen="$born"
+    [ -f "$RUN_DIR/$session_id.seen" ] && seen="$(cat "$RUN_DIR/$session_id.seen" 2>/dev/null)"
+    [ -n "$seen" ] || seen="$born"
+
+    age=$((now - born))
+    idle=$((now - seen))
+
+    if [ "$age" -ge "$SESSION_MAX_AGE" ] 2>/dev/null; then
+      post_event "$session_id" "error" "this terminal reached its maximum age and was closed"
+      close_session "$session_id"
+      log "closed $session_id after $age seconds (maximum age)"
+    elif [ "$idle" -ge "$SESSION_IDLE_MAX" ] 2>/dev/null; then
+      post_event "$session_id" "error" "this terminal was idle and was closed"
+      close_session "$session_id"
+      log "closed $session_id after $idle seconds idle"
+    fi
+  done
+
+  shopt -u nullglob
 }
 
 # pump_output ships whatever each live session has produced since last time.
@@ -219,13 +348,21 @@ pump_output() {
       continue
     fi
 
-    post_event_file "$session_id" "output" "$chunk"
+    # Only on delivery. A chunk the relay never received must be sent again
+    # on the next pass, not skipped — that is what makes the offset able to
+    # lag without ever losing.
+    if ! post_event_file "$session_id" "output" "$chunk"; then
+      rm -f "$chunk"
+      continue
+    fi
+
     rm -f "$chunk"
 
     # Advanced by what was actually taken, so a chunk capped at the ceiling
     # resumes exactly where it stopped on the next pass.
     offset=$((offset + taken))
     printf '%s' "$offset" > "$RUN_DIR/$session_id.off"
+    touch_activity "$session_id"
 
     [ "$offset" -ge "$SPOOL_ROTATE_BYTES" ] 2>/dev/null && rotate_spool "$session_id"
   done
@@ -272,7 +409,11 @@ rotate_spool() {
       break
     fi
 
-    post_event_file "$session_id" "output" "$chunk"
+    if ! post_event_file "$session_id" "output" "$chunk"; then
+      rm -f "$chunk"
+      break
+    fi
+
     rm -f "$chunk"
 
     # Drop what was just shipped so the next pass reads the next slice.
@@ -304,7 +445,8 @@ reap_finished() {
       [ -f "$spool" ] || continue
 
       post_event "$session_id" "exit" ""
-      rm -f "$spool" "$RUN_DIR/$session_id.off"
+      rm -f "$spool" "$RUN_DIR/$session_id.off" \
+        "$RUN_DIR/$session_id.born" "$RUN_DIR/$session_id.seen"
       log "terminal $session_id ended"
     fi
   done
@@ -317,7 +459,8 @@ close_session() {
   name="$(session_name "$session_id")"
 
   tmux kill-session -t "$name" 2>/dev/null
-  rm -f "$RUN_DIR/$session_id.out" "$RUN_DIR/$session_id.off"
+  rm -f "$RUN_DIR/$session_id.out" "$RUN_DIR/$session_id.off" \
+    "$RUN_DIR/$session_id.born" "$RUN_DIR/$session_id.seen"
   log "closed terminal $session_id"
 }
 
@@ -328,7 +471,11 @@ apply_command() {
   type="$(jq -r '.type // empty' <<<"$cmd")"
   session_id="$(jq -r '.sessionId // empty' <<<"$cmd")"
 
-  [ -n "$session_id" ] || return
+  if ! valid_session_id "$session_id"; then
+    log "refusing a command with a malformed session id"
+
+    return
+  fi
 
   case "$type" in
     open)
@@ -346,6 +493,7 @@ apply_command() {
       # jq -r hands us exactly what was typed.
       local data
       data="$(jq -r '.data // ""' <<<"$cmd")"
+      touch_activity "$session_id"
       [ -n "$data" ] && printf '%s' "$data" \
         | tmux load-buffer -b "zop-$session_id" - 2>/dev/null \
         && tmux paste-buffer -d -b "zop-$session_id" -t "$(session_name "$session_id")" 2>/dev/null
@@ -408,15 +556,27 @@ poll_once() {
 # the two share is the spool, and the worst a collision there can do is skip
 # a pass.
 pump_loop() {
+  local ticks=0
+
   while true; do
     pump_output
     reap_finished
+
+    # Once a minute is plenty for a limit measured in hours, and it keeps
+    # the hot path to the two calls above.
+    ticks=$((ticks + 1))
+    if [ "$ticks" -ge 600 ]; then
+      enforce_limits
+      ticks=0
+    fi
+
     sleep "$PUMP_INTERVAL"
   done
 }
 
 main() {
   require_tools
+  require_secure_relay
 
   install -d -m 0700 "$RUN_DIR"
   write_auth_file
