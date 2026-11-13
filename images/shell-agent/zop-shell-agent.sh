@@ -50,6 +50,18 @@ SESSION_PREFIX="zopday-"
 # re-pointed at a fresh file and the old one is drained and dropped.
 SPOOL_ROTATE_BYTES="${ZOP_SHELL_SPOOL_ROTATE_BYTES:-8388608}"
 
+# SPOOL_MAX_UNDELIVERED bounds what one terminal may hold that has NOT been
+# shipped yet.
+#
+# Rotation alone does not bound RUN_DIR, because it triggers on the DELIVERED
+# offset and that offset only moves when the relay accepts a chunk. With the
+# relay unreachable — an outage, a deployer rollout — the offset is frozen,
+# nothing rotates, and a `yes` in a terminal fills /run. That is a RAM-backed
+# tmpfs shared with dockerd and containerd, so filling it takes the host's
+# container runtime down with it. The idle limit is no help: a terminal
+# producing output is never idle.
+SPOOL_MAX_UNDELIVERED="${ZOP_SHELL_SPOOL_MAX_UNDELIVERED:-33554432}"
+
 # PUMP_INTERVAL is how often output is shipped. It is NOT tied to the poll:
 # the poll parks for as long as the relay holds it, and output must not wait
 # on that. See main().
@@ -411,9 +423,41 @@ pump_output() {
     [ -n "$offset" ] || offset=0
 
     [ "$offset" -ge "$SPOOL_ROTATE_BYTES" ] 2>/dev/null && rotate_spool "$session_id"
+
+    # Nothing above bounds a backlog that is not being delivered.
+    enforce_spool_cap "$session_id" "$spool" "$offset"
   done
 
   shopt -u nullglob
+}
+
+# enforce_spool_cap ends a terminal whose undelivered output has grown past
+# what this machine should hold for it.
+#
+# Closing is harsh, and it is the right end of the trade: the alternatives are
+# to keep filling a tmpfs that dockerd and containerd depend on, or to drop
+# the pane's capture and leave a terminal whose scrollback silently lies. The
+# person is told which it was.
+enforce_spool_cap() {
+  local session_id="$1" spool="$2" offset="$3" size undelivered name
+
+  [ -f "$spool" ] || return 0
+
+  size=$(wc -c "$spool" 2>/dev/null | awk '{print $1}')
+  [ -n "$size" ] || return 0
+
+  undelivered=$((size - offset))
+  [ "$undelivered" -ge "$SPOOL_MAX_UNDELIVERED" ] 2>/dev/null || return 0
+
+  name="$(session_name "$session_id")"
+
+  # Stop capturing first, so the pane cannot add to a spool we are abandoning.
+  tmux pipe-pane -t "$name" 2>/dev/null
+
+  log "closing $session_id: $undelivered bytes of output could not be delivered"
+  post_event "$session_id" "error" \
+    "this terminal produced more output than could be sent, and was closed"
+  close_session "$session_id"
 }
 
 # rotate_spool caps what one terminal can hold in RUN_DIR without losing a
