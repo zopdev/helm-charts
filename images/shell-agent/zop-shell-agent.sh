@@ -312,57 +312,96 @@ enforce_limits() {
   shopt -u nullglob
 }
 
-# pump_output ships whatever each live session has produced since last time.
+# drain_file ships everything in a spool past the offset recorded for it.
 #
-# Tracked by a per-session BYTE OFFSET rather than by truncating the spool.
-# pipe-pane holds the file open and appends to the inode, so truncating or
-# renaming it underneath loses whatever was written between the read and the
-# swap — and on a terminal that is a line of someone's output vanishing with
-# nothing to indicate it. An offset can only ever lag, never lose.
-pump_output() {
-  local spool session_id offset size chunk taken
-  shopt -s nullglob
+# One drain for both the live spool and a rotated one, because having two
+# copies of this logic is how the rotated file ended up being re-sent from
+# byte zero: the second copy did not read the offset at all.
+#
+# Returns 0 when it reached the end of the file, 1 when a POST failed and
+# there is still something to send. The offset moves only on delivery, so a
+# failure is retried rather than skipped.
+#
+# max_chunks bounds one pass; 0 means drain to the end. The live spool is
+# bounded, because a command like `yes` produces faster than this can ship
+# and the loop would never hand control back.
+drain_file() {
+  local session_id="$1" file="$2" offfile="$3" max_chunks="$4"
+  local offset size chunk taken sent=0
 
-  for spool in "$RUN_DIR"/*.out; do
-    session_id="$(basename "$spool" .out)"
+  offset=0
+  [ -f "$offfile" ] && offset="$(cat "$offfile" 2>/dev/null)"
+  [ -n "$offset" ] || offset=0
 
-    size=$(wc -c < "$spool" 2>/dev/null | tr -d ' ')
-    [ -n "$size" ] || continue
-
-    offset=0
-    [ -f "$RUN_DIR/$session_id.off" ] && offset="$(cat "$RUN_DIR/$session_id.off")"
+  while true; do
+    size=$(wc -c < "$file" 2>/dev/null | tr -d ' ')
+    [ -n "$size" ] || return 0
 
     # The shell restarted and the spool was recreated shorter than our mark.
     [ "$offset" -gt "$size" ] 2>/dev/null && offset=0
 
-    [ "$size" -gt "$offset" ] 2>/dev/null || continue
+    [ "$size" -gt "$offset" ] 2>/dev/null || return 0
 
-    # Through a file, never a variable: $(...) would strip the trailing
-    # newlines, and the offset below is derived from the bytes on disk.
     chunk="$(mktemp "$RUN_DIR/chunk.XXXXXX")"
-    tail -c "+$((offset + 1))" "$spool" | head -c "$OUTPUT_CHUNK_BYTES" > "$chunk"
+    tail -c "+$((offset + 1))" "$file" | head -c "$OUTPUT_CHUNK_BYTES" > "$chunk"
 
     taken=$(wc -c < "$chunk" | tr -d ' ')
     if [ "$taken" -le 0 ] 2>/dev/null; then
       rm -f "$chunk"
-      continue
+
+      return 0
     fi
 
-    # Only on delivery. A chunk the relay never received must be sent again
-    # on the next pass, not skipped — that is what makes the offset able to
-    # lag without ever losing.
     if ! post_event_file "$session_id" "output" "$chunk"; then
       rm -f "$chunk"
-      continue
+
+      return 1
     fi
 
     rm -f "$chunk"
 
-    # Advanced by what was actually taken, so a chunk capped at the ceiling
-    # resumes exactly where it stopped on the next pass.
     offset=$((offset + taken))
-    printf '%s' "$offset" > "$RUN_DIR/$session_id.off"
+    printf '%s' "$offset" > "$offfile"
     touch_activity "$session_id"
+
+    sent=$((sent + 1))
+    [ "$max_chunks" -gt 0 ] 2>/dev/null && [ "$sent" -ge "$max_chunks" ] && return 0
+  done
+}
+
+# pump_output ships whatever each session has produced since last time.
+#
+# Tracked by a BYTE OFFSET rather than by truncating the spool. pipe-pane
+# holds the file open and appends to the inode, so truncating or renaming it
+# underneath loses whatever was written between the read and the swap — on a
+# terminal that is a line of someone's output vanishing with nothing to
+# indicate it. An offset can only ever lag, never lose.
+pump_output() {
+  local rot spool session_id
+  shopt -s nullglob
+
+  # Rotated spools FIRST: their bytes came before anything in the live file,
+  # and shipping them second would reorder the user's screen.
+  for rot in "$RUN_DIR"/*.rot; do
+    session_id="$(basename "$rot" .rot)"
+
+    if drain_file "$session_id" "$rot" "$RUN_DIR/$session_id.rotoff" 0; then
+      rm -f "$rot" "$RUN_DIR/$session_id.rotoff"
+    fi
+  done
+
+  for spool in "$RUN_DIR"/*.out; do
+    session_id="$(basename "$spool" .out)"
+
+    # A rotation that has not finished draining must finish first, or this
+    # session's output arrives out of order.
+    [ -f "$RUN_DIR/$session_id.rot" ] && continue
+
+    drain_file "$session_id" "$spool" "$RUN_DIR/$session_id.off" 16
+
+    local offset=0
+    [ -f "$RUN_DIR/$session_id.off" ] && offset="$(cat "$RUN_DIR/$session_id.off" 2>/dev/null)"
+    [ -n "$offset" ] || offset=0
 
     [ "$offset" -ge "$SPOOL_ROTATE_BYTES" ] 2>/dev/null && rotate_spool "$session_id"
   done
@@ -370,59 +409,46 @@ pump_output() {
   shopt -u nullglob
 }
 
-# rotate_spool caps what one terminal can hold without losing a byte.
+# rotate_spool caps what one terminal can hold in RUN_DIR without losing a
+# byte, and WITHOUT re-sending one.
 #
-# The pane is re-pointed at a FRESH file first. Everything produced before
-# that command lands in the old inode, everything after in the new one, so
-# there is no window where a write can fall between the two — which is why
-# this is a rotation and not a truncate. The old file is then drained to its
-# end and dropped.
+# The pane is re-pointed at a fresh file first, so everything produced before
+# that command is in the old inode and everything after is in the new one —
+# a rotation, not a truncate, because a truncate has a window where a write
+# can fall between the read and the swap.
+#
+# The old file keeps its own offset. The earlier version drained it from
+# byte zero, which replayed the whole session to the user's screen and then
+# deleted the part it had not reached. The offset is carried across.
 rotate_spool() {
-  local session_id="$1" name spool old chunk taken guard
+  local session_id="$1" name spool old offset
   name="$(session_name "$session_id")"
   spool="$RUN_DIR/$session_id.out"
   old="$RUN_DIR/$session_id.rot"
+
+  # One rotation at a time. Overwriting a .rot that is still draining would
+  # discard exactly the bytes this function exists to preserve.
+  [ -f "$old" ] && return 0
+
+  offset=0
+  [ -f "$RUN_DIR/$session_id.off" ] && offset="$(cat "$RUN_DIR/$session_id.off" 2>/dev/null)"
+  [ -n "$offset" ] || offset=0
 
   # tmux is still appending through the fd it holds, which follows the inode.
   mv "$spool" "$old" 2>/dev/null || return 0
   : > "$spool"
 
   if ! tmux pipe-pane -t "$name" -O "cat >> $spool" 2>/dev/null; then
-    # The session went away mid-rotation. reap_finished will notice; put the
-    # tail back where it will be read rather than dropping it.
-    cat "$old" >> "$spool" 2>/dev/null
+    # The session went away mid-rotation. Put the UNSHIPPED tail back where
+    # pump_output will find it rather than dropping it.
+    tail -c "+$((offset + 1))" "$old" >> "$spool" 2>/dev/null
     rm -f "$old"
+    printf '0' > "$RUN_DIR/$session_id.off"
 
     return 0
   fi
 
-  # Whatever arrived between the last pump and the switch. Bounded so a
-  # rotation can never become an unbounded burst of its own.
-  guard=0
-  while [ "$guard" -lt 64 ]; do
-    chunk="$(mktemp "$RUN_DIR/chunk.XXXXXX")"
-    head -c "$OUTPUT_CHUNK_BYTES" "$old" > "$chunk"
-
-    taken=$(wc -c < "$chunk" | tr -d ' ')
-    if [ "$taken" -le 0 ] 2>/dev/null; then
-      rm -f "$chunk"
-      break
-    fi
-
-    if ! post_event_file "$session_id" "output" "$chunk"; then
-      rm -f "$chunk"
-      break
-    fi
-
-    rm -f "$chunk"
-
-    # Drop what was just shipped so the next pass reads the next slice.
-    tail -c "+$((taken + 1))" "$old" > "$old.tmp" 2>/dev/null && mv "$old.tmp" "$old"
-
-    guard=$((guard + 1))
-  done
-
-  rm -f "$old" "$old.tmp"
+  printf '%s' "$offset" > "$RUN_DIR/$session_id.rotoff"
   printf '0' > "$RUN_DIR/$session_id.off"
 
   log "rotated the output spool for $session_id"
@@ -444,8 +470,23 @@ reap_finished() {
       # browser has already been told; a second "exit" would be noise.
       [ -f "$spool" ] || continue
 
+      # The shell has exited but its last output may still be unsent — in a
+      # rotated spool, or in the live one. Ship it before announcing the end
+      # and deleting the files, or the final lines of a session that ended
+      # just after a rotation are lost. pump_output runs again next tick, so
+      # a failed POST here only defers the exit by one pass.
+      if [ -f "$RUN_DIR/$session_id.rot" ]; then
+        drain_file "$session_id" "$RUN_DIR/$session_id.rot" \
+          "$RUN_DIR/$session_id.rotoff" 0 || continue
+
+        rm -f "$RUN_DIR/$session_id.rot" "$RUN_DIR/$session_id.rotoff"
+      fi
+
+      drain_file "$session_id" "$spool" "$RUN_DIR/$session_id.off" 0 || continue
+
       post_event "$session_id" "exit" ""
       rm -f "$spool" "$RUN_DIR/$session_id.off" \
+        "$RUN_DIR/$session_id.rot" "$RUN_DIR/$session_id.rotoff" \
         "$RUN_DIR/$session_id.born" "$RUN_DIR/$session_id.seen"
       log "terminal $session_id ended"
     fi
@@ -460,6 +501,7 @@ close_session() {
 
   tmux kill-session -t "$name" 2>/dev/null
   rm -f "$RUN_DIR/$session_id.out" "$RUN_DIR/$session_id.off" \
+    "$RUN_DIR/$session_id.rot" "$RUN_DIR/$session_id.rotoff" \
     "$RUN_DIR/$session_id.born" "$RUN_DIR/$session_id.seen"
   log "closed terminal $session_id"
 }
@@ -521,7 +563,15 @@ poll_once() {
   response="$(curl -sS -m "$POLL_MAX_SECONDS" \
     -H @"$AUTH_FILE" \
     -w '\n%{http_code}' \
-    "$RELAY_URL/agent/shell/poll" 2>/dev/null)" || return 1
+    "$RELAY_URL/agent/shell/poll" 2>/dev/null)" || {
+    # Connection refused, DNS failure, a timeout, or a missing auth file.
+    # Logged because the backoff made this path silent: terminals stopped
+    # working and the journal said nothing about why. At most one line per
+    # backoff interval.
+    log "relay unreachable at $RELAY_URL (curl exit $?)"
+
+    return 1
+  }
 
   code="${response##*$'\n'}"
   body="${response%$'\n'*}"
@@ -556,9 +606,17 @@ poll_once() {
 # the two share is the spool, and the worst a collision there can do is skip
 # a pass.
 pump_loop() {
-  local ticks=0
+  local parent="$1" ticks=0
 
   while true; do
+    # Die with the agent. The pump is a background subshell, so a SIGKILL to
+    # the main process — which the EXIT trap cannot catch — would otherwise
+    # leave it running forever, polling every tenth of a second. The unit
+    # uses KillMode=process so that a restart does not take the user's tmux
+    # sessions with it, which means systemd will not clean this up either:
+    # every restart would strand another one.
+    kill -0 "$parent" 2>/dev/null || exit 0
+
     pump_output
     reap_finished
 
@@ -583,12 +641,20 @@ main() {
 
   log "starting for space $SPACE_ID against $RELAY_URL"
 
-  pump_loop &
+  pump_loop "$$" &
   pump_pid=$!
 
   # The pump is this process's responsibility; systemd restarting the unit
   # should not leave one behind.
-  trap 'kill "$pump_pid" 2>/dev/null; rm -f "$AUTH_FILE"' EXIT INT TERM
+  #
+  # EXIT does the cleanup; INT and TERM EXIT. A bash trap handler that merely
+  # returns hands control back to where the signal arrived, so the single
+  # combined trap this replaces killed the pump and deleted the auth file and
+  # then carried on running — restarting the pump and failing every poll,
+  # with nothing to read the Authorization header from, until systemd gave up
+  # waiting and sent SIGKILL ninety seconds later.
+  trap 'kill "$pump_pid" 2>/dev/null; rm -f "$AUTH_FILE"' EXIT
+  trap 'exit 143' INT TERM
 
   local backoff="$POLL_BACKOFF_MIN"
 
@@ -608,7 +674,7 @@ main() {
     # printing, so it is not allowed to die silently.
     if ! kill -0 "$pump_pid" 2>/dev/null; then
       log "the output pump stopped; restarting it"
-      pump_loop &
+      pump_loop "$$" &
       pump_pid=$!
     fi
   done
