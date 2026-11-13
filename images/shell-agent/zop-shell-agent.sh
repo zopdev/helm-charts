@@ -62,6 +62,22 @@ SPOOL_ROTATE_BYTES="${ZOP_SHELL_SPOOL_ROTATE_BYTES:-8388608}"
 # producing output is never idle.
 SPOOL_MAX_UNDELIVERED="${ZOP_SHELL_SPOOL_MAX_UNDELIVERED:-33554432}"
 
+# DELIVERY_FAIL_LIMIT is how many POSTs in a row must fail before the backlog
+# is treated as undeliverable rather than merely behind.
+#
+# The distinction matters more than the cap does. A backlog grows for two
+# quite different reasons: the relay is unreachable, or the shell is simply
+# printing faster than the pump ships — and the pump is deliberately bounded,
+# so a `cat` of a large log outruns it with the relay perfectly healthy. The
+# first version of this cap could not tell them apart and killed the user's
+# shell for the second, which is a far worse outcome than the one it was
+# written to prevent.
+DELIVERY_FAIL_LIMIT="${ZOP_SHELL_DELIVERY_FAIL_LIMIT:-10}"
+
+# delivery_fails counts consecutive POST failures. It lives in the pump
+# subshell, which is where every delivery and every cap check happens.
+delivery_fails=0
+
 # PUMP_INTERVAL is how often output is shipped. It is NOT tied to the poll:
 # the poll parks for as long as the relay holds it, and output must not wait
 # on that. See main().
@@ -201,11 +217,15 @@ post_event_file() {
     -H "Content-Type: application/json" \
     --data-binary "@$body" \
     "$RELAY_URL/agent/shell/events" >/dev/null 2>&1; then
+    delivery_fails=$((delivery_fails + 1))
+
     log "event $type for $session_id could not be delivered"
     rm -f "$body"
 
     return 1
   fi
+
+  delivery_fails=0
 
   rm -f "$body"
 
@@ -414,7 +434,18 @@ pump_output() {
 
     # A rotation that has not finished draining must finish first, or this
     # session's output arrives out of order.
-    [ -f "$RUN_DIR/$session_id.rot" ] && continue
+    #
+    # The cap is checked BEFORE that skip. It used to come after, so a
+    # session that had rotated once and then lost the relay skipped the cap
+    # on every pass — the .rot cannot drain while delivery fails, so the
+    # `continue` fired forever while the new live spool grew unbounded. That
+    # is the exact failure the cap exists to stop, reachable by any terminal
+    # that has passed the rotation threshold.
+    if [ -f "$RUN_DIR/$session_id.rot" ]; then
+      enforce_spool_cap "$session_id" "$spool" "$(delivered_offset "$session_id")"
+
+      continue
+    fi
 
     drain_file "$session_id" "$spool" "$RUN_DIR/$session_id.off" 16
 
@@ -438,8 +469,18 @@ pump_output() {
 # to keep filling a tmpfs that dockerd and containerd depend on, or to drop
 # the pane's capture and leave a terminal whose scrollback silently lies. The
 # person is told which it was.
+# delivered_offset reads what has actually been shipped for a session.
+delivered_offset() {
+  local v=0
+
+  [ -f "$RUN_DIR/$1.off" ] && v="$(cat "$RUN_DIR/$1.off" 2>/dev/null)"
+  [ -n "$v" ] || v=0
+
+  printf '%s' "$v"
+}
+
 enforce_spool_cap() {
-  local session_id="$1" spool="$2" offset="$3" size undelivered name
+  local session_id="$1" spool="$2" offset="$3" size undelivered rot rot_off rot_size
 
   [ -f "$spool" ] || return 0
 
@@ -447,17 +488,61 @@ enforce_spool_cap() {
   [ -n "$size" ] || return 0
 
   undelivered=$((size - offset))
+
+  # A rotated spool that has not drained is ALSO undelivered output sitting
+  # in RUN_DIR. Counting only the live file let a session hold its rotated
+  # backlog plus a full cap on top of it.
+  rot="$RUN_DIR/$session_id.rot"
+  if [ -f "$rot" ]; then
+    rot_size=$(wc -c "$rot" 2>/dev/null | awk '{print $1}')
+    rot_off=0
+    [ -f "$RUN_DIR/$session_id.rotoff" ] && rot_off="$(cat "$RUN_DIR/$session_id.rotoff" 2>/dev/null)"
+    [ -n "$rot_off" ] || rot_off=0
+    [ -n "$rot_size" ] && undelivered=$((undelivered + rot_size - rot_off))
+  fi
   [ "$undelivered" -ge "$SPOOL_MAX_UNDELIVERED" ] 2>/dev/null || return 0
 
-  name="$(session_name "$session_id")"
+  # Delivery is WORKING and the shell is just faster than the pump. Skip the
+  # backlog and say so, the way a terminal that cannot keep up drops lines.
+  # Killing the shell here would end an `apt-get upgrade` or a migration
+  # partway through for the crime of being verbose.
+  if [ "$delivery_fails" -lt "$DELIVERY_FAIL_LIMIT" ] 2>/dev/null; then
+    skip_backlog "$session_id" "$spool" "$size"
 
-  # Stop capturing first, so the pane cannot add to a spool we are abandoning.
-  tmux pipe-pane -t "$name" 2>/dev/null
+    return 0
+  fi
 
-  log "closing $session_id: $undelivered bytes of output could not be delivered"
+  # Delivery has been failing for a while, so the backlog is not going
+  # anywhere and RUN_DIR is a tmpfs the container runtime shares.
+  log "closing $session_id: $undelivered bytes undeliverable after $delivery_fails failed sends"
+  tmux pipe-pane -t "$(session_name "$session_id")" 2>/dev/null
   post_event "$session_id" "error" \
-    "this terminal produced more output than could be sent, and was closed"
+    "the terminal lost contact with the platform and was closed"
   close_session "$session_id"
+}
+
+# skip_backlog abandons what has not been sent, tells the person, and keeps
+# the terminal running.
+#
+# The offset is moved to the end, so the unsent bytes are never sent, and the
+# rotation then reclaims the file. Capture is re-pointed by rotate_spool
+# rather than stopped here, so there is no window with no capture at all.
+skip_backlog() {
+  local session_id="$1" spool="$2" size="$3"
+
+  printf '%s' "$size" > "$RUN_DIR/$session_id.off"
+
+  # Whatever was still queued in a rotated spool goes with it; it is older
+  # than what we are already skipping.
+  rm -f "$RUN_DIR/$session_id.rot" "$RUN_DIR/$session_id.rotoff"
+
+  # \r\n because this lands in a terminal emulator, not a log file.
+  post_event "$session_id" "output" \
+    "$(printf '\r\n[output skipped: this terminal produced more than could be sent]\r\n')"
+
+  log "skipped a backlog for $session_id and kept the terminal open"
+
+  rotate_spool "$session_id"
 }
 
 # rotate_spool caps what one terminal can hold in RUN_DIR without losing a
