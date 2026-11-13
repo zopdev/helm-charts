@@ -755,6 +755,37 @@ poll_once() {
   done
 }
 
+# adopt_existing_sessions gives an age to terminals this agent did not open.
+#
+# enforce_limits works from a .born file, which only exists for sessions
+# opened since that file was introduced. After an upgrade, every terminal
+# already running had none — so the age and idle limits silently skipped
+# exactly the sessions most likely to have been forgotten, which is the
+# opposite of what the limits are for. They are adopted at start instead,
+# dated from now: an approximation, and a bounded one, where the alternative
+# is no limit at all.
+adopt_existing_sessions() {
+  local spool session_id adopted=0
+  shopt -s nullglob
+
+  for spool in "$RUN_DIR"/*.out; do
+    session_id="$(basename "$spool" .out)"
+
+    [ -f "$RUN_DIR/$session_id.born" ] && continue
+
+    date +%s > "$RUN_DIR/$session_id.born"
+    touch_activity "$session_id"
+
+    adopted=$((adopted + 1))
+  done
+
+  shopt -u nullglob
+
+  [ "$adopted" -gt 0 ] && log "adopted $adopted terminal(s) left by a previous agent"
+
+  return 0
+}
+
 # pump_loop ships output on its OWN schedule.
 #
 # This has to be independent of the poll. The poll parks for as long as the
@@ -802,6 +833,8 @@ main() {
 
   install -d -m 0700 "$RUN_DIR"
   write_auth_file
+
+  adopt_existing_sessions
 
   log "starting for space $SPACE_ID against $RELAY_URL"
 
