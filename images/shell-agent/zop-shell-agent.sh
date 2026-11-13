@@ -334,7 +334,14 @@ drain_file() {
   [ -n "$offset" ] || offset=0
 
   while true; do
-    size=$(wc -c < "$file" 2>/dev/null | tr -d ' ')
+    # The session can be closed between the caller's glob and this read.
+    # Checked here, and the size is taken with the file as an ARGUMENT:
+    # `wc -c < "$file"` makes the shell open it, and the shell's own
+    # redirection error is not something `2>/dev/null` on wc can suppress —
+    # it reached the journal as a bare "No such file or directory".
+    [ -f "$file" ] || return 0
+
+    size=$(wc -c "$file" 2>/dev/null | awk '{print $1}')
     [ -n "$size" ] || return 0
 
     # The shell restarted and the spool was recreated shorter than our mark.
@@ -558,20 +565,46 @@ apply_command() {
 # asks again immediately — a refused token became several requests a second,
 # forever, with nothing in the log to say why.
 poll_once() {
-  local response body code
+  local response body code body_file
 
-  response="$(curl -sS -m "$POLL_MAX_SECONDS" \
+  # Run in the BACKGROUND and wait.
+  #
+  # Bash does not run a trap while a foreground external command is running;
+  # it waits for it to finish first. With curl parked on a 25-second poll
+  # that made SIGTERM take up to its whole timeout to be noticed, so
+  # `systemctl stop` sat there for ~24 seconds. A trap fires immediately
+  # when it interrupts `wait`.
+  body_file="$(mktemp "$RUN_DIR/poll.XXXXXX")"
+
+  curl -sS -m "$POLL_MAX_SECONDS" \
     -H @"$AUTH_FILE" \
     -w '\n%{http_code}' \
-    "$RELAY_URL/agent/shell/poll" 2>/dev/null)" || {
+    "$RELAY_URL/agent/shell/poll" > "$body_file" 2>/dev/null &
+
+  # Recorded so the EXIT trap can take it with us. The unit runs
+  # KillMode=process so that a restart leaves the user's tmux sessions
+  # alone, which also means systemd will not clean up our own children:
+  # a parked poll would otherwise sit there for its whole timeout after
+  # the agent is gone, and systemd logs it as "remains running after unit
+  # stopped".
+  poll_pid=$!
+
+  if ! wait "$poll_pid"; then
+    poll_pid=""
+    rm -f "$body_file"
     # Connection refused, DNS failure, a timeout, or a missing auth file.
     # Logged because the backoff made this path silent: terminals stopped
     # working and the journal said nothing about why. At most one line per
     # backoff interval.
-    log "relay unreachable at $RELAY_URL (curl exit $?)"
+    log "relay unreachable at $RELAY_URL"
 
     return 1
-  }
+  fi
+
+  poll_pid=""
+
+  response="$(cat "$body_file")"
+  rm -f "$body_file"
 
   code="${response##*$'\n'}"
   body="${response%$'\n'*}"
@@ -633,6 +666,8 @@ pump_loop() {
 }
 
 main() {
+  poll_pid=""
+
   require_tools
   require_secure_relay
 
@@ -653,7 +688,7 @@ main() {
   # then carried on running — restarting the pump and failing every poll,
   # with nothing to read the Authorization header from, until systemd gave up
   # waiting and sent SIGKILL ninety seconds later.
-  trap 'kill "$pump_pid" 2>/dev/null; rm -f "$AUTH_FILE"' EXIT
+  trap 'kill "$pump_pid" 2>/dev/null; [ -n "$poll_pid" ] && kill "$poll_pid" 2>/dev/null; rm -f "$AUTH_FILE"' EXIT
   trap 'exit 143' INT TERM
 
   local backoff="$POLL_BACKOFF_MIN"
@@ -665,7 +700,9 @@ main() {
     else
       # Doubling, not a fixed retry: a relay that is down or refusing this
       # token must not be hammered by every VM in the fleet at once.
-      sleep "$backoff"
+      sleep "$backoff" &
+      wait $!
+
       backoff=$((backoff * 2))
       [ "$backoff" -gt "$POLL_BACKOFF_MAX" ] && backoff="$POLL_BACKOFF_MAX"
     fi
