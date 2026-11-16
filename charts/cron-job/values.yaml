@@ -30,8 +30,7 @@ envFrom:
   configmaps: [] #List of Configmaps
 
 # All environment variables can be passed as a map
-env:
-  APP_NAME: hello-api
+env: {}
 
 # Environment variables as a list (new format)
 envList:

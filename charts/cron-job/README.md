@@ -69,7 +69,7 @@ _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command doc
 
 | Parameter | Type | Description | Default |
 |-----------|------|-------------|---------|
-| `env` | map | Environment variables for the container | `{"APP_NAME": "hello-api"}` |
+| `env` | map | Environment variables for the container | `{}` |
 | `envList` | list | Environment variables as a list | `[]` |
 | `envFrom.configmaps` | list | List of ConfigMaps to mount as environment variables | `[]` |
 | `envFrom.secrets` | list | List of Secrets to mount as environment variables | `[]` |
@@ -86,7 +86,7 @@ _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command doc
 
 | Parameter | Type | Description | Default |
 |-----------|------|-------------|---------|
-| `alerts.standard.infra.cronjobFailedThreshold` | integer | Alert if cron job execution fails beyond threshold | `0` |
+| `alerts.standard.infra.cronjobFailedThreshold` | integer | Alert if the latest run of this cron job failed with more failed pods than the threshold | `0` |
 
 ## Example values.yaml
 
