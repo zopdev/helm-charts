@@ -62,8 +62,8 @@ SPOOL_ROTATE_BYTES="${ZOP_SHELL_SPOOL_ROTATE_BYTES:-8388608}"
 # producing output is never idle.
 SPOOL_MAX_UNDELIVERED="${ZOP_SHELL_SPOOL_MAX_UNDELIVERED:-33554432}"
 
-# DELIVERY_FAIL_LIMIT is how many POSTs in a row must fail before the backlog
-# is treated as undeliverable rather than merely behind.
+# DELIVERY_DEAD_AFTER is how long delivery must have been failing before a
+# backlog is treated as undeliverable rather than merely behind.
 #
 # The distinction matters more than the cap does. A backlog grows for two
 # quite different reasons: the relay is unreachable, or the shell is simply
@@ -72,11 +72,20 @@ SPOOL_MAX_UNDELIVERED="${ZOP_SHELL_SPOOL_MAX_UNDELIVERED:-33554432}"
 # first version of this cap could not tell them apart and killed the user's
 # shell for the second, which is a far worse outcome than the one it was
 # written to prevent.
-DELIVERY_FAIL_LIMIT="${ZOP_SHELL_DELIVERY_FAIL_LIMIT:-10}"
+#
+# It is ELAPSED TIME, not a count of failed POSTs. A count is paced by the
+# pump, and the pump runs every tenth of a second: ten consecutive failures
+# is about two seconds, so a 502 during a deployer rollout or a load-balancer
+# reset killed the terminal — and whatever it was running — before anyone
+# could notice the relay had blinked. Several minutes of silence is a dead
+# relay; two seconds is a blip, and a blip must cost at most some output.
+DELIVERY_DEAD_AFTER="${ZOP_SHELL_DELIVERY_DEAD_AFTER:-300}"
 
-# delivery_fails counts consecutive POST failures. It lives in the pump
-# subshell, which is where every delivery and every cap check happens.
-delivery_fails=0
+# last_delivery_ok is when the relay last accepted an event, as epoch
+# seconds. It lives in the pump subshell, which is where every delivery and
+# every cap check happens. It starts now so that a relay which is down before
+# the first event still gets the full grace period.
+last_delivery_ok=$(date +%s)
 
 # PUMP_INTERVAL is how often output is shipped. It is NOT tied to the poll:
 # the poll parks for as long as the relay holds it, and output must not wait
@@ -217,19 +226,27 @@ post_event_file() {
     -H "Content-Type: application/json" \
     --data-binary "@$body" \
     "$RELAY_URL/agent/shell/events" >/dev/null 2>&1; then
-    delivery_fails=$((delivery_fails + 1))
-
     log "event $type for $session_id could not be delivered"
     rm -f "$body"
 
     return 1
   fi
 
-  delivery_fails=0
+  last_delivery_ok=$(date +%s)
 
   rm -f "$body"
 
   return 0
+}
+
+# delivery_is_dead is true when nothing has been accepted for long enough
+# that the backlog is not going to drain. Anything shorter is a blip, and a
+# blip must not cost the user the process their terminal is running.
+delivery_is_dead() {
+  local now
+  now=$(date +%s)
+
+  [ "$((now - last_delivery_ok))" -ge "$DELIVERY_DEAD_AFTER" ] 2>/dev/null
 }
 
 # post_event is the small-payload form: exits and errors, never output.
@@ -416,13 +433,14 @@ drain_file() {
 # terminal that is a line of someone's output vanishing with nothing to
 # indicate it. An offset can only ever lag, never lose.
 pump_output() {
-  local rot spool session_id
+  local rot spool session_id pending=0
   shopt -s nullglob
 
   # Rotated spools FIRST: their bytes came before anything in the live file,
   # and shipping them second would reorder the user's screen.
   for rot in "$RUN_DIR"/*.rot; do
     session_id="$(basename "$rot" .rot)"
+    pending=1
 
     if drain_file "$session_id" "$rot" "$RUN_DIR/$session_id.rotoff" 0; then
       rm -f "$rot" "$RUN_DIR/$session_id.rotoff"
@@ -449,15 +467,29 @@ pump_output() {
 
     drain_file "$session_id" "$spool" "$RUN_DIR/$session_id.off" 16
 
-    local offset=0
+    local offset=0 size
     [ -f "$RUN_DIR/$session_id.off" ] && offset="$(cat "$RUN_DIR/$session_id.off" 2>/dev/null)"
     [ -n "$offset" ] || offset=0
+
+    size=$(wc -c "$spool" 2>/dev/null | awk '{print $1}')
+    [ -n "$size" ] && [ "$size" -gt "$offset" ] 2>/dev/null && pending=1
 
     [ "$offset" -ge "$SPOOL_ROTATE_BYTES" ] 2>/dev/null && rotate_spool "$session_id"
 
     # Nothing above bounds a backlog that is not being delivered.
     enforce_spool_cap "$session_id" "$spool" "$offset"
   done
+
+  # Nothing is waiting to be sent, so the agent is not stuck — whatever its
+  # last POST happened to be.
+  #
+  # Without this, last_delivery_ok only ever moved on a successful POST, and
+  # a terminal nobody is typing into sends nothing at all. An hour of quiet
+  # aged it past DELIVERY_DEAD_AFTER, so the FIRST burst of output after a
+  # quiet spell met a clock that already said "dead relay" and the terminal
+  # was closed with the relay perfectly healthy — the same kill-for-being-
+  # verbose this whole path exists to avoid, just with a longer fuse.
+  [ "$pending" -eq 0 ] && last_delivery_ok=$(date +%s)
 
   shopt -u nullglob
 }
@@ -502,19 +534,23 @@ enforce_spool_cap() {
   fi
   [ "$undelivered" -ge "$SPOOL_MAX_UNDELIVERED" ] 2>/dev/null || return 0
 
-  # Delivery is WORKING and the shell is just faster than the pump. Skip the
-  # backlog and say so, the way a terminal that cannot keep up drops lines.
-  # Killing the shell here would end an `apt-get upgrade` or a migration
-  # partway through for the crime of being verbose.
-  if [ "$delivery_fails" -lt "$DELIVERY_FAIL_LIMIT" ] 2>/dev/null; then
-    skip_backlog "$session_id" "$spool" "$size"
+  # Free RUN_DIR first, and in BOTH cases.
+  #
+  # skip_backlog drops the undelivered bytes and re-points capture at a fresh
+  # file, which is the whole job the cap exists to do — it does not care why
+  # the backlog grew. Doing it unconditionally means a relay that is merely
+  # slow, or briefly refusing, costs the user some output and nothing else.
+  skip_backlog "$session_id" "$spool" "$size"
 
-    return 0
-  fi
+  # Only a relay that has been silent for DELIVERY_DEAD_AFTER ends the
+  # terminal. The shell is still running as root on this VM and the platform
+  # can no longer see it, so something has to; but a `docker logs -f` through
+  # a load-balancer reset is not that, and killing it would end an
+  # `apt-get upgrade` or a migration partway through for the crime of being
+  # verbose while the network blinked.
+  delivery_is_dead || return 0
 
-  # Delivery has been failing for a while, so the backlog is not going
-  # anywhere and RUN_DIR is a tmpfs the container runtime shares.
-  log "closing $session_id: $undelivered bytes undeliverable after $delivery_fails failed sends"
+  log "closing $session_id: nothing delivered for ${DELIVERY_DEAD_AFTER}s"
   tmux pipe-pane -t "$(session_name "$session_id")" 2>/dev/null
   post_event "$session_id" "error" \
     "the terminal lost contact with the platform and was closed"
@@ -536,13 +572,22 @@ skip_backlog() {
   # than what we are already skipping.
   rm -f "$RUN_DIR/$session_id.rot" "$RUN_DIR/$session_id.rotoff"
 
-  # \r\n because this lands in a terminal emulator, not a log file.
-  post_event "$session_id" "output" \
-    "$(printf '\r\n[output skipped: this terminal produced more than could be sent]\r\n')"
-
   log "skipped a backlog for $session_id and kept the terminal open"
 
   rotate_spool "$session_id"
+
+  # The marker goes INTO the fresh spool, not out through post_event.
+  #
+  # A skip happens exactly when delivery is struggling, which is exactly when
+  # an event POST is most likely to be refused — so the notice explaining the
+  # gap was the thing most likely to be lost, and the user saw output simply
+  # vanish. Written here it is ordinary terminal output: it rides the same
+  # drain as everything else and arrives when the relay next accepts, in the
+  # right place in the stream.
+  #
+  # \r\n because this lands in a terminal emulator, not a log file.
+  printf '\r\n[output skipped: this terminal produced more than could be sent]\r\n' \
+    >> "$RUN_DIR/$session_id.out" 2>/dev/null || true
 }
 
 # rotate_spool caps what one terminal can hold in RUN_DIR without losing a
