@@ -402,10 +402,10 @@ entries:
   cron-job:
   - apiVersion: v1
     appVersion: "1.0"
-    created: "2026-11-17T15:11:06.46229+05:30"
+    created: "2026-11-19T14:35:49.000000+05:30"
     description: Helm chart creates a cron-job, service, alerts along with serviceMonitor
       etc
-    digest: 8084b5a4338f0917ffdfa849e869294022bc13a45a02f7403fa11cbe47dfb1c0
+    digest: 2d740462e190ea8b13e8fccfa609329f67cd8d1c7ae9c4a6abf8200be2f87085
     icon: https://zop.dev/logo.png
     maintainers:
     - name: ZopDev
