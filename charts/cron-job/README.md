@@ -69,7 +69,7 @@ _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command doc
 
 | Parameter | Type | Description | Default |
 |-----------|------|-------------|---------|
-| `env` | map | Environment variables for the container | `{"APP_NAME": "hello-api"}` |
+| `env` | map | Environment variables for the container | `{}` |
 | `envList` | list | Environment variables as a list | `[]` |
 | `envFrom.configmaps` | list | List of ConfigMaps to mount as environment variables | `[]` |
 | `envFrom.secrets` | list | List of Secrets to mount as environment variables | `[]` |
@@ -86,7 +86,14 @@ _See [helm uninstall](https://helm.sh/docs/helm/helm_uninstall/) for command doc
 
 | Parameter | Type | Description | Default |
 |-----------|------|-------------|---------|
-| `alerts.standard.infra.cronjobFailedThreshold` | integer | Alert if cron job execution fails beyond threshold | `0` |
+| `alerts.standard.infra.cronjobFailedThreshold` | integer | Alert if the latest run of this cron job failed with more failed pods than the threshold | `0` |
+
+The failure alert watches only Jobs named `<name>-` followed by hex characters (`0-9`, `a-f`): the CronJob's own runs and Jobs started with `kubectl create job <name>-<hex> --from=cronjob/<name>`. A Job started by hand under any other name, such as `<name>-manual`, is not watched.
+
+## Upgrading to 0.0.19
+
+- The default `env` is now empty (`{}`). Under 0.0.18 Helm merged the sample `APP_NAME: hello-api` into every job's environment, so if a job relied on it, set `env.APP_NAME` explicitly in your values.
+- The failure alert no longer matches every Job named `<name>-*`; see the note under [Alerting Configuration](#alerting-configuration) for the names it watches.
 
 ## Example values.yaml
 

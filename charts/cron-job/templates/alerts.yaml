@@ -11,11 +11,26 @@ spec:
   groups:
     - name: {{ .Release.Namespace }}.{{ .Values.name }}.rules
       rules:
-        # Alert if the cron job failed.
+        # Alert if the latest run of this cron job failed.
+        # Only this cron job's own Jobs count: scheduled runs are named <name>-<digits>
+        # and run-once Jobs <name>-<hex>, so job_name must be <name>- followed by hex
+        # characters only (a Job of another cron job such as <name>-other-123 never matches).
+        # topk picks the newest of those Jobs, so an older failed run stops alerting as
+        # soon as a newer run starts, and the alert fires only when that newest Job has
+        # failed for good (kube_job_failed), not while it is still retrying.
         - alert: {{ snakecase .Values.name }}_cron_job_failed
           annotations:
-            description: "CronJob {{ .Values.name }} failed to complete in {{.Release.Name}} namespace."
-          expr: kube_job_status_failed{namespace="{{ .Release.Namespace }}",job_name=~"{{ .Values.name }}-.*"} > {{.Values.alerts.standard.infra.cronjobFailedThreshold}}
+            description: "CronJob {{ .Values.name }} failed to complete in {{ .Release.Namespace }} namespace."
+          expr: |-
+            (
+              max by (namespace, job_name) (kube_job_status_failed{namespace="{{ .Release.Namespace }}",job_name=~"{{ .Values.name }}-[0-9a-f]+"}) > {{.Values.alerts.standard.infra.cronjobFailedThreshold}}
+            )
+            and on (namespace, job_name)
+            (
+              max by (namespace, job_name) (kube_job_failed{namespace="{{ .Release.Namespace }}",job_name=~"{{ .Values.name }}-[0-9a-f]+",condition="true"}) == 1
+            )
+            and on (namespace, job_name)
+            topk by (namespace) (1, max by (namespace, job_name) (kube_job_status_start_time{namespace="{{ .Release.Namespace }}",job_name=~"{{ .Values.name }}-[0-9a-f]+"}))
           labels:
             severity: critical
             servicealert: "true"
