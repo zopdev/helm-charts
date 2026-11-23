@@ -1,0 +1,151 @@
+# First listmonk admin account. listmonk reads these ONLY on the first start
+# against an empty database (./listmonk --install). After that the account
+# lives in Postgres: change the password from Admin -> Users in listmonk, not
+# here - editing these later changes nothing.
+admin:
+  username: "admin"
+  # 8 characters or more. Leave empty and a random password is generated into
+  # the <release>-admin Secret (see NOTES after install for how to read it).
+  password: ""
+
+# PostgreSQL backing store (zopdev/postgres subchart). Creates database
+# "listmonk" and a user scoped to it; the connection details arrive through
+# service.envFrom below.
+postgres:
+  name: "listmonk"
+  diskSize: "10Gi"
+  services:
+    - name: "listmonk"
+      database: "listmonk"
+
+service:
+  # NOT "listmonk". The service subchart names its PrometheusRule after this
+  # value and the postgres subchart names its own after the release, so a
+  # release called "listmonk" would render two rules named "listmonk" and helm
+  # refuses to install:
+  #   Error: prometheusrules.monitoring.coreos.com "listmonk" already exists
+  name: listmonk-app
+  image: "listmonk/listmonk:v6.2.0"
+  minCPU: "100m"
+  minMemory: "128Mi"
+  maxCPU: "500m"
+  maxMemory: "512Mi"
+  # One pod only. Every start runs the database install/upgrade (see command),
+  # which must not run in two pods at once, and uploads sit on a ReadWriteOnce
+  # volume.
+  minReplicas: 1
+  maxReplicas: 1
+
+  nginx:
+    # Hostname listmonk is served on. Empty means no Ingress is created.
+    host: ""
+    annotations:
+      kubernetes.io/ingress.class: "nginx"
+    tlsHost: ""
+    tlsSecretName: ""
+
+  env:
+    # Listen on all interfaces; the image's config.toml says localhost:9000,
+    # which the kubelet probes and the Service cannot reach.
+    LISTMONK_app__address: "0.0.0.0:9000"
+    # The bundled Postgres has no TLS.
+    LISTMONK_db__ssl_mode: "disable"
+
+  # Pulled in by name rather than service.datastores, because the service chart
+  # runs these names through tpl, so {{ .Release.Name }} resolves for any
+  # release name.
+  envFrom:
+    configmaps:
+      # DB_HOST, DB_PORT, DB_NAME (postgres.services[0] is listmonk/listmonk)
+      - "{{ .Release.Name }}-listmonk-listmonk-postgres-configmap"
+    secrets:
+      # DB_USER, DB_PASSWORD
+      - "{{ .Release.Name }}-listmonk-listmonk-postgres-database-secret"
+      # LISTMONK_ADMIN_USER, LISTMONK_ADMIN_PASSWORD - templates/admin-secret.yaml
+      - "{{ .Release.Name }}-admin"
+
+  # listmonk only reads its database settings as LISTMONK_db__* (it has no
+  # DATABASE_URL), while the postgres subchart hands out DB_*. The service chart
+  # puts env into a ConfigMap, where $(VAR) is never expanded, so the mapping is
+  # done by the shell at start. This replaces the image entrypoint, which only
+  # exists to drop from root to PUID; the pod already runs as uid 1000.
+  #
+  # Then, on every start: create the schema and the first admin if the database
+  # is empty (--idempotent makes it a no-op afterwards), apply any migrations
+  # for a newer image (--upgrade), and run listmonk. The install step is retried
+  # because on a fresh install the postgres init Job creates the listmonk user
+  # a little after the pod starts; it gives up after 10 minutes so a real
+  # misconfiguration fails visibly.
+  command:
+    - /bin/sh
+    - -c
+    - |
+      set -e
+      export LISTMONK_db__host="$DB_HOST" LISTMONK_db__port="$DB_PORT" \
+        LISTMONK_db__user="$DB_USER" LISTMONK_db__password="$DB_PASSWORD" \
+        LISTMONK_db__database="$DB_NAME"
+      deadline=$(( $(date +%s) + 600 ))
+      until ./listmonk --install --idempotent --yes; do
+        if [ "$(date +%s)" -ge "$deadline" ]; then
+          echo "gave up waiting for postgres"; exit 1
+        fi
+        echo "postgres not ready, retrying in 5s"; sleep 5
+      done
+      ./listmonk --upgrade --yes
+      unset LISTMONK_ADMIN_USER LISTMONK_ADMIN_PASSWORD
+      exec ./listmonk
+
+  # Recreate, not the default RollingUpdate: with one replica on the
+  # ReadWriteOnce uploads volume, a surge pod scheduled on another node would
+  # wait forever for the volume the old pod still holds, and the rollout stalls.
+  strategy:
+    type: Recreate
+
+  # Runs as a non-root user. /listmonk in the image is root-owned but
+  # world-readable, which is all listmonk needs; fsGroup makes the uploads
+  # volume writable. Setting this also drops all capabilities and blocks
+  # privilege escalation on the container.
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    fsGroupChangePolicy: OnRootMismatch
+    seccompProfile: RuntimeDefault
+
+  alerts:
+    enabled: true
+
+  # /health answers without a session.
+  heartbeatURL: /health
+  httpPort: 9000
+
+  # The first start runs the install and waits for postgres, so liveness gets
+  # a long grace period before it may restart the pod.
+  livenessProbe:
+    enable: true
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 6
+
+  readinessProbe:
+    enable: true
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+  # Media uploaded in campaigns and templates (listmonk's default "uploads"
+  # path, relative to /listmonk). Without a volume they are lost on every pod
+  # restart, breaking images in campaigns already sent.
+  volumeMounts:
+    pvc:
+      - name: listmonk-uploads
+        mountPath: /listmonk/uploads
+        subPath: ""
+        storage: "5Gi"
+        # Outlives helm uninstall, like the Postgres volume whose campaigns
+        # link to these files. Delete the PVC by hand to drop the uploads.
+        annotations:
+          helm.sh/resource-policy: keep

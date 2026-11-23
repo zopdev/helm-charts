@@ -1,0 +1,25 @@
+apiVersion: v2
+appVersion: "6.2.0"
+description: Helm chart for deploying listmonk, a self-hosted newsletter and mailing list manager
+name: listmonk
+version: 0.0.1
+icon: "https://raw.githubusercontent.com/knadh/listmonk/v6.2.0/static/public/static/favicon.png"
+type: application
+dependencies:
+  # Postgres holds every subscriber, list, campaign, template and setting. The
+  # subchart creates database "listmonk" and a user scoped to it, and emits a
+  # ConfigMap (DB_HOST/DB_PORT/DB_NAME) and Secret (DB_USER/DB_PASSWORD) per
+  # database, pulled in via service.envFrom (see values.yaml).
+  - name: postgres
+    version: 0.0.15
+    repository: https://helm.zop.dev
+  # Its PrometheusRule follows service.name ("listmonk-app"); the postgres one is
+  # named after the release, so the two never share a name.
+  - name: service
+    version: 0.0.36
+    repository: https://helm.zop.dev
+maintainers:
+  - name: ZopDev
+    url: zop.dev
+annotations:
+  type: application

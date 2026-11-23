@@ -69,6 +69,10 @@ const CHART_DISPLAY = {
     name: "LiteLLM",
     description: "One OpenAI-compatible proxy in front of every LLM provider",
   },
+  listmonk: {
+    name: "listmonk",
+    description: "Self-hosted newsletter and mailing list manager",
+  },
   localai: {
     name: "LocalAI",
     description: "OpenAI-compatible inference API that runs models on your own cluster",
