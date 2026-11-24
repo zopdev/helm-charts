@@ -212,6 +212,70 @@ valid_session_id() {
   [ "${#1}" -eq 36 ]
 }
 
+# SABLIER_URL is where scale-to-zero listens on this host. It binds
+# 127.0.0.1 only (see the scale-to-zero component), so this is reachable from
+# the agent — which runs ON the host — and from nowhere else.
+SABLIER_URL="${ZOP_SABLIER_URL:-http://127.0.0.1:10000}"
+
+# WAKE_TIMEOUT bounds the wait for a woken container. A cold image start is
+# seconds; a minute is generous and still well under the browser's patience.
+WAKE_TIMEOUT="${ZOP_WAKE_TIMEOUT:-60}"
+
+# container_running answers the question the exec actually depends on.
+# `docker inspect` alone only proves the container EXISTS — it succeeds for a
+# stopped one, which is exactly what scale-to-zero leaves behind.
+container_running() {
+  [ "$(docker inspect -f '{{.State.Running}}' -- "$1" 2>/dev/null)" = "true" ]
+}
+
+# wake_container asks scale-to-zero to start a container, the same way a
+# visitor's HTTP request does, then waits for docker to agree it is running.
+#
+# The request REGISTERS a session with Sablier, which is the part that
+# matters: it is what stops Sablier putting the container back to sleep while
+# someone is typing in it. `docker start` would skip that and race the very
+# component it is working around.
+#
+# BLOCKING, not dynamic. Sablier's two start strategies differ in what they
+# do while the container comes up: /api/strategies/dynamic answers
+# immediately with an HTML waiting page for a browser to re-poll, while
+# /api/strategies/blocking holds the request until the instance is ready and
+# answers JSON. A terminal has no page to show and nothing to re-poll with,
+# so blocking is the one that fits. Both take Go durations.
+#
+# The docker poll after it is deliberate belt-and-braces: blocking returning
+# means SABLIER considers the instance ready, and `docker exec` needs the
+# container actually running. The wait is short because blocking has already
+# done the waiting.
+#
+# Returns non-zero if scale-to-zero is not installed, cannot be reached, or
+# the container does not come up in time. The caller reports that; it does not
+# fall back to starting the container itself.
+wake_container() {
+  local name="$1" deadline
+
+  # session_duration outlives the shell's own idle limit, so the container is
+  # not reaped from under an open terminal.
+  #
+  # Interpolated raw, and safe to be: valid_container_name has already held
+  # the name to docker's charset, [a-zA-Z0-9][a-zA-Z0-9_.-]*, every character
+  # of which is URL-safe. open_session calls that check before this.
+  curl -fsS -m "$(( WAKE_TIMEOUT + 5 ))" -o /dev/null \
+    "$SABLIER_URL/api/strategies/blocking?names=$name&session_duration=45m&timeout=${WAKE_TIMEOUT}s" \
+    2>/dev/null || true
+
+  deadline=$(( $(date +%s) + 10 ))
+  while [ "$(date +%s)" -lt "$deadline" ]; do
+    if container_running "$name"; then
+      return 0
+    fi
+
+    sleep 1
+  done
+
+  return 1
+}
+
 # valid_container_name holds docker's own charset. A name beginning with "-"
 # is read by docker as an option, so the leading character is constrained
 # separately and every call also uses `--`.
@@ -317,9 +381,31 @@ open_session() {
     fi
 
     if ! docker inspect --type container -- "$container" >/dev/null 2>&1; then
-      post_event "$session_id" "error" "container $container is not running on this VM"
+      post_event "$session_id" "error" "no container named $container on this VM"
 
       return
+    fi
+
+    # EXISTS is not RUNNING, and `docker inspect` answers the first question.
+    # A scale-to-zero service is stopped, not absent, so it sailed through the
+    # check above and `docker exec` then failed with the daemon's own words —
+    # "Error response from daemon: container <64 hex> is not running" — and
+    # the session ended on the spot.
+    #
+    # Scale-to-zero's contract is "wakes on request", and opening a terminal
+    # IS a request. Sablier is what honours it for an HTTP visitor, so the
+    # terminal asks Sablier too rather than reaching for `docker start`:
+    # starting the container behind its back leaves it with no session
+    # registered, and it stops the container again underneath the shell.
+    if ! container_running "$container"; then
+      post_event "$session_id" "info" "$container is scaled to zero — starting it"
+
+      if ! wake_container "$container"; then
+        post_event "$session_id" "error" \
+          "$container is not running and could not be started; open the service once to wake it, then reconnect"
+
+        return
+      fi
     fi
 
     program=(docker exec -it -- "$container" sh)
