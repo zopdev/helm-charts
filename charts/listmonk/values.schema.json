@@ -55,6 +55,7 @@
         },
         "nginx": {
           "type": "object",
+          "category": "advanced",
           "description": "nginx Ingress for listmonk. Created only when host is set",
           "properties": {
             "host": {
