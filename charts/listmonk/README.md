@@ -32,23 +32,16 @@ helm dependency build charts/listmonk
 ```bash
 helm repo add zopdev https://helm.zop.dev
 helm repo update
-helm install listmonk zopdev/listmonk --set admin.password='<8+ characters>'
+helm install listmonk zopdev/listmonk
 ```
 
 Any release name works except `listmonk-app` (its PrometheusRule would clash with the service one); Postgres is wired in by `<release>-…` names. Install **one listmonk per namespace**: the Deployment (`listmonk-app`) and uploads PVC (`listmonk-uploads`) have fixed names.
 
 ### Admin account
 
-The first admin is created from `admin.username` and `admin.password`, stored in the `<release>-admin` Secret:
+The chart creates **no** admin account. The first visit to `/admin` shows listmonk's **New user** page, where you pick the Super Admin e-mail, username and password. After that, manage users from **Admin → Users**.
 
-- Set `admin.password` (8+ characters) and sign in with it.
-- Leave it empty and a random 24-character password is generated, kept across upgrades. Read it with:
-
-  ```bash
-  kubectl get secret <release>-admin -o jsonpath='{.data.LISTMONK_ADMIN_PASSWORD}' | base64 -d; echo
-  ```
-
-listmonk reads these **only on the first install**, into an empty database. After that the account lives in Postgres, so change the password from **Admin → Users** in listmonk. Changing `admin.*` later has no effect.
+> **Claim it right away.** Until that page is filled in, anyone who can reach listmonk can create the Super Admin account. Open it straight after install (port-forward is enough), before giving it a public hostname.
 
 ### Open it
 
@@ -65,7 +58,7 @@ listmonk reads its database settings only as `LISTMONK_db__*`, while the postgre
 
 An **init container** prepares the database before listmonk starts:
 
-1. `./listmonk --install --idempotent --yes`: creates the schema and the admin account on an empty database, and is a no-op afterwards. On a fresh install it is retried every 5 s until the postgres init Job has created listmonk's user, giving up after 10 minutes.
+1. `./listmonk --install --idempotent --yes`: creates the schema on an empty database, and is a no-op afterwards. On a fresh install it is retried every 5 s until the postgres init Job has created listmonk's user, giving up after 10 minutes.
 2. `./listmonk --upgrade --yes`: applies the migrations of a newer image. listmonk refuses to start while migrations are pending. **Back up Postgres before raising the image.**
 
 Then the main container just runs `./listmonk`. Doing the install and migrations in an init container keeps them out of reach of the liveness probe, which would otherwise restart the pod during a slow first install or part way through a long migration.
@@ -74,7 +67,7 @@ Then the main container just runs `./listmonk`. Doing the install and migrations
 
 The chart runs exactly one replica (`minReplicas`/`maxReplicas` 1, `Recreate` strategy): migrations must not run in two pods at once, and uploads sit on a ReadWriteOnce volume.
 
-The pod runs as uid 1000, non-root, with all capabilities dropped. The admin Secret is mounted only into the init container.
+The pod runs as uid 1000, non-root, with all capabilities dropped.
 
 **Health checks:** both probes use `/health`, which listmonk answers without touching Postgres. A Postgres outage therefore does not restart or un-ready the pod. listmonk reconnects on its own once Postgres is back, but the Service keeps routing to it while the database is down.
 
@@ -84,9 +77,9 @@ The pod runs as uid 1000, non-root, with all capabilities dropped. The admin Sec
 helm uninstall listmonk
 ```
 
-Uninstall **keeps your data**: the Postgres volume (as with any StatefulSet), the `listmonk-uploads` volume and the `<release>-admin` Secret (`helm.sh/resource-policy: keep`).
+Uninstall **keeps your data**: the Postgres volume (as with any StatefulSet) and the `listmonk-uploads` volume (`helm.sh/resource-policy: keep`).
 
-The postgres subchart's own credential Secrets are **not** kept, so a reinstall onto the retained Postgres volume fails with `password authentication failed for user "postgres"` in the `postgres-<release>-listmonk-init-*` Job. To start from scratch, delete the PVCs and the `<release>-admin` Secret before reinstalling.
+The postgres subchart's own credential Secrets are **not** kept, so a reinstall onto the retained Postgres volume fails with `password authentication failed for user "postgres"` in the `postgres-<release>-listmonk-init-*` Job. To start from scratch, delete the PVCs before reinstalling.
 
 ---
 
@@ -94,8 +87,6 @@ The postgres subchart's own credential Secrets are **not** kept, so a reinstall 
 
 | Key | Default | Description |
 |-----|---------|-------------|
-| `admin.username` | `admin` | First admin's login name, 3+ characters. First install only |
-| `admin.password` | `""` | First admin's password, 8+ characters. Empty generates one. First install only |
 | `service.image` | `listmonk/listmonk:v6.2.0` | listmonk image. Raising it migrates the database |
 | `service.initContainer.image` | `listmonk/listmonk:v6.2.0` | Image that installs and migrates the database. Must equal `service.image` |
 | `service.nginx.host` | `""` | Ingress hostname. Empty means no Ingress |

@@ -1,12 +1,8 @@
-# First listmonk admin account. listmonk reads these ONLY on the first start
-# against an empty database (./listmonk --install). After that the account
-# lives in Postgres: change the password from Admin -> Users in listmonk, not
-# here - editing these later changes nothing.
-admin:
-  username: "admin"
-  # 8 characters or more. Leave empty and a random password is generated into
-  # the <release>-admin Secret (see NOTES after install for how to read it).
-  password: ""
+# No admin account is set here. listmonk's first install creates none, and the
+# first visit to /admin shows its "New user" page to pick the Super Admin
+# e-mail, username and password. Until someone does, ANYONE who can reach the
+# URL can claim it: open listmonk right after install, before exposing it more
+# widely.
 
 # PostgreSQL backing store (zopdev/postgres subchart). Creates database
 # "listmonk" and a user scoped to it; the connection details arrive through
@@ -84,7 +80,7 @@ service:
         LISTMONK_db__database="$DB_NAME"
       exec ./listmonk
 
-  # Creates the schema and first admin on an empty database (--idempotent makes
+  # Creates the schema on an empty database (--idempotent makes
   # it a no-op afterwards), then applies the migrations of a newer image
   # (--upgrade; listmonk refuses to start with migrations pending). An init
   # container, not the main command, because the liveness probe would restart
@@ -98,8 +94,7 @@ service:
   # The service chart gives init containers Secrets only (no ConfigMaps), so
   # there is no DB_HOST here: the host is built from the release name (the
   # command goes through tpl) and port/database are the postgres subchart's
-  # fixed values. The admin Secret is mounted only here - the running app
-  # never needs it.
+  # fixed values.
   initContainer:
     # MUST equal service.image above: the migrations run by this binary are the
     # ones the app expects. templates/validate.yaml fails the render otherwise.
@@ -126,8 +121,6 @@ service:
       secrets:
         # DB_USER, DB_PASSWORD
         - "{{ .Release.Name }}-listmonk-listmonk-postgres-database-secret"
-        # LISTMONK_ADMIN_USER, LISTMONK_ADMIN_PASSWORD - templates/admin-secret.yaml
-        - "{{ .Release.Name }}-admin"
     resources:
       requests:
         cpu: "50m"

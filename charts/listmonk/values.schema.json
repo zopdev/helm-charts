@@ -2,33 +2,6 @@
   "$schema": "https://json-schema.org/draft-07/schema#",
   "type": "object",
   "properties": {
-    "admin": {
-      "type": "object",
-      "category": "runtime",
-      "description": "First listmonk admin account, created on the first install",
-      "properties": {
-        "username": {
-          "type": "string",
-          "minLength": 3,
-          "description": "Login name for the first admin account, 3 characters or more",
-          "default": "admin",
-          "mutable": true,
-          "editDisabled": true
-        },
-        "password": {
-          "type": "string",
-          "format": "password",
-          "pattern": "^(.{8,})?$",
-          "description": "Password for the first admin account, 8 characters or more. Used only on the first install; change it later from Admin -> Users in listmonk. Leave empty to generate one into the <release>-admin Secret",
-          "default": "",
-          "mutable": true,
-          "editDisabled": true
-        }
-      },
-      "required": [
-        "username"
-      ]
-    },
     "service": {
       "type": "object",
       "category": "runtime",

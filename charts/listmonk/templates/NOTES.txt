@@ -1,16 +1,10 @@
-listmonk is starting. The first start creates the database schema and the
-admin account, so the pod can take a minute or two to become Ready.
+listmonk is starting. The first start creates the database schema, so the
+pod can take a minute or two to become Ready.
 
-Sign in as "{{ .Values.admin.username }}" with the password
-{{- if .Values.admin.password }} you set in admin.password.
-{{- else }} generated into a Secret:
-
-  kubectl get secret {{ .Release.Name }}-admin -n {{ .Release.Namespace }} \
-    -o jsonpath='{.data.LISTMONK_ADMIN_PASSWORD}' | base64 -d; echo
-{{- end }}
-
-The account is created once. To change the password later, use
-Admin -> Users in listmonk; editing admin.* afterwards has no effect.
+No admin account exists yet. The first visit to /admin shows listmonk's
+"New user" page: pick the Super Admin e-mail, username and password there.
+Until you do, anyone who can reach the URL can claim that account, so open
+it right away.
 {{- if .Values.service.nginx.host }}
 
 Open: https://{{ .Values.service.nginx.host }}/admin
