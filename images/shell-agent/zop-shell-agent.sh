@@ -396,12 +396,14 @@ enforce_limits() {
 # byte zero: the second copy did not read the offset at all.
 #
 # Returns 0 when it reached the end of the file, 1 when a POST failed and
-# there is still something to send. The offset moves only on delivery, so a
+# there is still something to send, and 2 when max_chunks stopped it with the
+# file possibly not yet exhausted. The offset moves only on delivery, so a
 # failure is retried rather than skipped.
 #
 # max_chunks bounds one pass; 0 means drain to the end. The live spool is
 # bounded, because a command like `yes` produces faster than this can ship
-# and the loop would never hand control back.
+# and the loop would never hand control back. Only a bounded pass can return
+# 2, so the callers that drain to the end keep treating non-zero as failure.
 drain_file() {
   local session_id="$1" file="$2" offfile="$3" max_chunks="$4"
   local offset size chunk taken sent=0
@@ -449,7 +451,7 @@ drain_file() {
     touch_activity "$session_id"
 
     sent=$((sent + 1))
-    [ "$max_chunks" -gt 0 ] 2>/dev/null && [ "$sent" -ge "$max_chunks" ] && return 0
+    [ "$max_chunks" -gt 0 ] 2>/dev/null && [ "$sent" -ge "$max_chunks" ] && return 2
   done
 }
 
@@ -461,7 +463,7 @@ drain_file() {
 # terminal that is a line of someone's output vanishing with nothing to
 # indicate it. An offset can only ever lag, never lose.
 pump_output() {
-  local rot spool session_id pending=0
+  local rot spool session_id pending=0 offset rc
   shopt -s nullglob
 
   # Rotated spools FIRST: their bytes came before anything in the live file,
@@ -490,6 +492,12 @@ pump_output() {
     # is the exact failure the cap exists to stop, reachable by any terminal
     # that has passed the rotation threshold.
     if [ -f "$RUN_DIR/$session_id.rot" ]; then
+      # The live spool will need a full pass once the rotation has drained:
+      # rotate_spool writes .off AFTER the new spool exists, so whatever
+      # landed in that gap is newer-than-nothing and the skip below would
+      # never look at it.
+      backlog[$session_id]=1
+
       enforce_spool_cap "$session_id" "$spool" "$(delivered_offset "$session_id")"
 
       continue
@@ -505,21 +513,39 @@ pump_output() {
     # credits spent on discovering that nothing happened. `-nt` is a bash
     # builtin and forks nothing.
     #
-    # A failed delivery does not write the offset file, so the spool stays
-    # newer and the retry keeps happening; the skip can only ever fire when
-    # there is genuinely nothing to send.
-    [ "$spool" -nt "$RUN_DIR/$session_id.off" ] || continue
+    # The mtime says nothing about a session that still has a backlog: a
+    # bounded drain, or a POST refused partway through one, writes the
+    # offset file AFTER the last byte was appended, so the offset looks newer
+    # than the spool while undelivered bytes remain. Trusting the mtime alone
+    # stranded everything past the first 16 chunks of a burst until the next
+    # keystroke. backlog holds the sessions the last pass did not finish.
+    # `.off` must be strictly newer, so two files stamped in the same
+    # instant are drained rather than skipped.
+    if [ -z "${backlog[$session_id]:-}" ] && [ "$RUN_DIR/$session_id.off" -nt "$spool" ]; then
+      continue
+    fi
 
     drain_file "$session_id" "$spool" "$RUN_DIR/$session_id.off" 16
+    rc=$?
 
-    local offset=0 size
+    # Whether anything is left comes from drain_file, not from a second look
+    # at the file: a `wc -c < "$spool"` here forked on every active pass,
+    # and its redirection error is not suppressible by the 2>/dev/null on wc.
+    if [ "$rc" -ne 0 ]; then
+      pending=1
+      backlog[$session_id]=1
+    else
+      unset "backlog[$session_id]"
+    fi
+
+    offset=0
     [ -f "$RUN_DIR/$session_id.off" ] && read -r offset < "$RUN_DIR/$session_id.off" 2>/dev/null
     [ -n "$offset" ] || offset=0
 
-    size=$(wc -c < "$spool" 2>/dev/null)
-    [ -n "$size" ] && [ "$size" -gt "$offset" ] 2>/dev/null && pending=1
-
-    [ "$offset" -ge "$SPOOL_ROTATE_BYTES" ] 2>/dev/null && rotate_spool "$session_id"
+    if [ "$offset" -ge "$SPOOL_ROTATE_BYTES" ] 2>/dev/null; then
+      rotate_spool "$session_id"
+      backlog[$session_id]=1
+    fi
 
     # Nothing above bounds a backlog that is not being delivered.
     enforce_spool_cap "$session_id" "$spool" "$offset"
@@ -937,6 +963,9 @@ has_open_sessions() {
 
 pump_loop() {
   local parent="$1" ticks=0 idle_ticks
+  # Sessions whose last pass left bytes undelivered; read and written by
+  # pump_output, which only ever runs from this loop.
+  local -A backlog=()
 
   # How many fast ticks one idle tick is worth, so enforce_limits keeps
   # measuring the same wall-clock hours at either pace. Computed ONCE: doing

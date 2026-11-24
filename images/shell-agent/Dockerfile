@@ -74,15 +74,23 @@ RUN chmod 0755 /usr/local/bin/zop-shell-agent
 #      MESSAGE, not on the exit status: with every `:?` guard deleted the
 #      script still exits non-zero, because require_secure_relay rejects the
 #      empty URL a moment later — so a non-zero exit proved nothing and the
-#      build could not have noticed the guards going missing.
+#      build could not have noticed the guards going missing. Each variable
+#      is emptied in its own run with the other two set, because the script
+#      stops at the first guard it fails and a single run only ever tested
+#      the first.
 RUN test -x /usr/local/bin/zop-shell-agent \
       || { echo "agent missing from the published path" >&2; exit 1; } \
  && bash -n /usr/local/bin/zop-shell-agent \
       || { echo "agent is not valid bash" >&2; exit 1; } \
- && ZOP_SHELL_RELAY_URL= ZOP_SHELL_AGENT_TOKEN= ZOP_SHELL_SPACE_ID= \
-      bash /usr/local/bin/zop-shell-agent 2>&1 \
-      | grep -q 'relay url is required' \
-      || { echo "the required-variable guards are gone" >&2; exit 1; }
+ && for guard in \
+      "ZOP_SHELL_RELAY_URL=:relay url is required" \
+      "ZOP_SHELL_AGENT_TOKEN=:agent token is required" \
+      "ZOP_SHELL_SPACE_ID=:space id is required"; do \
+      env ZOP_SHELL_RELAY_URL=https://relay.invalid ZOP_SHELL_AGENT_TOKEN=x ZOP_SHELL_SPACE_ID=x \
+          "${guard%%:*}" bash /usr/local/bin/zop-shell-agent 2>&1 \
+        | grep -q "${guard#*:}" \
+        || { echo "the guard for '${guard%%=*}' is gone" >&2; exit 1; }; \
+    done
 
 # Never executed — see the header. Present so a person who does run the
 # container gets an explanation instead of silence.
