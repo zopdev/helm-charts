@@ -3,7 +3,7 @@ appVersion: "6.2.0"
 description: Helm chart for deploying listmonk, a self-hosted newsletter and mailing list manager
 name: listmonk
 version: 0.0.1
-icon: "https://raw.githubusercontent.com/knadh/listmonk/v6.2.0/static/public/static/favicon.png"
+icon: "https://storage.googleapis.com/zopdev-blog-resources/1/internal-dashboard/6b9566a3-f1ee-4d9a-bdd9-baa86d4afc48-listmonk.png"
 type: application
 dependencies:
   # Postgres holds every subscriber, list, campaign, template and setting. The
