@@ -77,7 +77,11 @@ RUN chmod 0755 /usr/local/bin/zop-shell-agent
 #      build could not have noticed the guards going missing. Each variable
 #      is emptied in its own run with the other two set, because the script
 #      stops at the first guard it fails and a single run only ever tested
-#      the first.
+#      the first. The URL the other two runs carry is plain http on purpose:
+#      with a guard gone the script goes on to require_secure_relay, which
+#      refuses it at once, so the build fails. An https URL would pass that
+#      check and send the script into its poll loop against a host that never
+#      answers, hanging the build instead of failing it.
 RUN test -x /usr/local/bin/zop-shell-agent \
       || { echo "agent missing from the published path" >&2; exit 1; } \
  && bash -n /usr/local/bin/zop-shell-agent \
@@ -86,7 +90,7 @@ RUN test -x /usr/local/bin/zop-shell-agent \
       "ZOP_SHELL_RELAY_URL=:relay url is required" \
       "ZOP_SHELL_AGENT_TOKEN=:agent token is required" \
       "ZOP_SHELL_SPACE_ID=:space id is required"; do \
-      env ZOP_SHELL_RELAY_URL=https://relay.invalid ZOP_SHELL_AGENT_TOKEN=x ZOP_SHELL_SPACE_ID=x \
+      env ZOP_SHELL_RELAY_URL=http://relay.invalid ZOP_SHELL_AGENT_TOKEN=x ZOP_SHELL_SPACE_ID=x \
           "${guard%%:*}" bash /usr/local/bin/zop-shell-agent 2>&1 \
         | grep -q "${guard#*:}" \
         || { echo "the guard for '${guard%%=*}' is gone" >&2; exit 1; }; \
