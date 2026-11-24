@@ -17,6 +17,7 @@
         },
         "password": {
           "type": "string",
+          "format": "password",
           "pattern": "^(.{8,})?$",
           "description": "Password for the first admin account, 8 characters or more. Used only on the first install; change it later from Admin -> Users in listmonk. Leave empty to generate one into the <release>-admin Secret",
           "default": "",
