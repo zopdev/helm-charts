@@ -61,8 +61,6 @@ service:
     secrets:
       # DB_USER, DB_PASSWORD
       - "{{ .Release.Name }}-listmonk-listmonk-postgres-database-secret"
-      # LISTMONK_ADMIN_USER, LISTMONK_ADMIN_PASSWORD - templates/admin-secret.yaml
-      - "{{ .Release.Name }}-admin"
 
   # listmonk only reads its database settings as LISTMONK_db__* (it has no
   # DATABASE_URL), while the postgres subchart hands out DB_*. The service chart
@@ -70,30 +68,80 @@ service:
   # done by the shell at start. This replaces the image entrypoint, which only
   # exists to drop from root to PUID; the pod already runs as uid 1000.
   #
-  # Then, on every start: create the schema and the first admin if the database
-  # is empty (--idempotent makes it a no-op afterwards), apply any migrations
-  # for a newer image (--upgrade), and run listmonk. The install step is retried
-  # because on a fresh install the postgres init Job creates the listmonk user
-  # a little after the pod starts; it gives up after 10 minutes so a real
-  # misconfiguration fails visibly.
+  # The image's own config.toml is still loaded on purpose (upstream compose
+  # passes --config '' instead): it carries the DB pool defaults (max_open,
+  # max_idle, max_lifetime), and every value that matters is overridden by the
+  # LISTMONK_* env above.
+  #
+  # The database is already installed and migrated by the init container below,
+  # so this only starts listmonk.
   command:
     - /bin/sh
     - -c
     - |
-      set -e
       export LISTMONK_db__host="$DB_HOST" LISTMONK_db__port="$DB_PORT" \
         LISTMONK_db__user="$DB_USER" LISTMONK_db__password="$DB_PASSWORD" \
         LISTMONK_db__database="$DB_NAME"
-      deadline=$(( $(date +%s) + 600 ))
-      until ./listmonk --install --idempotent --yes; do
-        if [ "$(date +%s)" -ge "$deadline" ]; then
-          echo "gave up waiting for postgres"; exit 1
-        fi
-        echo "postgres not ready, retrying in 5s"; sleep 5
-      done
-      ./listmonk --upgrade --yes
-      unset LISTMONK_ADMIN_USER LISTMONK_ADMIN_PASSWORD
       exec ./listmonk
+
+  # Creates the schema and first admin on an empty database (--idempotent makes
+  # it a no-op afterwards), then applies the migrations of a newer image
+  # (--upgrade; listmonk refuses to start with migrations pending). An init
+  # container, not the main command, because the liveness probe would restart
+  # the main container about 2 minutes in - during a slow first install, or
+  # part way through a long migration on a large subscriber table.
+  #
+  # The install is retried because on a fresh install the postgres init Job
+  # creates the listmonk user a little after the pod starts; it gives up after
+  # 10 minutes so a real misconfiguration fails visibly.
+  #
+  # The service chart gives init containers Secrets only (no ConfigMaps), so
+  # there is no DB_HOST here: the host is built from the release name (the
+  # command goes through tpl) and port/database are the postgres subchart's
+  # fixed values. The admin Secret is mounted only here - the running app
+  # never needs it.
+  initContainer:
+    # MUST equal service.image above: the migrations run by this binary are the
+    # ones the app expects. templates/validate.yaml fails the render otherwise.
+    image: "listmonk/listmonk:v6.2.0"
+    command:
+      - /bin/sh
+      - -c
+      - |
+        export LISTMONK_db__host="{{ .Release.Name }}-postgres" \
+          LISTMONK_db__user="$DB_USER" LISTMONK_db__password="$DB_PASSWORD"
+        deadline=$(( $(date +%s) + 600 ))
+        until ./listmonk --install --idempotent --yes; do
+          if [ "$(date +%s)" -ge "$deadline" ]; then
+            echo "gave up waiting for postgres"; exit 1
+          fi
+          echo "postgres not ready, retrying in 5s"; sleep 5
+        done
+        exec ./listmonk --upgrade --yes
+    env:
+      LISTMONK_db__port: "5432"
+      LISTMONK_db__database: "listmonk"
+      LISTMONK_db__ssl_mode: "disable"
+    envFrom:
+      secrets:
+        # DB_USER, DB_PASSWORD
+        - "{{ .Release.Name }}-listmonk-listmonk-postgres-database-secret"
+        # LISTMONK_ADMIN_USER, LISTMONK_ADMIN_PASSWORD - templates/admin-secret.yaml
+        - "{{ .Release.Name }}-admin"
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "64Mi"
+      limits:
+        cpu: "500m"
+        memory: "256Mi"
+    # Same hardening as the main container; uid 1000 comes from the pod.
+    securityContext:
+      runAsNonRoot: true
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
 
   # Recreate, not the default RollingUpdate: with one replica on the
   # ReadWriteOnce uploads volume, a surge pod scheduled on another node would
@@ -120,11 +168,11 @@ service:
   heartbeatURL: /health
   httpPort: 9000
 
-  # The first start runs the install and waits for postgres, so liveness gets
-  # a long grace period before it may restart the pod.
+  # Probes start only after the init container has installed and migrated the
+  # database, so the main container is up within seconds.
   livenessProbe:
     enable: true
-    initialDelaySeconds: 60
+    initialDelaySeconds: 30
     periodSeconds: 10
     timeoutSeconds: 3
     failureThreshold: 6

@@ -9,8 +9,8 @@
       "properties": {
         "username": {
           "type": "string",
-          "minLength": 1,
-          "description": "Login name for the first admin account",
+          "minLength": 3,
+          "description": "Login name for the first admin account, 3 characters or more",
           "default": "admin",
           "mutable": true,
           "editDisabled": true
@@ -36,9 +36,22 @@
         "image": {
           "type": "string",
           "minLength": 1,
-          "description": "listmonk container image, e.g. listmonk/listmonk:v6.2.0. Raising the tag upgrades listmonk and migrates its database on the next rollout - back up Postgres first",
+          "description": "listmonk container image, e.g. listmonk/listmonk:v6.2.0. Raising the tag upgrades listmonk and migrates its database on the next rollout - back up Postgres first. Set service.initContainer.image to the same value",
           "default": "listmonk/listmonk:v6.2.0",
           "mutable": true
+        },
+        "initContainer": {
+          "type": "object",
+          "description": "Init container that installs and migrates the database",
+          "properties": {
+            "image": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Must be the same image as service.image: it runs the database migrations that image expects. The install fails if the two differ",
+              "default": "listmonk/listmonk:v6.2.0",
+              "mutable": true
+            }
+          }
         },
         "nginx": {
           "type": "object",

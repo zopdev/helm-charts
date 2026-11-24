@@ -1012,7 +1012,7 @@ entries:
       type: application
     apiVersion: v2
     appVersion: 6.2.0
-    created: "2026-11-23T18:45:33.254483+05:30"
+    created: "2026-11-24T11:18:26.746519+05:30"
     dependencies:
     - name: postgres
       repository: https://helm.zop.dev
@@ -1022,7 +1022,7 @@ entries:
       version: 0.0.36
     description: Helm chart for deploying listmonk, a self-hosted newsletter and mailing
       list manager
-    digest: 85a9611c73c345bd3333fd143e24797b02cbee83d9c8636bd73ac2cc5e36edf4
+    digest: 5417e611be18f6c09bd0e4aacd898805d4c5909fcf2fccbb62fd4c389bde49f2
     icon: https://raw.githubusercontent.com/knadh/listmonk/v6.2.0/static/public/static/favicon.png
     maintainers:
     - name: ZopDev
@@ -1030,8 +1030,8 @@ entries:
     name: listmonk
     type: application
     urls:
-    - https://helm.zop.dev/listmonk-0.0.1.tgz
-    version: 0.0.1
+    - https://helm.zop.dev/listmonk-v0.0.1.tgz
+    version: v0.0.1
   litellm:
   - annotations:
       type: application
@@ -3551,4 +3551,4 @@ entries:
     urls:
     - https://helm.zop.dev/zookeeper-operator-v0.0.1.tgz
     version: v0.0.1
-generated: "2026-11-23T18:45:33.253415+05:30"
+generated: "2026-11-24T11:18:26.744263+05:30"

@@ -65,13 +65,13 @@ const CHART_DISPLAY = {
     name: "LibreDB Studio",
     description: "Web-based SQL IDE for PostgreSQL, MySQL, MongoDB, Redis and other databases",
   },
-  litellm: {
-    name: "LiteLLM",
-    description: "One OpenAI-compatible proxy in front of every LLM provider",
-  },
   listmonk: {
     name: "listmonk",
     description: "Self-hosted newsletter and mailing list manager",
+  },
+  litellm: {
+    name: "LiteLLM",
+    description: "One OpenAI-compatible proxy in front of every LLM provider",
   },
   localai: {
     name: "LocalAI",

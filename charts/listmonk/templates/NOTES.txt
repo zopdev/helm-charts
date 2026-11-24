@@ -13,7 +13,7 @@ The account is created once. To change the password later, use
 Admin -> Users in listmonk; editing admin.* afterwards has no effect.
 {{- if .Values.service.nginx.host }}
 
-Open: http{{ if .Values.service.nginx.tlsSecretName }}s{{ end }}://{{ .Values.service.nginx.host }}/admin
+Open: https://{{ .Values.service.nginx.host }}/admin
 {{- else }}
 
 Open it locally:
