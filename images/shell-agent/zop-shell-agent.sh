@@ -85,12 +85,20 @@ DELIVERY_DEAD_AFTER="${ZOP_SHELL_DELIVERY_DEAD_AFTER:-300}"
 # seconds. It lives in the pump subshell, which is where every delivery and
 # every cap check happens. It starts now so that a relay which is down before
 # the first event still gets the full grace period.
-last_delivery_ok=$(date +%s)
+last_delivery_ok=${EPOCHSECONDS:-$(date +%s)}
 
 # PUMP_INTERVAL is how often output is shipped. It is NOT tied to the poll:
 # the poll parks for as long as the relay holds it, and output must not wait
 # on that. See main().
 PUMP_INTERVAL="${ZOP_SHELL_PUMP_INTERVAL:-0.1}"
+
+# PUMP_IDLE_INTERVAL is the pace with NO terminal open. The fast interval
+# exists so a running command's output feels live; with nothing open there is
+# no output to be live about, and ten wakeups a second is just a tick the
+# customer's VM pays for forever. A new terminal arrives through the poll
+# loop, which creates the spool before any output can exist, so the first
+# output after a quiet spell waits at most one idle interval.
+PUMP_IDLE_INTERVAL="${ZOP_SHELL_PUMP_IDLE_INTERVAL:-1}"
 
 # Backoff bounds for a relay that is refusing or unreachable. Without this a
 # rejected token means a request every fifth of a second, forever, from every
@@ -117,14 +125,34 @@ AUTH_FILE="$RUN_DIR/auth"
 
 log() { printf '%s zop-shell-agent: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" >&2; }
 
+# CURL_PROTO is the protocol allow-list handed to every call. For an https
+# relay it pins the scheme, so neither a redirect nor a crafted URL can walk
+# the bearer token down to cleartext. Loopback relaxes it to http because
+# that is the only case where plain http is permitted at all.
+CURL_PROTO="=https"
+
 # require_secure_relay refuses to carry a bearer token over a link that is
 # not encrypted. Loopback is allowed because the integration tests stand a
 # relay up on 127.0.0.1, and there is no network there to intercept.
 require_secure_relay() {
+  # A URL may carry userinfo before the host, and "@" is the only character
+  # that introduces it. http://127.0.0.1:1@relay.example.invalid matched the
+  # loopback patterns below while curl dialled relay.example.invalid in
+  # cleartext — the host the pattern checked was not the host that was
+  # contacted. Nothing legitimate puts credentials in this URL: the agent
+  # authenticates with a bearer token from a file.
+  case "${RELAY_URL#*://}" in
+    *@*)
+      log "refusing a relay URL with credentials in it: $RELAY_URL"
+      exit 1
+      ;;
+  esac
+
   case "$RELAY_URL" in
     https://*) return 0 ;;
     http://127.0.0.1[:/]* | http://127.0.0.1 | http://localhost[:/]* | http://localhost | http://\[::1\][:/]*)
       log "relay is loopback; proceeding without TLS"
+      CURL_PROTO="=http"
 
       return 0
       ;;
@@ -221,7 +249,7 @@ post_event_file() {
   # 5xx, the caller believed the chunk had landed, and pump_output advanced
   # its offset past bytes the relay never received — the user's output,
   # silently gone, under a comment promising that could not happen.
-  if ! curl -sS --fail -m 30 -X POST \
+  if ! curl -sS --fail --proto "$CURL_PROTO" -m 30 -X POST \
     -H @"$AUTH_FILE" \
     -H "Content-Type: application/json" \
     --data-binary "@$body" \
@@ -232,7 +260,7 @@ post_event_file() {
     return 1
   fi
 
-  last_delivery_ok=$(date +%s)
+  last_delivery_ok=${EPOCHSECONDS:-$(date +%s)}
 
   rm -f "$body"
 
@@ -244,7 +272,7 @@ post_event_file() {
 # blip must not cost the user the process their terminal is running.
 delivery_is_dead() {
   local now
-  now=$(date +%s)
+  now=${EPOCHSECONDS:-$(date +%s)}
 
   [ "$((now - last_delivery_ok))" -ge "$DELIVERY_DEAD_AFTER" ] 2>/dev/null
 }
@@ -331,7 +359,7 @@ touch_activity() { date +%s > "$RUN_DIR/$1.seen"; }
 # left running is never idle and would otherwise live forever.
 enforce_limits() {
   local born_file session_id born seen now age idle
-  now="$(date +%s)"
+  now="${EPOCHSECONDS:-$(date +%s)}"
   shopt -s nullglob
 
   for born_file in "$RUN_DIR"/*.born; do
@@ -439,7 +467,8 @@ pump_output() {
   # Rotated spools FIRST: their bytes came before anything in the live file,
   # and shipping them second would reorder the user's screen.
   for rot in "$RUN_DIR"/*.rot; do
-    session_id="$(basename "$rot" .rot)"
+    session_id="${rot##*/}"
+    session_id="${session_id%.rot}"
     pending=1
 
     if drain_file "$session_id" "$rot" "$RUN_DIR/$session_id.rotoff" 0; then
@@ -448,7 +477,8 @@ pump_output() {
   done
 
   for spool in "$RUN_DIR"/*.out; do
-    session_id="$(basename "$spool" .out)"
+    session_id="${spool##*/}"
+    session_id="${session_id%.out}"
 
     # A rotation that has not finished draining must finish first, or this
     # session's output arrives out of order.
@@ -465,13 +495,28 @@ pump_output() {
       continue
     fi
 
+    # Nothing has been appended since the offset was last recorded, so there
+    # is nothing to drain, nothing to rotate and nothing new to cap.
+    #
+    # This is the common case — a terminal that is open while nobody types —
+    # and it is the whole idle cost of the agent. Without it every open
+    # session paid about a dozen forks ten times a second whether or not a
+    # byte had moved, which on a burstable instance is the customer's CPU
+    # credits spent on discovering that nothing happened. `-nt` is a bash
+    # builtin and forks nothing.
+    #
+    # A failed delivery does not write the offset file, so the spool stays
+    # newer and the retry keeps happening; the skip can only ever fire when
+    # there is genuinely nothing to send.
+    [ "$spool" -nt "$RUN_DIR/$session_id.off" ] || continue
+
     drain_file "$session_id" "$spool" "$RUN_DIR/$session_id.off" 16
 
     local offset=0 size
-    [ -f "$RUN_DIR/$session_id.off" ] && offset="$(cat "$RUN_DIR/$session_id.off" 2>/dev/null)"
+    [ -f "$RUN_DIR/$session_id.off" ] && read -r offset < "$RUN_DIR/$session_id.off" 2>/dev/null
     [ -n "$offset" ] || offset=0
 
-    size=$(wc -c "$spool" 2>/dev/null | awk '{print $1}')
+    size=$(wc -c < "$spool" 2>/dev/null)
     [ -n "$size" ] && [ "$size" -gt "$offset" ] 2>/dev/null && pending=1
 
     [ "$offset" -ge "$SPOOL_ROTATE_BYTES" ] 2>/dev/null && rotate_spool "$session_id"
@@ -489,28 +534,37 @@ pump_output() {
   # quiet spell met a clock that already said "dead relay" and the terminal
   # was closed with the relay perfectly healthy — the same kill-for-being-
   # verbose this whole path exists to avoid, just with a longer fuse.
-  [ "$pending" -eq 0 ] && last_delivery_ok=$(date +%s)
+  [ "$pending" -eq 0 ] && last_delivery_ok=${EPOCHSECONDS:-$(date +%s)}
 
   shopt -u nullglob
 }
 
-# enforce_spool_cap ends a terminal whose undelivered output has grown past
-# what this machine should hold for it.
-#
-# Closing is harsh, and it is the right end of the trade: the alternatives are
-# to keep filling a tmpfs that dockerd and containerd depend on, or to drop
-# the pane's capture and leave a terminal whose scrollback silently lies. The
-# person is told which it was.
 # delivered_offset reads what has actually been shipped for a session.
 delivered_offset() {
   local v=0
 
-  [ -f "$RUN_DIR/$1.off" ] && v="$(cat "$RUN_DIR/$1.off" 2>/dev/null)"
+  # `read` is a builtin; the `cat` this replaces forked twice (the command
+  # substitution and the cat itself) for every session on every pass.
+  [ -f "$RUN_DIR/$1.off" ] && read -r v < "$RUN_DIR/$1.off" 2>/dev/null
   [ -n "$v" ] || v=0
 
   printf '%s' "$v"
 }
 
+# enforce_spool_cap bounds the undelivered output one terminal may hold on
+# this machine.
+#
+# It ALWAYS skips the backlog once the cap is passed, because the bytes are
+# sitting in a tmpfs that dockerd and containerd depend on and the reason
+# they are stuck does not change that. What it does about the terminal
+# depends on why: a relay that is merely slow, or a command that simply
+# outruns delivery, keeps its terminal and loses only the backlog, with the
+# person told so in the stream. The terminal is closed only once nothing has
+# been delivered for DELIVERY_DEAD_AFTER, which is the relay being gone
+# rather than behind.
+#
+# It used to close on backlog alone, so a verbose command cost you the
+# terminal it was running in.
 enforce_spool_cap() {
   local session_id="$1" spool="$2" offset="$3" size undelivered rot rot_off rot_size
 
@@ -638,14 +692,27 @@ rotate_spool() {
 # reap_finished tells the platform about terminals whose shell has exited, so
 # the browser stops waiting on output that can never arrive.
 reap_finished() {
-  local spool session_id name
+  local spool session_id live
   shopt -s nullglob
 
-  for spool in "$RUN_DIR"/*.out; do
-    session_id="$(basename "$spool" .out)"
-    name="$(session_name "$session_id")"
+  # Nothing open, nothing to reap — and no reason to ask tmux. With no
+  # terminal this is the only fork the pass would have made.
+  has_open_sessions || { shopt -u nullglob; return 0; }
 
-    if ! tmux has-session -t "$name" 2>/dev/null; then
+  # ONE list-sessions for the whole pass, matched in the shell.
+  #
+  # This was a `tmux has-session` per terminal per tick — a fork each, ten
+  # times a second, for the sole purpose of learning that nothing had
+  # exited. The newlines around both the haystack and the needle keep the
+  # match exact, so a session whose id is a prefix of another's is not read
+  # as alive.
+  live=$'\n'"$(tmux list-sessions -F '#S' 2>/dev/null)"$'\n'
+
+  for spool in "$RUN_DIR"/*.out; do
+    session_id="${spool##*/}"
+    session_id="${session_id%.out}"
+
+    if [[ "$live" != *$'\n'"$SESSION_PREFIX$session_id"$'\n'* ]]; then
       # close_session may have removed the spool between the glob above and
       # this check. That is a terminal the user closed deliberately, and the
       # browser has already been told; a second "exit" would be noise.
@@ -712,14 +779,23 @@ apply_command() {
       # Delivered through a tmux BUFFER rather than send-keys, so the bytes
       # reach the pty verbatim: send-keys interprets its argument as key
       # names, so a person typing the word "Enter" would send a newline.
-      # Data arrives as a raw JSON string (the relay does not base64 it), so
-      # jq -r hands us exactly what was typed.
-      local data
-      data="$(jq -r '.data // ""' <<<"$cmd")"
+      #
+      # PIPED, never captured. `data="$(jq -r ...)"` strips every trailing
+      # newline, so a keystroke that is ONLY a newline — Ctrl+J — arrived as
+      # the empty string and the `[ -n "$data" ]` guard then dropped it
+      # silently; a NUL (Ctrl+Space) was lost the same way. This is the
+      # command-substitution trap the output path already documents. `jq -j`
+      # writes the string with no trailing newline of its own, so what
+      # reaches the buffer is exactly what was typed.
+      #
+      # -r on paste-buffer, because without it tmux helpfully rewrites every
+      # LF to CR and the bytes are then not verbatim at all. Enter from a
+      # browser terminal is already CR, which -r passes through untouched.
       touch_activity "$session_id"
-      [ -n "$data" ] && printf '%s' "$data" \
+      jq -j '.data // ""' <<<"$cmd" \
         | tmux load-buffer -b "zop-$session_id" - 2>/dev/null \
-        && tmux paste-buffer -d -b "zop-$session_id" -t "$(session_name "$session_id")" 2>/dev/null
+        && tmux paste-buffer -r -d -b "zop-$session_id" \
+          -t "$SESSION_PREFIX$session_id" 2>/dev/null
       ;;
     resize)
       tmux resize-window -t "$(session_name "$session_id")" \
@@ -750,7 +826,7 @@ poll_once() {
   # when it interrupts `wait`.
   body_file="$(mktemp "$RUN_DIR/poll.XXXXXX")"
 
-  curl -sS -m "$POLL_MAX_SECONDS" \
+  curl -sS --proto "$CURL_PROTO" -m "$POLL_MAX_SECONDS" \
     -H @"$AUTH_FILE" \
     -w '\n%{http_code}' \
     "$RELAY_URL/agent/shell/poll" > "$body_file" 2>/dev/null &
@@ -843,8 +919,32 @@ adopt_existing_sessions() {
 # It owns the .off files; the poll side never writes them. The only state
 # the two share is the spool, and the worst a collision there can do is skip
 # a pass.
+# has_open_sessions answers from the glob alone — no fork, no subshell.
+has_open_sessions() {
+  local f
+  shopt -s nullglob
+
+  for f in "$RUN_DIR"/*.out; do
+    shopt -u nullglob
+
+    return 0
+  done
+
+  shopt -u nullglob
+
+  return 1
+}
+
 pump_loop() {
-  local parent="$1" ticks=0
+  local parent="$1" ticks=0 idle_ticks
+
+  # How many fast ticks one idle tick is worth, so enforce_limits keeps
+  # measuring the same wall-clock hours at either pace. Computed ONCE: doing
+  # it per pass would have put back a fork on the path this is here to make
+  # cheap.
+  idle_ticks=$(awk -v a="$PUMP_IDLE_INTERVAL" -v b="$PUMP_INTERVAL" \
+    'BEGIN{r=a/b; print (r<1)?1:int(r)}' 2>/dev/null)
+  [ -n "$idle_ticks" ] || idle_ticks=1
 
   while true; do
     # Die with the agent. The pump is a background subshell, so a SIGKILL to
@@ -866,7 +966,15 @@ pump_loop() {
       ticks=0
     fi
 
-    sleep "$PUMP_INTERVAL"
+    if has_open_sessions; then
+      sleep "$PUMP_INTERVAL"
+    else
+      # enforce_limits is paced in ticks, so a slower tick must not stretch
+      # the hours it measures. Count the idle pace against the same budget.
+      ticks=$((ticks + idle_ticks - 1))
+
+      sleep "$PUMP_IDLE_INTERVAL"
+    fi
   done
 }
 

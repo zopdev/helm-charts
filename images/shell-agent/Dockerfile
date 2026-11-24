@@ -70,14 +70,19 @@ RUN chmod 0755 /usr/local/bin/zop-shell-agent
 #   2. it is syntactically valid bash — a typo here becomes an agent that
 #      exits instantly on every VM it is installed on, and
 #   3. it refuses to start without its three required variables, which is what
-#      stops a half-configured install from looking healthy.
+#      stops a half-configured install from looking healthy. Asserted on the
+#      MESSAGE, not on the exit status: with every `:?` guard deleted the
+#      script still exits non-zero, because require_secure_relay rejects the
+#      empty URL a moment later — so a non-zero exit proved nothing and the
+#      build could not have noticed the guards going missing.
 RUN test -x /usr/local/bin/zop-shell-agent \
       || { echo "agent missing from the published path" >&2; exit 1; } \
  && bash -n /usr/local/bin/zop-shell-agent \
       || { echo "agent is not valid bash" >&2; exit 1; } \
- && ! ZOP_SHELL_RELAY_URL= ZOP_SHELL_AGENT_TOKEN= ZOP_SHELL_SPACE_ID= \
-      bash /usr/local/bin/zop-shell-agent 2>/dev/null \
-      || { echo "agent started with no configuration" >&2; exit 1; }
+ && ZOP_SHELL_RELAY_URL= ZOP_SHELL_AGENT_TOKEN= ZOP_SHELL_SPACE_ID= \
+      bash /usr/local/bin/zop-shell-agent 2>&1 \
+      | grep -q 'relay url is required' \
+      || { echo "the required-variable guards are gone" >&2; exit 1; }
 
 # Never executed — see the header. Present so a person who does run the
 # container gets an explanation instead of silence.
