@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "service": {
+      "type": "object",
+      "category": "runtime",
+      "description": "The listmonk deployment itself",
+      "properties": {
+        "image": {
+          "type": "string",
+          "minLength": 1,
+          "description": "listmonk container image, e.g. listmonk/listmonk:v6.2.0. Raising the tag upgrades listmonk and migrates its database on the next rollout - back up Postgres first. Set service.initContainer.image to the same value",
+          "default": "listmonk/listmonk:v6.2.0",
+          "mutable": true
+        },
+        "initContainer": {
+          "type": "object",
+          "description": "Init container that installs and migrates the database",
+          "properties": {
+            "image": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Must be the same image as service.image: it runs the database migrations that image expects. The install fails if the two differ",
+              "default": "listmonk/listmonk:v6.2.0",
+              "mutable": true
+            }
+          }
+        },
+        "nginx": {
+          "type": "object",
+          "category": "advanced",
+          "description": "nginx Ingress for listmonk. Created only when host is set",
+          "properties": {
+            "host": {
+              "type": "string",
+              "description": "Hostname to serve listmonk on, e.g. lists.example.com. Leave empty and no Ingress is created. Then set Settings -> General -> Root URL in listmonk to match",
+              "default": "",
+              "mutable": true
+            },
+            "tlsHost": {
+              "type": "string",
+              "description": "Hostname to put in the TLS certificate. Defaults to the host above",
+              "default": "",
+              "mutable": true
+            },
+            "tlsSecretName": {
+              "type": "string",
+              "description": "Name of an existing Kubernetes TLS secret holding the certificate for that host",
+              "default": "",
+              "mutable": true
+            }
+          }
+        },
+        "minCPU": {
+          "type": "string",
+          "description": "CPU reserved for the listmonk pod, e.g. 100m",
+          "default": "100m",
+          "mutable": true
+        },
+        "minMemory": {
+          "type": "string",
+          "description": "Memory reserved for the listmonk pod, e.g. 128Mi",
+          "default": "128Mi",
+          "mutable": true
+        },
+        "maxCPU": {
+          "type": "string",
+          "description": "CPU ceiling for the listmonk pod, e.g. 500m",
+          "default": "500m",
+          "mutable": true
+        },
+        "maxMemory": {
+          "type": "string",
+          "description": "Memory ceiling for the listmonk pod, e.g. 512Mi",
+          "default": "512Mi",
+          "mutable": true
+        },
+        "volumeMounts": {
+          "type": "object",
+          "description": "Storage attached to the listmonk container",
+          "properties": {
+            "pvc": {
+              "type": "array",
+              "description": "Disks mounted into listmonk. The default entry gives the media uploads directory a 5Gi volume. Set \"storage\" to change the size, at install time only - a live volume cannot be resized",
+              "default": [
+                {
+                  "name": "listmonk-uploads",
+                  "mountPath": "/listmonk/uploads",
+                  "subPath": "",
+                  "storage": "5Gi"
+                }
+              ],
+              "mutable": true,
+              "editDisabled": true
+            }
+          }
+        }
+      },
+      "required": [
+        "image",
+        "minCPU",
+        "minMemory",
+        "maxCPU",
+        "maxMemory"
+      ]
+    },
+    "postgres": {
+      "type": "object",
+      "category": "advanced",
+      "description": "Bundled PostgreSQL holding subscribers, lists, campaigns, templates and settings",
+      "properties": {
+        "diskSize": {
+          "type": "string",
+          "description": "Disk for the bundled PostgreSQL, e.g. 10Gi. Fixed at install time - a live volume cannot be resized afterwards",
+          "default": "10Gi",
+          "mutable": true,
+          "editDisabled": true
+        }
+      }
+    }
+  },
+  "title": "listmonk Helm Chart Values"
+}

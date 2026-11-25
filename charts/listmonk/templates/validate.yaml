@@ -1,0 +1,13 @@
+{{- /*
+Render-time checks for settings that would otherwise give a broken install.
+
+The init container installs and migrates the database with its own copy of
+the listmonk binary. The service chart renders initContainer.image verbatim,
+so it cannot follow service.image: if only one is raised, the migrations do not
+match the app and listmonk refuses to start with migrations pending.
+*/ -}}
+{{- $app := .Values.service.image | default "" }}
+{{- $init := .Values.service.initContainer.image | default "" }}
+{{- if ne $app $init }}
+{{- fail (printf "service.image (%q) and service.initContainer.image (%q) must be the same listmonk image: the init container runs the database migrations the app expects. Set both to the same tag." $app $init) }}
+{{- end }}
