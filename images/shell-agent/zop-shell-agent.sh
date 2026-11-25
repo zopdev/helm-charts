@@ -106,6 +106,27 @@ PUMP_IDLE_INTERVAL="${ZOP_SHELL_PUMP_IDLE_INTERVAL:-1}"
 POLL_BACKOFF_MIN=1
 POLL_BACKOFF_MAX=30
 
+# Waking a scaled-to-zero container. Sablier is a sibling component on this
+# same VM and answers on loopback only, which is why the agent is the thing
+# that asks it.
+SABLIER_PORT="${ZOP_SHELL_SABLIER_PORT:-10000}"
+# How long Sablier is given to bring the instance up, and how long curl waits
+# for that answer — a few seconds more, so a Sablier replying right on its own
+# deadline is read rather than cut off.
+WAKE_TIMEOUT_SECONDS="${ZOP_SHELL_WAKE_TIMEOUT:-60}"
+WAKE_MAX_SECONDS=$((WAKE_TIMEOUT_SECONDS + 5))
+# A VM with no scale-to-zero has nothing on the port. One second to find that
+# out, rather than the whole budget, on every container terminal it opens.
+WAKE_CONNECT_TIMEOUT="${ZOP_SHELL_WAKE_CONNECT_TIMEOUT:-1}"
+# Sablier reports ready a moment before docker does; these are the seconds
+# spent waiting for the two to agree.
+WAKE_READY_TRIES="${ZOP_SHELL_WAKE_READY_TRIES:-10}"
+# The session registered with Sablier, which is what stops it stopping the
+# container again. It buys a window, not the shell's lifetime: terminal
+# traffic goes through tmux and docker exec, never through Sablier, so
+# nothing refreshes it.
+WAKE_SESSION="${ZOP_SHELL_WAKE_SESSION:-45m}"
+
 # SESSION_MAX_AGE and SESSION_IDLE_MAX bound a terminal's life on the VM.
 #
 # These exist because the relay's registry is in memory. When the deployer
@@ -297,6 +318,34 @@ post_event() {
 # host terminal is just a shell. A container terminal is `docker exec` from
 # the host's own docker, which needs no socket mount because it is the host's
 # own socket.
+# container_running reports whether a container is up right now.
+container_running() {
+  [ "$(docker inspect -f '{{.State.Running}}' -- "$1" 2>/dev/null)" = true ]
+}
+
+# wake_container asks Sablier to start a stopped container and waits for
+# docker to agree it is running.
+#
+# Best effort by design: every failure here leaves the container stopped and
+# lets `docker exec` report it, which is exactly what happened before this
+# existed. A VM with no scale-to-zero has nothing listening on the port, so
+# --connect-timeout keeps that case to a second rather than the full budget.
+wake_container() {
+  local c="$1" i=0
+
+  curl -fsS -m "$WAKE_MAX_SECONDS" --connect-timeout "$WAKE_CONNECT_TIMEOUT" -o /dev/null \
+    "http://127.0.0.1:$SABLIER_PORT/api/strategies/blocking?names=$c&session_duration=$WAKE_SESSION&timeout=${WAKE_TIMEOUT_SECONDS}s" \
+    2>/dev/null || true
+
+  while [ "$i" -lt "$WAKE_READY_TRIES" ]; do
+    container_running "$c" && return 0
+    i=$((i + 1))
+    sleep 1
+  done
+
+  return 1
+}
+
 open_session() {
   local session_id="$1" scope="$2" container="$3" cols="$4" rows="$5"
   local name program
@@ -320,6 +369,27 @@ open_session() {
       post_event "$session_id" "error" "container $container is not running on this VM"
 
       return
+    fi
+
+    # A container that EXISTS but is stopped is a scaled-to-zero service, and
+    # opening a terminal on it is a request to use it — so wake it.
+    #
+    # Done HERE, by the agent, because this is the only process that can:
+    # Sablier listens on the VM's own loopback, which nothing outside the
+    # machine can reach. The platform used to ship this same curl in over a
+    # cloud exec channel (Azure Run Command, SSM, gcloud), which needs
+    # credentials and IAM that a pool may simply not have — and where it does
+    # not, the terminal died and the person was told to go and open the
+    # service's public URL by hand to wake it. The agent is already here,
+    # already root, already holding the docker socket. No credentials, no
+    # inbound path, works on a private subnet: the same reasons this agent
+    # can serve a terminal at all.
+    #
+    # Through Sablier rather than `docker start`, because the request also
+    # REGISTERS a session, and that is what stops scale-to-zero stopping the
+    # container again while someone is typing in it.
+    if ! container_running "$container"; then
+      wake_container "$container"
     fi
 
     program=(docker exec -it -- "$container" sh)
